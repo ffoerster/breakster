@@ -10,8 +10,8 @@ use App\Events\RoomStateChanged;
 use App\Models\Provider;
 use App\Models\Room;
 use App\Models\RoomPlayer;
-use Illuminate\Support\Collection;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -29,7 +29,9 @@ class Show extends Component
 
     public function mount(string $code): void
     {
-        $this->room = Room::with('pack')->where('code', strtoupper($code))->firstOrFail();
+        $this->room = Room::with([
+            'pack' => fn($query) => $query->withCount(['spotifyTracks', 'tidalTracks', 'tracks']),
+        ])->where('code', strtoupper($code))->firstOrFail();
     }
 
     #[Computed]

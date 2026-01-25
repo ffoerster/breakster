@@ -62,6 +62,12 @@ class Create extends Component
                 'tracks as tracks_count' => function ($query): void {
                     $query->where('is_active', true);
                 },
+                'spotifyTracks as spotify_tracks_count' => function ($query): void {
+                    $query->where('is_active', true);
+                },
+                'tidalTracks as tidal_tracks_count' => function ($query): void {
+                    $query->where('is_active', true);
+                },
             ])
             ->orderBy('name')
             ->get();

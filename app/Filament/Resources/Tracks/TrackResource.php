@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Tracks;
 
 use App\Filament\Resources\Tracks\Pages\CreateTrack;
 use App\Filament\Resources\Tracks\Pages\EditTrack;
+use App\Filament\Resources\Tracks\Pages\ListSpotifyTracks;
+use App\Filament\Resources\Tracks\Pages\ListTidalTracks;
 use App\Filament\Resources\Tracks\Pages\ListTracks;
 use App\Filament\Resources\Tracks\Schemas\TrackForm;
 use App\Filament\Resources\Tracks\Tables\TracksTable;
@@ -41,8 +43,19 @@ class TrackResource extends Resource
     {
         return [
             'index' => ListTracks::route('/'),
+            'spotify' => ListSpotifyTracks::route('/spotify'),
+            'tidal' => ListTidalTracks::route('/tidal'),
             'create' => CreateTrack::route('/create'),
             'edit' => EditTrack::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getNavigationItems(): array
+    {
+        return [
+            ...parent::getNavigationItems(),
+            ...ListSpotifyTracks::getNavigationItems(),
+            ...ListTidalTracks::getNavigationItems(),
         ];
     }
 }

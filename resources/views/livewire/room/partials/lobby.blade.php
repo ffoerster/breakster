@@ -8,6 +8,23 @@
                 @if ($room->pack->description)
                     <p class="text-sm text-gray-400 mt-1">{{ $room->pack->description }}</p>
                 @endif
+                @if (isset($room->pack->tracks_count))
+                    <p class="text-sm text-gray-400 mt-1">
+                        {{ $room->pack->tracks_count }} total tracks
+                        @if ($room->pack->spotify_tracks_count > 0 || $room->pack->tidal_tracks_count > 0)
+                            <span class="mx-1">•</span>
+                            @if ($room->pack->spotify_tracks_count > 0)
+                                <span>{{ $room->pack->spotify_tracks_count }} Spotify</span>
+                            @endif
+                            @if ($room->pack->spotify_tracks_count > 0 && $room->pack->tidal_tracks_count > 0)
+                                <span class="mx-1">•</span>
+                            @endif
+                            @if ($room->pack->tidal_tracks_count > 0)
+                                <span>{{ $room->pack->tidal_tracks_count }} Tidal</span>
+                            @endif
+                        @endif
+                    </p>
+                @endif
             </div>
         </div>
         <div class="text-right">

@@ -37,6 +37,16 @@ class Pack extends Model
         return $this->tracks()->where('is_active', true);
     }
 
+    public function spotifyTracks(): HasMany
+    {
+        return $this->tracks()->whereHas('provider', fn($query) => $query->where('key', 'spotify'));
+    }
+
+    public function tidalTracks(): HasMany
+    {
+        return $this->tracks()->whereHas('provider', fn($query) => $query->where('key', 'tidal'));
+    }
+
     public function rooms(): HasMany
     {
         return $this->hasMany(Room::class);

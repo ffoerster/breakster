@@ -25,14 +25,20 @@ class PacksTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->searchable(),
+                TextColumn::make('name')->searchable(),
                 TextColumn::make('tracks_count')
                     ->counts('tracks')
-                    ->label('Tracks')
+                    ->label('Total Tracks')
                     ->sortable(),
-                IconColumn::make('is_active')
-                    ->boolean(),
+                TextColumn::make('spotify_tracks_count')
+                    ->counts('spotifyTracks')
+                    ->label('Spotify')
+                    ->sortable(),
+                TextColumn::make('tidal_tracks_count')
+                    ->counts('tidalTracks')
+                    ->label('Tidal')
+                    ->sortable(),
+                IconColumn::make('is_active')->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -50,7 +56,9 @@ class PacksTable
                     ->label('Import from TIDAL')
                     ->icon(Heroicon::ArrowDownTray)
                     ->modalHeading('Import from TIDAL')
-                    ->modalDescription('Paste a TIDAL track or playlist URL (or type track:<id> / playlist:<id>). This will enqueue a database-backed job to import/refresh tracks for this pack.')
+                    ->modalDescription(
+                        'Paste a TIDAL track or playlist URL (or type track:<id> / playlist:<id>). This will enqueue a database-backed job to import/refresh tracks for this pack.',
+                    )
                     ->form([
                         TextInput::make('source')
                             ->label('Track/playlist URL or ID')
@@ -70,10 +78,12 @@ class PacksTable
                             return;
                         }
 
-                        if ($parsed['type'] === 'playlist' && ! app(TidalAdminTokenService::class)->hasValidToken()) {
+                        if ($parsed['type'] === 'playlist' && !app(TidalAdminTokenService::class)->hasValidToken()) {
                             Notification::make()
                                 ->title('Connect TIDAL to import playlists')
-                                ->body('Playlists require an admin connection. Open a pack and use the "Connect TIDAL" action first.')
+                                ->body(
+                                    'Playlists require an admin connection. Open a pack and use the "Connect TIDAL" action first.',
+                                )
                                 ->warning()
                                 ->send();
 

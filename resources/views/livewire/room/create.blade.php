@@ -37,7 +37,21 @@
                             >
                             <div class="flex-1">
                                 <div class="font-medium {{ $packId == $pack->id ? 'text-white' : '' }}">{{ $pack->name }}</div>
-                                <div class="text-sm {{ $packId == $pack->id ? 'text-purple-200' : 'text-gray-400' }}">{{ $pack->tracks_count }} tracks</div>
+                                <div class="text-sm {{ $packId == $pack->id ? 'text-purple-200' : 'text-gray-400' }}">
+                                    {{ $pack->tracks_count }} tracks
+                                    @if ($pack->spotify_tracks_count > 0 || $pack->tidal_tracks_count > 0)
+                                        <span class="mx-1">•</span>
+                                        @if ($pack->spotify_tracks_count > 0)
+                                            <span>{{ $pack->spotify_tracks_count }} Spotify</span>
+                                        @endif
+                                        @if ($pack->spotify_tracks_count > 0 && $pack->tidal_tracks_count > 0)
+                                            <span class="mx-1">•</span>
+                                        @endif
+                                        @if ($pack->tidal_tracks_count > 0)
+                                            <span>{{ $pack->tidal_tracks_count }} Tidal</span>
+                                        @endif
+                                    @endif
+                                </div>
                             </div>
                             @if ($packId == $pack->id)
                                 <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">

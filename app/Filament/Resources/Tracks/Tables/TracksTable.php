@@ -17,36 +17,22 @@ class TracksTable
     {
         return $table
             ->columns([
-                TextColumn::make('title')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('artist')
-                    ->searchable()
-                    ->sortable(),
+                TextColumn::make('title')->searchable()->sortable(),
+                TextColumn::make('artist')->searchable()->sortable(),
                 TextColumn::make('label')
                     ->label('Label')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('release_date')
-                    ->date('Y')
-                    ->sortable(),
-                TextColumn::make('pack.name')
-                    ->label('Pack')
-                    ->sortable(),
-                TextColumn::make('provider.name')
-                    ->label('Provider')
-                    ->sortable(),
-                TextColumn::make('provider_track_id')
-                    ->label('Provider ID')
-                    ->searchable(),
+                TextColumn::make('release_date')->date('Y')->sortable(),
+                TextColumn::make('pack.name')->label('Pack')->sortable(),
+                TextColumn::make('provider.name')->label('Provider')->sortable(),
+                TextColumn::make('provider_track_id')->label('Provider ID')->searchable(),
                 TextColumn::make('external_url')
                     ->label('External URL')
-                    ->url(fn ($record): ?string => $record->external_url)
+                    ->url(fn($record): ?string => $record->external_url)
                     ->openUrlInNewTab()
                     ->toggleable(isToggledHiddenByDefault: true),
-                IconColumn::make('is_active')
-                    ->boolean()
-                    ->sortable(),
+                IconColumn::make('is_active')->boolean()->sortable(),
                 TextColumn::make('difficulty')
                     ->numeric()
                     ->sortable()
@@ -69,6 +55,20 @@ class TracksTable
                     ->relationship('provider', 'name')
                     ->searchable()
                     ->preload(),
+                TernaryFilter::make('spotify')
+                    ->label('Spotify')
+                    ->queries(
+                        true: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', 'spotify')),
+                        false: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', '!=', 'spotify')),
+                        blank: fn($query) => $query,
+                    ),
+                TernaryFilter::make('tidal')
+                    ->label('Tidal')
+                    ->queries(
+                        true: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', 'tidal')),
+                        false: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', '!=', 'tidal')),
+                        blank: fn($query) => $query,
+                    ),
                 TernaryFilter::make('is_active'),
             ])
             ->recordActions([
