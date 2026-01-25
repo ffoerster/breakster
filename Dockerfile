@@ -1,43 +1,50 @@
-# Use the official ServerSideUp PHP 8.4 FPM Nginx image as the base
+# syntax=docker/dockerfile:1.7
+
+# Coolify-ready production image: HTTP (nginx) + PHP-FPM in one container
+# Base image includes nginx + s6 overlay + sane defaults.
+
 FROM serversideup/php:8.4-fpm-nginx
 
-# Switch to root user for installation
 USER root
 
-# Install required PHP extensions
-RUN install-php-extensions intl
-
-# Set the working directory
 WORKDIR /var/www/html
 
+# Install required PHP extensions for this app (keep it minimal)
+RUN install-php-extensions \
+    intl \
+    bcmath
+
 # Copy composer files first for better caching
-COPY --chown=www-data:www-data composer.json composer.lock ./
+COPY composer.json composer.lock ./
 
-# Install PHP dependencies (production mode, no dev dependencies)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-cache
+# Install prod dependencies without running scripts (avoid dev-only providers)
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --prefer-dist \
+    --optimize-autoloader \
+    --classmap-authoritative
 
-# Copy the rest of the application code
-COPY --chown=www-data:www-data . .
+# Copy the rest of the app
+COPY . .
 
-# Set proper permissions for Laravel
-RUN chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+# Generate autoloader and clear stale cache files
+RUN composer dump-autoload --classmap-authoritative --no-dev && \
+    rm -f /var/www/html/bootstrap/cache/*.php
 
-# Switch back to www-data user
+# Ensure correct permissions & avoid stale cached providers from the repo
+RUN rm -f /var/www/html/bootstrap/cache/*.php \
+    && chmod 755 /var/www/html/artisan \
+    && chown -R www-data:www-data /var/www/html \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Performance (enable OPcache in production)
+ENV PHP_OPCACHE_ENABLE=1
+
+# Drop back to the default unprivileged user
 USER www-data
 
-# Expose port 80 for web traffic
-EXPOSE 80
+# Nginx listens on 8080 in this image
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD php artisan --version || exit 1
-
-# Set environment variables
-ENV APP_ENV=production \
-    APP_DEBUG=false \
-    LOG_CHANNEL=stderr
-
-# Default command - runs the base image's entrypoint (S6 supervisor)
-# To run different roles, override with environment variable ROLE=queue or ROLE=reverb
-CMD []
