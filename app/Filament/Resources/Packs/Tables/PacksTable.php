@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Packs\Tables;
 
+use App\Domain\Packs\PackExportService;
 use App\Domain\Providers\Tidal\TidalAdminTokenService;
 use App\Domain\Providers\Tidal\TidalUrlParser;
 use App\Jobs\ImportTidalTracksJob;
@@ -29,7 +30,7 @@ class PacksTable
                 ImageColumn::make('image_url')
                     ->label('Cover')
                     ->circular()
-                    ->defaultImageUrl(fn(Pack $record): string => $record->image_url)
+                    ->defaultImageUrl(fn (Pack $record): string => $record->image_url)
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('tracks_count')
@@ -58,6 +59,20 @@ class PacksTable
                 TernaryFilter::make('is_active'),
             ])
             ->recordActions([
+                Action::make('exportPack')
+                    ->label('Export')
+                    ->icon(Heroicon::ArrowUpTray)
+                    ->action(function (Pack $record): \Symfony\Component\HttpFoundation\StreamedResponse {
+                        $service = app(PackExportService::class);
+                        $json = $service->toJson($record);
+                        $filename = $service->getFilename($record);
+
+                        return response()->streamDownload(
+                            fn () => print ($json),
+                            $filename,
+                            ['Content-Type' => 'application/json']
+                        );
+                    }),
                 Action::make('importFromTidal')
                     ->label('Import from TIDAL')
                     ->icon(Heroicon::ArrowDownTray)
@@ -84,7 +99,7 @@ class PacksTable
                             return;
                         }
 
-                        if ($parsed['type'] === 'playlist' && !app(TidalAdminTokenService::class)->hasValidToken()) {
+                        if ($parsed['type'] === 'playlist' && ! app(TidalAdminTokenService::class)->hasValidToken()) {
                             Notification::make()
                                 ->title('Connect TIDAL to import playlists')
                                 ->body(

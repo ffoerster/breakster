@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Packs\Pages;
 
+use App\Domain\Packs\PackExportService;
+use App\Domain\Packs\PackImportService;
 use App\Domain\Providers\Spotify\SpotifyAdminTokenService;
 use App\Domain\Providers\Spotify\SpotifyApiClient;
 use App\Domain\Providers\Spotify\SpotifyClientCredentialsTokenService;
@@ -18,10 +20,15 @@ use App\Models\Track;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -463,6 +470,81 @@ class EditPack extends EditRecord
                 ->label($isSpotifyConnected ? 'Spotify' : 'Spotify (not connected)')
                 ->button()
                 ->color($isSpotifyConnected ? 'success' : 'gray'),
+
+            // Pack management dropdown
+            ActionGroup::make([
+                Action::make('exportPack')
+                    ->label('Export to JSON')
+                    ->icon(Heroicon::ArrowUpTray)
+                    ->action(function (): \Symfony\Component\HttpFoundation\StreamedResponse {
+                        $service = app(PackExportService::class);
+                        $json = $service->toJson($this->record);
+                        $filename = $service->getFilename($this->record);
+
+                        return response()->streamDownload(
+                            fn () => print ($json),
+                            $filename,
+                            ['Content-Type' => 'application/json']
+                        );
+                    }),
+
+                Action::make('importTracksFromJson')
+                    ->label('Import tracks from JSON')
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->modalHeading('Import Tracks from JSON')
+                    ->modalDescription('Upload a pack export JSON file to import its tracks into this pack.')
+                    ->form([
+                        FileUpload::make('json_file')
+                            ->label('JSON File')
+                            ->required()
+                            ->acceptedFileTypes(['application/json', 'text/plain'])
+                            ->maxSize(5120)
+                            ->disk('local')
+                            ->directory('temp-imports')
+                            ->visibility('private'),
+                        Checkbox::make('update_existing')
+                            ->label('Update existing tracks if they already exist')
+                            ->default(true),
+                    ])
+                    ->action(function (array $data): void {
+                        $service = app(PackImportService::class);
+
+                        try {
+                            $filePath = $data['json_file'];
+                            $contents = Storage::disk('local')->get($filePath);
+                            $parsed = $service->parseJsonFile($contents);
+                            $result = $service->importTracksIntoPack($this->record, $parsed, $data['update_existing']);
+
+                            Storage::disk('local')->delete($filePath);
+
+                            Notification::make()
+                                ->title('Tracks imported successfully')
+                                ->body(sprintf(
+                                    '%d new tracks, %d updated, %d skipped.',
+                                    $result['imported'],
+                                    $result['updated'],
+                                    $result['skipped']
+                                ))
+                                ->success()
+                                ->send();
+                        } catch (ValidationException $e) {
+                            Notification::make()
+                                ->title('Invalid import file')
+                                ->body(collect($e->errors())->flatten()->first())
+                                ->danger()
+                                ->send();
+                        } catch (InvalidArgumentException $e) {
+                            Notification::make()
+                                ->title('Invalid JSON file')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+            ])
+                ->label('Pack')
+                ->button()
+                ->color('gray'),
 
             DeleteAction::make(),
         ];
