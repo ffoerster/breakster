@@ -15,6 +15,7 @@ class Pack extends Model
     protected $fillable = [
         'name',
         'description',
+        'tidal_source',
         'is_active',
     ];
 
