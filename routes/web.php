@@ -40,6 +40,7 @@ Route::prefix('/room/{code}')
         Route::post('/place', [RoomActionController::class, 'place'])->name('room.place');
         Route::post('/reveal', [RoomActionController::class, 'reveal'])->name('room.reveal');
         Route::post('/next', [RoomActionController::class, 'next'])->name('room.next');
+        Route::post('/finish', [RoomActionController::class, 'finish'])->name('room.finish');
     });
 
 Route::middleware(['auth'])->group(function (): void {

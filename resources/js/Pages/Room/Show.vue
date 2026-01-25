@@ -167,6 +167,20 @@ const nextRound = async () => {
     await refreshState();
 };
 
+const finishGame = async () => {
+    if (!isHost.value || isFinished.value) {
+        return;
+    }
+
+    const ok = window.confirm('Finish this game? Players will no longer be able to join.');
+    if (!ok) {
+        return;
+    }
+
+    await window.axios.post(`/room/${code.value}/finish`);
+    await refreshState();
+};
+
 const leaderboard = computed(() => {
     const players = [...state.players];
     players.sort((a, b) => {
@@ -705,13 +719,15 @@ onBeforeUnmount(() => {
                         </div>
 
                         <div v-if="isHost" class="flex justify-center">
-                            <button
-                                type="button"
-                                class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-lg transition"
-                                @click="nextRound"
-                            >
-                                Next Round
-                            </button>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button
+                                    type="button"
+                                    class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-lg transition"
+                                    @click="nextRound"
+                                >
+                                    Next Round
+                                </button>
+                            </div>
                         </div>
                         <div v-else class="text-center text-gray-400">Waiting for host to start the next round…</div>
                     </div>
@@ -766,6 +782,18 @@ onBeforeUnmount(() => {
                             <Link href="/" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold transition">
                                 Home
                             </Link>
+                        </div>
+                    </div>
+
+                    <div v-if="isHost && !isFinished" class="pt-10">
+                        <div class="bg-gray-800/30 backdrop-blur rounded-2xl border border-white/10 p-6 flex justify-center">
+                            <button
+                                type="button"
+                                class="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition"
+                                @click="finishGame"
+                            >
+                                Close Game
+                            </button>
                         </div>
                     </div>
                 </div>

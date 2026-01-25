@@ -70,15 +70,19 @@ class GameService
     {
         $room = Room::where('code', strtoupper($code))->firstOrFail();
 
+        // Check for existing player
+        $existingPlayer = $this->findExistingPlayer($room, $user);
+        if ($existingPlayer) {
+            return $existingPlayer;
+        }
+
         // Check if room is joinable
         if ($room->state === RoomState::Finished) {
             throw new \RuntimeException('This room has already finished.');
         }
 
-        // Check for existing player
-        $existingPlayer = $this->findExistingPlayer($room, $user);
-        if ($existingPlayer) {
-            return $existingPlayer;
+        if ($room->state !== RoomState::Lobby) {
+            throw new \RuntimeException('This room has already started.');
         }
 
         // Generate unique display name
@@ -97,6 +101,28 @@ class GameService
         event(new RoomPlayersUpdated($room->code));
 
         return $player;
+    }
+
+    public function finishRoom(Room $room): void
+    {
+        DB::transaction(function () use ($room): void {
+            $room->loadMissing('currentRound');
+
+            if ($room->currentRound) {
+                $room->currentRound->update([
+                    'status' => RoundStatus::Done,
+                ]);
+            }
+
+            $room->update([
+                'state' => RoomState::Finished,
+                'current_round_id' => null,
+            ]);
+
+            DB::afterCommit(function () use ($room): void {
+                event(new RoomStateChanged($room->code, RoomState::Finished, null));
+            });
+        });
     }
 
     /**

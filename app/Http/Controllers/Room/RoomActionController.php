@@ -134,6 +134,19 @@ class RoomActionController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function finish(
+        string $code,
+        RoomSession $roomSession,
+        GameService $gameService,
+    ): JsonResponse {
+        $room = $this->room($code);
+        $roomSession->requireHost($room);
+
+        $gameService->finishRoom($room);
+
+        return response()->json(['ok' => true]);
+    }
+
     private function room(string $code): Room
     {
         return Room::query()
