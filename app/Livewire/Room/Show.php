@@ -96,6 +96,9 @@ class Show extends Component
 
         try {
             $gameService->submitPlacement($player, $this->room->currentRound, $insertAfterTrackId);
+
+            // Dispatch event to update UI state
+            $this->dispatch('placement-submitted');
         } catch (\RuntimeException $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -161,7 +164,8 @@ class Show extends Component
         }
     }
 
-    public function getTitle(): string
+    #[Computed]
+    public function title(): string
     {
         return "Room {$this->room->code} - Breakster";
     }
@@ -240,6 +244,6 @@ class Show extends Component
             'state' => $this->room->state,
             'player' => $this->currentPlayer,
             'isHost' => $this->isHost,
-        ])->title($this->getTitle());
+        ])->title($this->title);
     }
 }

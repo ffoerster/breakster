@@ -11,6 +11,7 @@
     placementUnlocksAt: @js($placementUnlocksAt?->toIso8601String()),
     remainingSeconds: 0,
     isLocked: false,
+    hasPlaced: @js($hasPlaced),
 
     init() {
         this.updateCountdown();
@@ -39,7 +40,7 @@
 }" @round-started.window="
     placementUnlocksAt = $event.detail.placementUnlocksAt;
     updateCountdown();
-">
+" @placement-submitted.window="hasPlaced = true">
     {{-- Track Player --}}
     <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-8 text-center">
         <div class="text-sm text-gray-400 mb-2">Round {{ $round->round_number }}</div>
@@ -71,77 +72,152 @@
         </p>
     </div>
 
+    {{-- Current Card (Mystery Card) --}}
+    <div x-show="!hasPlaced" x-cloak>
+        <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-6">
+            <h3 class="text-lg font-bold mb-4 text-center">Current Track</h3>
+            <div
+                id="current-mystery-card"
+                data-is-mystery-card="true"
+                class="flex items-center gap-3 p-4 bg-linear-to-r from-purple-600/30 to-pink-600/30 border-2 border-purple-500/50 rounded-lg"
+                :class="{ 'cursor-grab': !isLocked, 'cursor-not-allowed opacity-50': isLocked }"
+            >
+                {{-- Blurred/Hidden Artwork --}}
+                @if ($track->artwork_url)
+                    <div class="w-16 h-16 rounded shrink-0 relative overflow-hidden">
+                        <img src="{{ $track->artwork_url }}" alt="" class="w-full h-full object-cover blur-lg scale-110">
+                        <div class="absolute inset-0 bg-purple-900/60 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                @else
+                    <div class="w-16 h-16 rounded bg-purple-900/60 flex items-center justify-center shrink-0">
+                        <svg class="w-8 h-8 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"/>
+                        </svg>
+                    </div>
+                @endif
+                <div class="flex-1 min-w-0 text-center">
+                    <div class="text-2xl font-black text-purple-300">???</div>
+                    <div class="text-sm text-gray-300 font-medium">Mystery Track</div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        <template x-if="!isLocked">
+                            <span>Drag to your timeline</span>
+                        </template>
+                        <template x-if="isLocked">
+                            <span>Locked</span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Timeline & Placement --}}
-    <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-8">
+    <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-8" x-data="dragPlacement(isLocked)">
         <h3 class="text-xl font-bold mb-4">Your Timeline</h3>
 
         <div x-show="isLocked" x-cloak class="p-4 bg-blue-500/20 border border-blue-500 rounded-lg text-center mb-4">
             <span x-text="remainingSeconds > 1 ? `Placement unlocks in ${remainingSeconds}s...` : (remainingSeconds === 1 ? 'Placement unlocks in 1s...' : 'Go!')"></span>
         </div>
 
-        @if ($hasPlaced)
-            <div class="p-4 bg-green-500/20 border border-green-500 rounded-lg text-center mb-4">
-                You've placed your guess! Waiting for other players...
-            </div>
-        @endif
+        <div x-show="hasPlaced" x-cloak class="p-4 bg-green-500/20 border border-green-500 rounded-lg text-center mb-4">
+            You've placed your guess! Waiting for other players...
+        </div>
 
-        @if ($timeline->isEmpty() && !$hasPlaced)
+        <div x-show="!hasPlaced && (@js($timeline->isEmpty()))">
             <div class="text-center py-8">
                 <p class="text-gray-400 mb-4">Your timeline is empty. This will be your first track!</p>
+
+                {{-- Drop zone for empty timeline --}}
+                <div
+                    data-drop-zone="true"
+                    data-insert-after-id=""
+                    class="drop-zone p-8 border-2 border-dashed border-purple-500/30 rounded-lg transition-all"
+                >
+                    <div class="text-purple-400 font-medium">Drop here to place as first track</div>
+                </div>
+
+                {{-- Fallback button --}}
                 <button
                     wire:click="submitPlacement(null)"
-                    class="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="mt-4 px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
                     wire:loading.attr="disabled"
                     :disabled="isLocked"
                 >
-                    Place Here
+                    Or Click to Place Here
                 </button>
             </div>
-        @else
-            @if ($timeline->isNotEmpty())
+        </div>
+
+        {{-- Timeline when not placed (with drop zones) --}}
+        @if ($timeline->isNotEmpty())
+            <div x-show="!hasPlaced" x-cloak>
                 <div class="mb-6">
                     <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
                         </svg>
-                        Drag cards to reorder your timeline
+                        <span>Drag mystery card to place it in your timeline</span>
                     </div>
-                    <ul wire:ignore x-data="timelineSortable" x-ref="timelineList" class="space-y-2">
-                        @foreach ($timeline as $item)
-                            <li
-                                wire:key="timeline-{{ $item->track_id }}"
-                                data-track-id="{{ $item->track_id }}"
-                                class="flex items-center gap-3 p-4 bg-gray-700/30 rounded-lg transition-opacity"
-                            >
-                                <button type="button" class="drag-handle cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 transition">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zM13 3h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
-                                    </svg>
-                                </button>
-                                @if ($item->track->artwork_url)
-                                    <img src="{{ $item->track->artwork_url }}" alt="" class="w-16 h-16 rounded object-cover flex-shrink-0">
-                                @else
-                                    <div class="w-16 h-16 rounded bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/>
-                                        </svg>
-                                    </div>
-                                @endif
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-2xl md:text-3xl font-black text-purple-400 leading-none mb-1">
-                                        {{ $item->track->release_date->format('Y') }}
-                                    </div>
-                                    <div class="font-medium truncate">{{ $item->track->title }}</div>
-                                    <div class="text-sm text-gray-400 truncate">{{ $item->track->artist }}</div>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
-            @if (!$hasPlaced)
-                <div class="space-y-3">
+                    <div id="timeline-container" class="space-y-2">
+                        {{-- Drop zone at beginning --}}
+                        <div
+                            data-drop-zone="true"
+                            data-insert-after-id=""
+                            class="drop-zone p-4 border-2 border-dashed border-purple-500/30 rounded-lg transition-all text-center text-sm text-gray-500"
+                        >
+                            Drop here to place at beginning
+                        </div>
+
+                        <ul wire:ignore x-data="timelineSortable" x-ref="timelineList" class="space-y-2">
+                            @foreach ($timeline as $item)
+                                <li
+                                    wire:key="timeline-{{ $item->track_id }}"
+                                    data-track-id="{{ $item->track_id }}"
+                                    class="flex items-center gap-3 p-4 bg-gray-700/30 rounded-lg transition-opacity"
+                                >
+                                    <button type="button" class="drag-handle cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 transition">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zM13 3h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+                                        </svg>
+                                    </button>
+                                    @if ($item->track->artwork_url)
+                                        <img src="{{ $item->track->artwork_url }}" alt="" class="w-16 h-16 rounded object-cover shrink-0">
+                                    @else
+                                        <div class="w-16 h-16 rounded bg-gray-600 flex items-center justify-center shrink-0">
+                                            <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/>
+                                            </svg>
+                                        </div>
+                                    @endif
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-2xl md:text-3xl font-black text-purple-400 leading-none mb-1">
+                                            {{ $item->track->release_date->format('Y') }}
+                                        </div>
+                                        <div class="font-medium truncate">{{ $item->track->title }}</div>
+                                        <div class="text-sm text-gray-400 truncate">{{ $item->track->artist }}</div>
+                                    </div>
+                                </li>
+
+                                {{-- Drop zone after this item --}}
+                                <div
+                                    data-drop-zone="true"
+                                    data-insert-after-id="{{ $item->track_id }}"
+                                    class="drop-zone p-4 border-2 border-dashed border-purple-500/30 rounded-lg transition-all text-center text-sm text-gray-500"
+                                >
+                                    Drop here to place after {{ $item->track->release_date->format('Y') }}
+                                </div>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+
+                {{-- Fallback Dropdown Placement --}}
+                <div class="space-y-3 mt-6">
                     <div class="text-sm text-gray-400">Or pick a position (fallback)</div>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <select
@@ -166,7 +242,51 @@
                         </button>
                     </div>
                 </div>
-            @endif
+            </div>
+
+            {{-- Timeline when placed (reorderable) --}}
+            <div x-show="hasPlaced" x-cloak>
+                <div class="mb-6">
+                    <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                        </svg>
+                        <span>Drag cards to reorder your timeline</span>
+                    </div>
+
+                    <ul wire:ignore x-data="timelineSortable" x-ref="timelineList" class="space-y-2">
+                        @foreach ($timeline as $item)
+                            <li
+                                wire:key="timeline-reorder-{{ $item->track_id }}"
+                                data-track-id="{{ $item->track_id }}"
+                                class="flex items-center gap-3 p-4 bg-gray-700/30 rounded-lg transition-opacity"
+                            >
+                                <button type="button" class="drag-handle cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 transition">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zM13 3h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+                                    </svg>
+                                </button>
+                                @if ($item->track->artwork_url)
+                                    <img src="{{ $item->track->artwork_url }}" alt="" class="w-16 h-16 rounded object-cover shrink-0">
+                                @else
+                                    <div class="w-16 h-16 rounded bg-gray-600 flex items-center justify-center shrink-0">
+                                        <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/>
+                                        </svg>
+                                    </div>
+                                @endif
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-2xl md:text-3xl font-black text-purple-400 leading-none mb-1">
+                                        {{ $item->track->release_date->format('Y') }}
+                                    </div>
+                                    <div class="font-medium truncate">{{ $item->track->title }}</div>
+                                    <div class="text-sm text-gray-400 truncate">{{ $item->track->artist }}</div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
         @endif
     </div>
 

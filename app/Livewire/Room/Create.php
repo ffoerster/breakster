@@ -8,6 +8,7 @@ use App\Domain\Game\GameService;
 use App\Models\Pack;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -41,11 +42,7 @@ class Create extends Component
 
         $pack = Pack::findOrFail($this->packId);
 
-        $room = $gameService->createRoom(
-            pack: $pack,
-            host: auth()->user(),
-            guestDisplayName: $this->displayName,
-        );
+        $room = $gameService->createRoom(pack: $pack, host: auth()->user(), guestDisplayName: $this->displayName);
 
         $player = $room->players()->first();
         session()->put('room_player_id', $player->id);
@@ -53,7 +50,8 @@ class Create extends Component
         $this->redirect(route('room.show', $room->code), navigate: true);
     }
 
-    public function getPacks(): Collection
+    #[Computed]
+    public function packs(): Collection
     {
         return Pack::query()
             ->where('is_active', true)
@@ -71,8 +69,6 @@ class Create extends Component
 
     public function render(): View
     {
-        return view('livewire.room.create', [
-            'packs' => $this->getPacks(),
-        ]);
+        return view('livewire.room.create');
     }
 }

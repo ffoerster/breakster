@@ -26,7 +26,7 @@
                     Choose a Pack
                 </label>
                 <div class="space-y-2">
-                    @foreach ($packs as $pack)
+                    @foreach ($this->packs as $pack)
                         <label class="flex items-center p-4 rounded-lg cursor-pointer transition-all {{ $packId == $pack->id ? 'bg-purple-600 ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-800' : 'bg-gray-700/30 hover:bg-gray-700/50' }}">
                             <input
                                 wire:model.live="packId"
