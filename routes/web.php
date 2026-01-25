@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SpotifyAuthController;
 use App\Http\Controllers\Auth\TidalAuthController;
+use App\Http\Controllers\Play\PlayRedirectController;
 use App\Http\Controllers\Room\RoomActionController;
 use App\Http\Controllers\Room\RoomCreateController;
 use App\Http\Controllers\Room\RoomJoinController;
@@ -19,6 +20,11 @@ Route::get('/__inertia', function () {
         'message' => 'If you can see this page, Phase 1 is wired up correctly.',
     ]);
 })->name('inertia.test');
+
+Route::get('/play/{roomCode}/{roundId}', PlayRedirectController::class)
+    ->where('roomCode', '[A-Z0-9]{6,8}')
+    ->whereNumber('roundId')
+    ->name('play.redirect');
 
 Route::get('/room/create', [RoomCreateController::class, 'create'])->name('room.create');
 Route::post('/room/create', [RoomCreateController::class, 'store'])->name('room.create.store');

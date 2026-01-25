@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import QrcodeVue from 'qrcode.vue';
 import Sortable from 'sortablejs';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
@@ -45,6 +46,26 @@ const isInRound = computed(() => state.room.state === 'in_round');
 const isInReveal = computed(() => state.room.state === 'reveal');
 const isFinished = computed(() => state.room.state === 'finished');
 const code = computed(() => state.room.code);
+
+const playUrl = computed(() => {
+    if (!state.round?.id) {
+        return '';
+    }
+
+    return `${window.location.origin}/play/${state.room.code}/${state.round.id}`;
+});
+
+const copyPlayUrl = async () => {
+    if (!playUrl.value) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(playUrl.value);
+    } catch {
+        // ignore
+    }
+};
 
 const isRefreshing = ref(false);
 let refreshTimeoutId = null;
@@ -493,6 +514,28 @@ onBeforeUnmount(() => {
                         <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-8 text-center">
                             <div class="text-sm text-gray-400 mb-2">Round {{ state.round.round_number }}</div>
                             <h2 class="text-2xl font-bold mb-6">Listen and place this track!</h2>
+
+                            <div v-if="isHost" class="max-w-sm mx-auto mb-6">
+                                <div class="text-sm text-gray-400 mb-3">Scan to open in {{ state.room.playback_provider?.name ?? 'your app' }}</div>
+
+                                <QrcodeVue
+                                    v-if="playUrl"
+                                    :value="playUrl"
+                                    :size="220"
+                                    level="M"
+                                    class="mx-auto bg-white p-3 rounded-xl"
+                                />
+
+                                <div class="mt-3 text-xs text-gray-400 break-all font-mono">{{ playUrl }}</div>
+
+                                <button
+                                    type="button"
+                                    class="mt-3 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold transition"
+                                    @click="copyPlayUrl"
+                                >
+                                    Copy link
+                                </button>
+                            </div>
 
                             <div class="max-w-sm mx-auto">
                                 <audio v-if="state.round.playback?.preview_url" controls class="w-full" autoplay>
