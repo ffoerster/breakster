@@ -6,6 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -17,6 +18,11 @@ class TracksTable
     {
         return $table
             ->columns([
+                ImageColumn::make('artwork_url')
+                    ->label('Artwork')
+                    ->square()
+                    ->defaultImageUrl(url('/images/placeholder.png'))
+                    ->toggleable(isToggledHiddenByDefault: false),
                 TextColumn::make('title')->searchable()->sortable(),
                 TextColumn::make('artist')->searchable()->sortable(),
                 TextColumn::make('label')
