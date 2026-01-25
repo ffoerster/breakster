@@ -102,7 +102,7 @@ defineProps({
                     <button
                         v-if="isHost"
                         type="button"
-                        class="flex-1 py-4 px-6 font-bold rounded-lg transition"
+                        class="btn-interactive flex-1 py-4 px-6 font-bold rounded-lg"
                         :class="
                             canStart
                                 ? 'bg-green-600 hover:bg-green-700 text-white dark:bg-green-600 dark:hover:bg-green-700'

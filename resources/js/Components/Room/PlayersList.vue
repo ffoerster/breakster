@@ -16,7 +16,7 @@ defineProps({
 </script>
 
 <template>
-    <div class="grid gap-3">
+    <TransitionGroup name="player-list" tag="div" class="grid gap-3">
         <div
             v-for="p in players"
             :key="p.id"
@@ -39,7 +39,7 @@ defineProps({
                 Host
             </span>
 
-            <div v-else-if="showScore" class="font-bold text-accent-600 dark:text-accent-400">{{ p.score }} pts</div>
+            <div v-else-if="showScore" class="font-bold text-accent-600 dark:text-accent-400 tabular-nums">{{ p.score }} pts</div>
         </div>
-    </div>
+    </TransitionGroup>
 </template>

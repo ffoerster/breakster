@@ -15,10 +15,26 @@ const emit = defineEmits(['update:modelValue']);
 const modules = [EffectCoverflow, Keyboard, Navigation];
 
 const select = (id) => emit('update:modelValue', id);
+
+const onSlideChange = (swiper) => {
+  const index = swiper.activeIndex;
+  const pack = props.packs[index];
+  if (pack) {
+    emit('update:modelValue', pack.id);
+  }
+};
+
+const onSwiperReady = (swiper) => {
+  const index = swiper.activeIndex;
+  const pack = props.packs[index];
+  if (pack && !props.modelValue) {
+    emit('update:modelValue', pack.id);
+  }
+};
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full overflow-hidden">
     <Swiper
       :modules="modules"
       effect="coverflow"
@@ -29,6 +45,8 @@ const select = (id) => emit('update:modelValue', id);
       :coverflow-effect="{ rotate: 0, stretch: 0, depth: 120, modifier: 1, slideShadows: false }"
       navigation
       class="overflow-visible!"
+      @swiper="onSwiperReady"
+      @slideChange="onSlideChange"
     >
       <SwiperSlide
         v-for="pack in packs"

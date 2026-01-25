@@ -3,6 +3,8 @@ import QrcodeVue from 'qrcode.vue';
 import Sortable from 'sortablejs';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
+import AudioPlayer from '../../Ui/AudioPlayer.vue';
+import CountdownRing from '../../Ui/CountdownRing.vue';
 import GlassCard from '../../Ui/GlassCard.vue';
 import PlayersList from '../PlayersList.vue';
 
@@ -145,9 +147,11 @@ const initPlacementDnD = () => {
                 put: false,
             },
             sort: false,
-            animation: 150,
-            ghostClass: 'opacity-60',
-            dragClass: 'opacity-90',
+            animation: 200,
+            easing: 'cubic-bezier(0.2, 0, 0, 1)',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            chosenClass: 'sortable-chosen',
             delay: 120,
             delayOnTouchOnly: true,
             touchStartThreshold: 5,
@@ -165,8 +169,11 @@ const initPlacementDnD = () => {
         draggable: '.timeline-item',
         filter: '.timeline-track',
         preventOnFilter: false,
-        animation: 150,
-        ghostClass: 'opacity-60',
+        animation: 200,
+        easing: 'cubic-bezier(0.2, 0, 0, 1)',
+        ghostClass: 'sortable-ghost',
+        dragClass: 'sortable-drag',
+        chosenClass: 'sortable-chosen',
         fallbackOnBody: true,
         swapThreshold: 0.65,
         onAdd: async (evt) => {
@@ -273,7 +280,7 @@ const placementsProgress = computed(() => {
                         >
                             <button
                                 type="button"
-                                class="w-full px-6 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-bold transition flex items-center justify-center gap-3"
+                                class="btn-interactive w-full px-6 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-bold flex items-center justify-center gap-3"
                                 :disabled="isPlayingSpotify"
                                 @click="playSpotifyTrack"
                             >
@@ -307,7 +314,7 @@ const placementsProgress = computed(() => {
 
                         <button
                             type="button"
-                            class="mt-3 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold transition"
+                            class="btn-interactive mt-3 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold"
                             @click="copyPlayUrl"
                         >
                             Copy link
@@ -315,16 +322,18 @@ const placementsProgress = computed(() => {
                     </div>
 
                     <div class="max-w-sm mx-auto">
-                        <audio v-if="state.round.playback?.preview_url" controls class="w-full" autoplay>
-                            <source :src="state.round.playback.preview_url" type="audio/mpeg" />
-                        </audio>
+                        <AudioPlayer
+                            v-if="state.round.playback?.preview_url"
+                            :src="state.round.playback.preview_url"
+                            autoplay
+                        />
 
                         <a
                             v-if="state.round.playback?.external_url"
                             :href="state.round.playback.external_url"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="inline-flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition mt-4"
+                            class="btn-interactive inline-flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold mt-4"
                         >
                             Open in {{ state.round.playback.provider_name }}
                         </a>
@@ -404,23 +413,39 @@ const placementsProgress = computed(() => {
                         <div class="h-full bg-accent-500/70" :style="{ width: `${placementsProgress}%` }" />
                     </div>
 
-                    <div
-                        v-if="isPlacementLocked"
-                        class="p-4 bg-blue-500/20 border border-blue-500 rounded-lg text-center mb-4"
-                    >
-                        Placement unlocks in {{ remainingSeconds }}s…
-                    </div>
+                    <Transition name="feedback-slide">
+                        <div
+                            v-if="isPlacementLocked"
+                            class="flex items-center justify-center gap-4 p-4 bg-blue-500/20 border border-blue-500 rounded-lg mb-4"
+                        >
+                            <CountdownRing :remaining="remainingSeconds" :total="3" />
+                            <span class="font-medium">Placement unlocks soon...</span>
+                        </div>
+                    </Transition>
 
-                    <div
-                        v-if="state.me.has_placed"
-                        class="p-4 bg-green-500/20 border border-green-500 rounded-lg text-center mb-4"
-                    >
-                        Your guess is saved. You can change it until reveal.
-                    </div>
+                    <Transition name="feedback-slide">
+                        <div
+                            v-if="state.me.has_placed && !isPlacementLocked"
+                            class="p-4 bg-green-500/20 border border-green-500 rounded-lg text-center mb-4"
+                        >
+                            <div class="flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5 text-green-400 animate-scale-pop" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                                <span>Your guess is saved. You can change it until reveal.</span>
+                            </div>
+                        </div>
+                    </Transition>
 
-                    <div v-if="placeError" class="p-4 bg-red-500/20 border border-red-500 rounded-lg text-center mb-4">
-                        {{ placeError }}
-                    </div>
+                    <Transition name="feedback-slide">
+                        <div v-if="placeError" class="p-4 bg-red-500/20 border border-red-500 rounded-lg text-center mb-4 animate-shake">
+                            {{ placeError }}
+                        </div>
+                    </Transition>
 
                     <div class="text-sm text-gray-400 mb-3">
                         <span v-if="!state.me.has_placed">Drop the mystery card between years.</span>
@@ -509,7 +534,7 @@ const placementsProgress = computed(() => {
                         <button
                             v-if="isHost"
                             type="button"
-                            class="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="btn-interactive px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                             :disabled="state.round.players_count === 0"
                             @click="revealRound"
                         >

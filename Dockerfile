@@ -1,8 +1,23 @@
 # syntax=docker/dockerfile:1.7
 
-# Coolify-ready production image: HTTP (nginx) + PHP-FPM in one container
-# Base image includes nginx + s6 overlay + sane defaults.
+# Build stage: compile frontend assets with bun
+FROM oven/bun AS frontend-builder
 
+WORKDIR /var/www/html
+
+# Copy package files
+COPY package.json bun.lock ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# Copy frontend source
+COPY . .
+
+# Build assets
+RUN bun run build
+
+# Production stage: PHP-FPM + Nginx
 FROM serversideup/php:8.4-fpm-nginx
 
 USER root
@@ -28,6 +43,9 @@ RUN composer install \
 
 # Copy the rest of the app
 COPY . .
+
+# Copy pre-built frontend assets from builder stage
+COPY --from=frontend-builder /var/www/html/public/build ./public/build
 
 # Generate autoloader and clear stale cache files
 RUN composer dump-autoload --classmap-authoritative --no-dev && \

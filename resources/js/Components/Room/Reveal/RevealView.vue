@@ -1,7 +1,9 @@
 <script setup>
+import { computed } from 'vue';
+
 import GlassCard from '../../Ui/GlassCard.vue';
 
-defineProps({
+const props = defineProps({
     state: {
         type: Object,
         required: true,
@@ -26,7 +28,12 @@ defineProps({
         <GlassCard class="p-8 text-center">
             <div class="text-sm text-gray-400 mb-2">Round {{ state.round.round_number }} - Revealed!</div>
 
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div
+                v-motion
+                :initial="{ scale: 0.9, opacity: 0 }"
+                :enter="{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } }"
+                class="flex flex-col sm:flex-row items-center justify-center gap-6"
+            >
                 <img
                     v-if="state.round.track?.artwork_url"
                     :src="state.round.track.artwork_url"
@@ -34,7 +41,12 @@ defineProps({
                     class="w-32 h-32 rounded-lg shadow-lg"
                 />
                 <div class="text-left">
-                    <div class="text-5xl font-black text-accent-400 leading-none mb-3">
+                    <div
+                        v-motion
+                        :initial="{ y: 20, opacity: 0 }"
+                        :enter="{ y: 0, opacity: 1, transition: { delay: 100, type: 'spring', stiffness: 300, damping: 25 } }"
+                        class="text-5xl font-black text-accent-400 leading-none mb-3"
+                    >
                         {{ state.round.track?.year }}
                     </div>
                     <h2 class="text-2xl font-bold">{{ state.round.track?.title }}</h2>
@@ -46,10 +58,11 @@ defineProps({
         <div class="grid gap-6 lg:grid-cols-12">
             <GlassCard class="p-8 lg:col-span-7">
                 <h3 class="text-xl font-bold mb-4">Results</h3>
-                <div class="space-y-3">
+                <TransitionGroup name="result-list" tag="div" class="space-y-3">
                     <div
-                        v-for="placement in (state.round.placements ?? [])"
+                        v-for="(placement, index) in (state.round.placements ?? [])"
                         :key="placement.id"
+                        :style="{ '--stagger-index': index }"
                         class="flex items-center justify-between p-4 rounded-lg border"
                         :class="placement.is_correct ? 'bg-green-500/20 border-green-500' : 'bg-red-500/20 border-red-500'"
                     >
@@ -61,19 +74,27 @@ defineProps({
                             </div>
                         </div>
                         <div class="text-right">
-                            <div v-if="placement.is_correct" class="text-green-400 font-bold">+{{ placement.points_earned }} pts</div>
+                            <div
+                                v-if="placement.is_correct"
+                                class="text-green-400 font-bold animate-scale-pop"
+                            >
+                                +{{ placement.points_earned }} pts
+                            </div>
                             <div v-else class="text-red-400">0 pts</div>
                         </div>
                     </div>
-                </div>
+                </TransitionGroup>
             </GlassCard>
 
             <GlassCard class="p-8 lg:col-span-5">
                 <h3 class="text-xl font-bold mb-4">Leaderboard</h3>
                 <div class="space-y-2">
                     <div
-                        v-for="p in leaderboard"
+                        v-for="(p, index) in leaderboard"
                         :key="p.id"
+                        v-motion
+                        :initial="{ x: -20, opacity: 0 }"
+                        :enter="{ x: 0, opacity: 1, transition: { delay: 200 + index * 60, type: 'spring', stiffness: 300, damping: 25 } }"
                         class="flex items-center justify-between p-3 rounded-lg"
                         :class="p.is_me ? 'bg-accent-500/20' : 'bg-gray-700/30'"
                     >
@@ -83,7 +104,7 @@ defineProps({
                             </div>
                             <span>{{ p.display_name }}</span>
                         </div>
-                        <span class="font-bold text-accent-400">{{ p.score }} pts</span>
+                        <span class="font-bold text-accent-400 tabular-nums">{{ p.score }} pts</span>
                     </div>
                 </div>
             </GlassCard>
@@ -93,7 +114,7 @@ defineProps({
             <div class="flex flex-col sm:flex-row gap-3">
                 <button
                     type="button"
-                    class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-lg transition"
+                    class="btn-interactive px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-lg"
                     @click="nextRound"
                 >
                     Next Round

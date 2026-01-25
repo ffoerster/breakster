@@ -6,6 +6,7 @@ use App\Domain\Game\GameService;
 use App\Domain\Game\PlacementValidator;
 use App\Domain\Game\RoomCodeGenerator;
 use App\Domain\Game\ScoreCalculator;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -33,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (config('app.env') === 'production') {
+            URL::forceScheme('https');
+        }
     }
 }

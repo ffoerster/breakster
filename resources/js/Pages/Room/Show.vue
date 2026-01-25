@@ -171,63 +171,70 @@ onBeforeUnmount(() => {
         <div v-else class="space-y-6">
             <RoomIntroCard :room="state.room" :me="state.me" />
 
-            <LobbyView
-                v-if="isInLobby"
-                :state="state"
-                :is-host="isHost"
-                :can-start="canStart"
-                :select-provider="selectProvider"
-                :start-game="startGame"
-                :is-spotify-provider="isSpotifyProvider"
-                :has-spotify-token="hasSpotifyToken"
-                :spotify-devices="spotifyDevices"
-                :spotify-error="spotifyError"
-                :is-loading-devices="isLoadingDevices"
-                :selected-device-id="selectedDeviceId"
-                :connect-spotify="connectSpotify"
-                :load-spotify-devices="loadSpotifyDevices"
-                :select-spotify-device="selectSpotifyDevice"
-            />
+            <Transition name="view-fade" mode="out-in">
+                <LobbyView
+                    v-if="isInLobby"
+                    key="lobby"
+                    :state="state"
+                    :is-host="isHost"
+                    :can-start="canStart"
+                    :select-provider="selectProvider"
+                    :start-game="startGame"
+                    :is-spotify-provider="isSpotifyProvider"
+                    :has-spotify-token="hasSpotifyToken"
+                    :spotify-devices="spotifyDevices"
+                    :spotify-error="spotifyError"
+                    :is-loading-devices="isLoadingDevices"
+                    :selected-device-id="selectedDeviceId"
+                    :connect-spotify="connectSpotify"
+                    :load-spotify-devices="loadSpotifyDevices"
+                    :select-spotify-device="selectSpotifyDevice"
+                />
 
-            <RoundView
-                v-if="isInRound"
-                :state="state"
-                :is-host="isHost"
-                :play-url="playUrl"
-                :copy-play-url="copyPlayUrl"
-                :remaining-seconds="remainingSeconds"
-                :is-placement-locked="isPlacementLocked"
-                :is-placing="isPlacing"
-                :place-error="placeError"
-                :place="place"
-                :reveal-round="revealRound"
-                :is-spotify-provider="isSpotifyProvider"
-                :spotify-play-error="spotifyPlayError"
-                :is-playing-spotify="isPlayingSpotify"
-                :play-spotify-track="playSpotifyTrack"
-            />
+                <RoundView
+                    v-else-if="isInRound"
+                    key="round"
+                    :state="state"
+                    :is-host="isHost"
+                    :play-url="playUrl"
+                    :copy-play-url="copyPlayUrl"
+                    :remaining-seconds="remainingSeconds"
+                    :is-placement-locked="isPlacementLocked"
+                    :is-placing="isPlacing"
+                    :place-error="placeError"
+                    :place="place"
+                    :reveal-round="revealRound"
+                    :is-spotify-provider="isSpotifyProvider"
+                    :spotify-play-error="spotifyPlayError"
+                    :is-playing-spotify="isPlayingSpotify"
+                    :play-spotify-track="playSpotifyTrack"
+                />
 
-            <RevealView
-                v-if="isInReveal"
-                :state="state"
-                :is-host="isHost"
-                :leaderboard="leaderboard"
-                :next-round="nextRound"
-            />
+                <RevealView
+                    v-else-if="isInReveal"
+                    key="reveal"
+                    :state="state"
+                    :is-host="isHost"
+                    :leaderboard="leaderboard"
+                    :next-round="nextRound"
+                />
 
-            <FinishedView v-if="isFinished" :leaderboard="leaderboard" />
+                <FinishedView v-else-if="isFinished" key="finished" :leaderboard="leaderboard" />
+            </Transition>
 
-            <div v-if="isHost && !isFinished" class="pt-10">
-                <div class="bg-gray-800/30 backdrop-blur rounded-2xl border border-white/10 p-6 flex justify-center">
-                    <button
-                        type="button"
-                        class="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition"
-                        @click="finishGame"
-                    >
-                        Close Game
-                    </button>
+            <Transition name="view-fade">
+                <div v-if="isHost && !isFinished" class="pt-10">
+                    <div class="bg-gray-800/30 backdrop-blur rounded-2xl border border-white/10 p-6 flex justify-center">
+                        <button
+                            type="button"
+                            class="btn-interactive px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg"
+                            @click="finishGame"
+                        >
+                            Close Game
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </Transition>
         </div>
     </AppLayout>
 </template>

@@ -77,16 +77,28 @@ export function useRoomState(props) {
         await refreshState();
     };
 
+    const startError = ref('');
+    const isStarting = ref(false);
+
     const startGame = async () => {
         if (!isHost.value || !isInLobby.value) {
             return;
         }
 
-        await window.axios.post(`/room/${code.value}/start`);
-        await refreshState();
+        startError.value = '';
+        isStarting.value = true;
+
+        try {
+            await window.axios.post(`/room/${code.value}/start`);
+            await refreshState();
+        } catch (e) {
+            startError.value = e?.response?.data?.message ?? 'Could not start the game. Please try again.';
+        } finally {
+            isStarting.value = false;
+        }
     };
 
-    const canStart = computed(() => isHost.value && isInLobby.value && Boolean(state.room.playback_provider));
+    const canStart = computed(() => isHost.value && isInLobby.value && Boolean(state.room.playback_provider) && !isStarting.value);
 
     const placeError = ref('');
     const isPlacing = ref(false);
@@ -205,6 +217,8 @@ export function useRoomState(props) {
         selectProvider,
         startGame,
         canStart,
+        startError,
+        isStarting,
 
         place,
         placeError,
