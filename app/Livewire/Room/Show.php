@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Room;
 
-use App\Domain\Game\Enums\RoomState;
 use App\Domain\Game\GameService;
 use App\Models\Room;
 use App\Models\RoomPlayer;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -16,7 +16,11 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Show extends Component
 {
+    private const int PLACEMENT_DELAY_SECONDS = 5;
+
     public Room $room;
+
+    public ?int $insertAfterTrackId = null;
 
     public function mount(string $code): void
     {
@@ -67,6 +71,24 @@ class Show extends Component
     {
         $player = $this->currentPlayer;
         if (! $player || ! $this->room->currentRound) {
+            return;
+        }
+
+        $insertAfterTrackId = $insertAfterTrackId ?? $this->insertAfterTrackId;
+
+        $key = sprintf('placement-submit:%d', $player->id);
+        if (RateLimiter::tooManyAttempts($key, 30)) {
+            session()->flash('error', 'Too many placement attempts. Please slow down.');
+
+            return;
+        }
+
+        RateLimiter::hit($key, 60);
+
+        $startedAt = $this->room->currentRound->started_at;
+        if ($startedAt !== null && now()->lt($startedAt->copy()->addSeconds(self::PLACEMENT_DELAY_SECONDS))) {
+            session()->flash('error', 'Placement will unlock in a moment.');
+
             return;
         }
 

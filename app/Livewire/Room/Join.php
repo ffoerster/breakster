@@ -6,6 +6,7 @@ namespace App\Livewire\Room;
 
 use App\Domain\Game\GameService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -39,6 +40,15 @@ class Join extends Component
 
     public function join(GameService $gameService): void
     {
+        $key = sprintf('room-join:%s', request()->ip() ?? 'unknown');
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            $this->addError('code', 'Too many join attempts. Please wait a moment and try again.');
+
+            return;
+        }
+
+        RateLimiter::hit($key, 60);
+
         $this->validate();
 
         try {
