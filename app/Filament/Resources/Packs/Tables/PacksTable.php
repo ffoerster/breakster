@@ -13,6 +13,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
@@ -25,6 +26,11 @@ class PacksTable
     {
         return $table
             ->columns([
+                ImageColumn::make('image_url')
+                    ->label('Cover')
+                    ->circular()
+                    ->defaultImageUrl(fn (Pack $record): string => $record->image_url)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('tracks_count')
                     ->counts('tracks')

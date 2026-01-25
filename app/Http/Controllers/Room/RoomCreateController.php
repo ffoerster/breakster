@@ -40,6 +40,7 @@ class RoomCreateController extends Controller
                 'id' => $pack->id,
                 'name' => $pack->name,
                 'description' => $pack->description,
+                'image_url' => $pack->image_url,
                 'tracks_count' => $pack->tracks_count,
                 'spotify_tracks_count' => $pack->spotify_tracks_count,
                 'tidal_tracks_count' => $pack->tidal_tracks_count,

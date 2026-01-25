@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\TidalAuthController;
 use App\Http\Controllers\Play\PlayRedirectController;
 use App\Http\Controllers\Room\RoomActionController;
 use App\Http\Controllers\Room\RoomCreateController;
+use App\Http\Controllers\PackImageController;
 use App\Http\Controllers\Room\RoomJoinController;
 use App\Http\Controllers\Room\RoomShowController;
 use App\Http\Controllers\Room\RoomStateController;
@@ -29,6 +30,7 @@ Route::get('/play/{roomCode}/{roundId}', PlayRedirectController::class)
 
 Route::get('/room/create', [RoomCreateController::class, 'create'])->name('room.create');
 Route::post('/room/create', [RoomCreateController::class, 'store'])->name('room.create.store');
+Route::get('/packs/{pack}/placeholder.svg', [PackImageController::class, 'placeholder'])->name('packs.placeholder');
 
 Route::get('/room/join', [RoomJoinController::class, 'create'])->name('room.join');
 Route::post('/room/join', [RoomJoinController::class, 'store'])->name('room.join.store');
