@@ -23,13 +23,18 @@ class TracksTable
                 TextColumn::make('artist')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('label')
+                    ->label('Label')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('release_date')
                     ->date('Y')
                     ->sortable(),
                 TextColumn::make('pack.name')
                     ->label('Pack')
                     ->sortable(),
-                TextColumn::make('provider')
+                TextColumn::make('provider.name')
+                    ->label('Provider')
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_active')
                     ->boolean()
@@ -50,6 +55,10 @@ class TracksTable
             ->filters([
                 SelectFilter::make('pack')
                     ->relationship('pack', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('provider')
+                    ->relationship('provider', 'name')
                     ->searchable()
                     ->preload(),
                 TernaryFilter::make('is_active'),

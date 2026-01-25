@@ -49,6 +49,11 @@ class Room extends Model
         return $this->hasMany(Round::class);
     }
 
+    public function usedTracks(): HasMany
+    {
+        return $this->hasMany(RoomUsedTrack::class);
+    }
+
     public function currentRound(): BelongsTo
     {
         return $this->belongsTo(Round::class, 'current_round_id');
@@ -81,6 +86,6 @@ class Room extends Model
 
     public function usedTrackIds(): array
     {
-        return $this->rounds()->pluck('track_id')->toArray();
+        return $this->usedTracks()->pluck('track_id')->toArray();
     }
 }

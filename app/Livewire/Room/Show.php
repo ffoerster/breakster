@@ -138,6 +138,23 @@ class Show extends Component
         $this->redirect(route('home'), navigate: true);
     }
 
+    /**
+     * @param  array<int, int|string>  $orderedTrackIds
+     */
+    public function reorderTimeline(GameService $gameService, array $orderedTrackIds): void
+    {
+        $player = $this->currentPlayer;
+        if (! $player) {
+            return;
+        }
+
+        try {
+            $gameService->reorderTimeline($player, $orderedTrackIds);
+        } catch (\RuntimeException $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
     public function getTitle(): string
     {
         return "Room {$this->room->code} - Breakster";

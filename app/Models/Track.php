@@ -15,10 +15,11 @@ class Track extends Model
 
     protected $fillable = [
         'pack_id',
-        'provider',
+        'provider_id',
         'provider_track_id',
         'title',
         'artist',
+        'label',
         'release_date',
         'artwork_url',
         'preview_url',
@@ -41,6 +42,11 @@ class Track extends Model
         return $this->belongsTo(Pack::class);
     }
 
+    public function provider(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class);
+    }
+
     public function rounds(): HasMany
     {
         return $this->hasMany(Round::class);
@@ -49,6 +55,11 @@ class Track extends Model
     public function timelineItems(): HasMany
     {
         return $this->hasMany(TimelineItem::class);
+    }
+
+    public function usedInRooms(): HasMany
+    {
+        return $this->hasMany(RoomUsedTrack::class);
     }
 
     public function hasPreview(): bool

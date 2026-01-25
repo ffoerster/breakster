@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Pack;
+use App\Models\Provider;
 use App\Models\Track;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -29,10 +30,14 @@ class TrackFactory extends Factory
 
         return [
             'pack_id' => Pack::factory(),
-            'provider' => 'tidal',
+            'provider_id' => Provider::query()->firstOrCreate(
+                ['key' => 'tidal'],
+                ['name' => 'TIDAL', 'is_active' => true],
+            )->id,
             'provider_track_id' => (string) fake()->unique()->numberBetween(100000, 999999999),
             'title' => fake()->randomElement($songPrefixes).' '.fake()->randomElement($songSuffixes),
             'artist' => fake()->randomElement($artists),
+            'label' => fake()->optional(0.4)->company(),
             'release_date' => fake()->dateTimeBetween('1960-01-01', '2024-12-31'),
             'artwork_url' => 'https://picsum.photos/seed/'.fake()->uuid().'/300/300',
             'preview_url' => null,

@@ -6,7 +6,6 @@ use App\Domain\Game\GameService;
 use App\Models\Pack;
 use App\Models\Placement;
 use App\Models\Room;
-use App\Models\RoomPlayer;
 use App\Models\Round;
 use App\Models\TimelineItem;
 use App\Models\Track;
@@ -131,22 +130,86 @@ describe('GameService::startRound', function () {
     });
 
     it('finishes game when no tracks remain', function () {
-        // Create pack with only 1 track
+        // Create pack with 2 tracks: 1 seed + 1 playable
         $smallPack = Pack::factory()->create();
-        Track::factory()->for($smallPack)->create();
+        Track::factory()->count(2)->for($smallPack)->create();
 
         $room = $this->gameService->createRoom($smallPack, guestDisplayName: 'Host');
 
-        // Play the only track
+        // Play the only playable track
         $round = $this->gameService->startRound($room);
         $round->update(['status' => RoundStatus::Revealed]);
         $room->update(['state' => RoomState::Reveal]);
 
-        // Try to start another round
+        // Try to start another round (no tracks remain)
         expect(fn () => $this->gameService->startRound($room->fresh()))
             ->toThrow(\RuntimeException::class, 'No more tracks available.');
 
         expect($room->fresh()->state)->toBe(RoomState::Finished);
+    });
+
+    it('seeds each player with one timeline item on the first round', function () {
+        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P2']));
+        $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P3']));
+
+        $round = $this->gameService->startRound($room);
+
+        $players = $room->fresh()->players;
+        expect($players)->toHaveCount(3);
+
+        foreach ($players as $player) {
+            expect($player->timelineItems()->count())->toBe(1);
+        }
+
+        $seededTrackIds = TimelineItem::query()
+            ->whereIn('room_player_id', $players->pluck('id'))
+            ->pluck('track_id')
+            ->all();
+
+        expect($seededTrackIds)->not->toContain($round->track_id);
+    });
+
+    it('never selects a seeded track for later rounds', function () {
+        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P2']));
+        $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P3']));
+
+        $round1 = $this->gameService->startRound($room);
+
+        $players = $room->fresh()->players;
+        $seededTrackIds = TimelineItem::query()
+            ->whereIn('room_player_id', $players->pluck('id'))
+            ->pluck('track_id')
+            ->unique()
+            ->values()
+            ->all();
+
+        $round1->update(['status' => RoundStatus::Revealed]);
+        $room->update(['state' => RoomState::Reveal]);
+
+        $round2 = $this->gameService->startRound($room->fresh());
+
+        expect($seededTrackIds)->not->toContain($round2->track_id);
+    });
+
+    it('does not seed again after the first round', function () {
+        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P2']));
+        $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P3']));
+
+        $round1 = $this->gameService->startRound($room);
+        $players = $room->fresh()->players;
+        $initialTimelineCount = TimelineItem::query()->whereIn('room_player_id', $players->pluck('id'))->count();
+
+        $round1->update(['status' => RoundStatus::Revealed]);
+        $room->update(['state' => RoomState::Reveal]);
+
+        $this->gameService->startRound($room->fresh());
+
+        $afterTimelineCount = TimelineItem::query()->whereIn('room_player_id', $players->pluck('id'))->count();
+
+        expect($afterTimelineCount)->toBe($initialTimelineCount);
     });
 });
 
@@ -296,9 +359,9 @@ describe('GameService::nextRound', function () {
     });
 
     it('returns null and finishes game when no tracks remain', function () {
-        // Create pack with only 1 track
+        // Create pack with 2 tracks: 1 seed + 1 playable
         $smallPack = Pack::factory()->create();
-        Track::factory()->for($smallPack)->create();
+        Track::factory()->count(2)->for($smallPack)->create();
 
         $room = $this->gameService->createRoom($smallPack, guestDisplayName: 'Host');
         $round = $this->gameService->startRound($room);
@@ -391,5 +454,35 @@ describe('GameService::leaveRoom', function () {
         $this->gameService->leaveRoom($hostPlayer);
 
         expect($room->fresh()->state)->toBe(RoomState::Finished);
+    });
+});
+
+describe('GameService::reorderTimeline', function () {
+    it('reorders timeline item positions for a player', function () {
+        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $round = $this->gameService->startRound($room);
+
+        $player = $room->fresh()->players()->firstOrFail();
+
+        $trackA = $player->timelineItems()->firstOrFail()->track;
+        $trackB = Track::factory()->for($this->pack)->create();
+        $trackC = Track::factory()->for($this->pack)->create();
+
+        TimelineItem::create([
+            'room_player_id' => $player->id,
+            'track_id' => $trackB->id,
+            'position' => 1,
+        ]);
+
+        TimelineItem::create([
+            'room_player_id' => $player->id,
+            'track_id' => $trackC->id,
+            'position' => 2,
+        ]);
+
+        $this->gameService->reorderTimeline($player, [$trackC->id, $trackA->id, $trackB->id]);
+
+        $ordered = $player->fresh()->timelineItems()->orderBy('position')->pluck('track_id')->all();
+        expect($ordered)->toBe([$trackC->id, $trackA->id, $trackB->id]);
     });
 });

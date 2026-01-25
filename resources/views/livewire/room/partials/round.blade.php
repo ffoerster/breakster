@@ -71,17 +71,13 @@
                 </button>
             </div>
         @else
-            @if (!$hasPlaced && $timeline->isNotEmpty())
+            @if ($timeline->isNotEmpty())
                 <div class="mb-6">
-                    <div class="text-sm text-gray-400 mb-2">Drag the mystery card into position</div>
-                    <div
-                        data-breakster-sortable
-                        data-breakster-livewire-id="{{ $this->getId() }}"
-                        data-breakster-disabled="{{ $isPlacementLocked ? '1' : '0' }}"
-                        class="space-y-2"
-                    >
+                    <div class="text-sm text-gray-400 mb-2">Drag cards to reorder your timeline</div>
+                    <div x-data="timelineSortable" class="space-y-2">
                         @foreach ($timeline as $item)
                             <div
+                                wire:key="timeline-item-{{ $item->id }}"
                                 data-track-id="{{ $item->track_id }}"
                                 class="flex items-center gap-4 p-4 bg-gray-700/30 rounded-lg cursor-grab"
                             >
@@ -101,14 +97,6 @@
                                 </div>
                             </div>
                         @endforeach
-
-                        <div
-                            data-breakster-new-track="1"
-                            class="p-4 border-2 border-dashed border-purple-500 text-purple-300 rounded-lg bg-purple-500/10 cursor-grab"
-                        >
-                            <div class="font-semibold">Mystery track</div>
-                            <div class="text-sm text-purple-200/80">Drag me to where you think I belong</div>
-                        </div>
                     </div>
                 </div>
             @endif

@@ -12,6 +12,7 @@ use App\Models\Pack;
 use App\Models\Placement;
 use App\Models\Room;
 use App\Models\RoomPlayer;
+use App\Models\RoomUsedTrack;
 use App\Models\Round;
 use App\Models\TimelineItem;
 use App\Models\Track;
@@ -131,6 +132,8 @@ class GameService
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
+        $this->ensureSeedCards($room);
+
         // Get available tracks
         $usedTrackIds = $room->usedTrackIds();
         $track = $room->pack
@@ -150,6 +153,11 @@ class GameService
             // Calculate round number
             $roundNumber = $room->rounds()->count() + 1;
 
+            RoomUsedTrack::firstOrCreate([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
+
             $round = Round::create([
                 'room_id' => $room->id,
                 'track_id' => $track->id,
@@ -164,6 +172,56 @@ class GameService
             ]);
 
             return $round;
+        });
+    }
+
+    public function ensureSeedCards(Room $room): void
+    {
+        $alreadySeeded = $room->players()
+            ->whereHas('timelineItems')
+            ->exists();
+
+        if ($alreadySeeded) {
+            return;
+        }
+
+        DB::transaction(function () use ($room): void {
+            $room->refresh();
+
+            $players = $room->players()->orderBy('joined_at')->get();
+            if ($players->isEmpty()) {
+                throw new \RuntimeException('Cannot seed cards without players.');
+            }
+
+            $usedTrackIds = $room->usedTrackIds();
+            $tracks = $room->pack
+                ->activeTracks()
+                ->whereNotIn('id', $usedTrackIds)
+                ->inRandomOrder()
+                ->limit($players->count())
+                ->get();
+
+            if ($tracks->count() < $players->count()) {
+                throw new \RuntimeException('Not enough unused tracks to seed the game.');
+            }
+
+            foreach ($players as $index => $player) {
+                $track = $tracks->get($index);
+                if (! $track) {
+                    continue;
+                }
+
+                TimelineItem::create([
+                    'room_player_id' => $player->id,
+                    'track_id' => $track->id,
+                    'position' => 0,
+                ]);
+
+                RoomUsedTrack::firstOrCreate([
+                    'room_id' => $room->id,
+                    'track_id' => $track->id,
+                ]);
+            }
         });
     }
 
@@ -321,6 +379,37 @@ class GameService
                 'score' => $player->score,
                 'rank' => $rank,
             ];
+        });
+    }
+
+    /**
+     * @param  array<int, int|string>  $orderedTrackIds
+     */
+    public function reorderTimeline(RoomPlayer $player, array $orderedTrackIds): void
+    {
+        $orderedTrackIds = collect($orderedTrackIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->values()
+            ->all();
+
+        DB::transaction(function () use ($player, $orderedTrackIds): void {
+            $items = $player->timelineItems()->get()->keyBy('track_id');
+
+            if (count($orderedTrackIds) !== $items->count()) {
+                throw new \RuntimeException('Invalid timeline reorder request.');
+            }
+
+            foreach ($orderedTrackIds as $position => $trackId) {
+                /** @var TimelineItem|null $item */
+                $item = $items->get($trackId);
+
+                if (! $item) {
+                    throw new \RuntimeException('Invalid timeline reorder request.');
+                }
+
+                $item->update(['position' => $position]);
+            }
         });
     }
 

@@ -55,9 +55,16 @@ class Create extends Component
 
     public function getPacks(): Collection
     {
-        return Pack::where('is_active', true)
-            ->withCount('tracks')
-            ->having('tracks_count', '>', 0)
+        return Pack::query()
+            ->where('is_active', true)
+            ->whereHas('tracks', function ($query): void {
+                $query->where('is_active', true);
+            })
+            ->withCount([
+                'tracks as tracks_count' => function ($query): void {
+                    $query->where('is_active', true);
+                },
+            ])
             ->orderBy('name')
             ->get();
     }

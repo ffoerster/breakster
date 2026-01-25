@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Domain\Providers\Tidal\TidalClient;
 use App\Models\Pack;
+use App\Models\Provider;
 use App\Models\Track;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -25,7 +26,10 @@ class ImportTidalTracksJob implements ShouldQueue
         $pack = Pack::findOrFail($this->packId);
         $normalized = $tidal->fetchTracks($this->source);
 
-        $provider = 'tidal';
+        $provider = Provider::query()->firstOrCreate(
+            ['key' => 'tidal'],
+            ['name' => 'TIDAL', 'is_active' => true],
+        );
         $providerTrackIds = collect($normalized)
             ->pluck('provider_track_id')
             ->filter()
@@ -35,7 +39,7 @@ class ImportTidalTracksJob implements ShouldQueue
 
         $existing = Track::query()
             ->where('pack_id', $pack->id)
-            ->where('provider', $provider)
+            ->where('provider_id', $provider->id)
             ->whereIn('provider_track_id', $providerTrackIds)
             ->get()
             ->keyBy('provider_track_id');
@@ -48,10 +52,11 @@ class ImportTidalTracksJob implements ShouldQueue
             $providerTrackId = (string) $row['provider_track_id'];
             $attributes = [
                 'pack_id' => $pack->id,
-                'provider' => $provider,
+                'provider_id' => $provider->id,
                 'provider_track_id' => $providerTrackId,
                 'title' => $row['title'],
                 'artist' => $row['artist'],
+                'label' => $row['label'] ?? null,
                 'release_date' => $row['release_date'],
                 'artwork_url' => $row['artwork_url'],
                 'preview_url' => $row['preview_url'],
@@ -70,7 +75,7 @@ class ImportTidalTracksJob implements ShouldQueue
             }
 
             $dirty = false;
-            foreach (['title', 'artist', 'release_date', 'artwork_url', 'preview_url', 'external_url'] as $field) {
+            foreach (['title', 'artist', 'label', 'release_date', 'artwork_url', 'preview_url', 'external_url'] as $field) {
                 if ($current->getAttribute($field) !== $attributes[$field]) {
                     $dirty = true;
                     break;
@@ -94,7 +99,7 @@ class ImportTidalTracksJob implements ShouldQueue
 
         Log::info('TIDAL import completed', [
             'pack_id' => $pack->id,
-            'provider' => $provider,
+            'provider' => $provider->key,
             'source' => $this->source,
             'imported' => $imported,
             'updated' => $updated,

@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
 
         // Seed packs and tracks
         $this->call([
+            ProviderSeeder::class,
             PackSeeder::class,
         ]);
     }

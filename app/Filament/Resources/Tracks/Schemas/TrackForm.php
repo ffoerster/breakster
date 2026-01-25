@@ -19,10 +19,11 @@ class TrackForm
                     ->searchable()
                     ->preload()
                     ->required(),
-                TextInput::make('provider')
-                    ->default('tidal')
-                    ->required()
-                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                Select::make('provider_id')
+                    ->relationship('provider', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
                 TextInput::make('provider_track_id')
                     ->required()
                     ->disabled(fn (string $operation): bool => $operation === 'edit'),
@@ -30,6 +31,9 @@ class TrackForm
                     ->required(),
                 TextInput::make('artist')
                     ->required(),
+                TextInput::make('label')
+                    ->label('Record Label')
+                    ->maxLength(255),
                 DatePicker::make('release_date')
                     ->required(),
                 Toggle::make('is_active')
