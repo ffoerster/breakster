@@ -131,7 +131,7 @@ class GameService
     public function startRound(Room $room): Round
     {
         // Validate state
-        if (! $room->state->canStartRound()) {
+        if (!$room->state->canStartRound()) {
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
@@ -141,7 +141,7 @@ class GameService
         $usedTrackIds = $room->usedTrackIds();
         $track = $room->pack->activeTracks()->whereNotIn('id', $usedTrackIds)->inRandomOrder()->first();
 
-        if (! $track) {
+        if (!$track) {
             // No more tracks available
             $room->update(['state' => RoomState::Finished]);
 
@@ -176,12 +176,7 @@ class GameService
 
             // Broadcast events after transaction commits
             DB::afterCommit(function () use ($room, $round) {
-                event(new RoundStarted(
-                    $room->code,
-                    $round->id,
-                    $round->round_number,
-                    $round->placement_unlocks_at
-                ));
+                event(new RoundStarted($room->code, $round->id, $round->round_number, $round->placement_unlocks_at));
                 event(new RoomStateChanged($room->code, RoomState::InRound, $round->id));
             });
 
@@ -220,7 +215,7 @@ class GameService
 
             foreach ($players as $index => $player) {
                 $track = $tracks->get($index);
-                if (! $track) {
+                if (!$track) {
                     continue;
                 }
 
@@ -244,7 +239,7 @@ class GameService
     public function submitPlacement(RoomPlayer $player, Round $round, ?int $insertAfterTrackId = null): Placement
     {
         // Validate round is active
-        if (! $round->isActive()) {
+        if (!$round->isActive()) {
             throw new \RuntimeException('This round is not active.');
         }
 
@@ -258,7 +253,7 @@ class GameService
         if ($insertAfterTrackId !== null) {
             $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
 
-            if (! $hasTrack) {
+            if (!$hasTrack) {
                 throw new \RuntimeException('Invalid track reference for placement.');
             }
         }
@@ -401,8 +396,8 @@ class GameService
     public function reorderTimeline(RoomPlayer $player, array $orderedTrackIds): void
     {
         $orderedTrackIds = collect($orderedTrackIds)
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id): bool => $id > 0)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn(int $id): bool => $id > 0)
             ->values()
             ->all();
 
@@ -417,7 +412,7 @@ class GameService
                 /** @var TimelineItem|null $item */
                 $item = $items->get($trackId);
 
-                if (! $item) {
+                if (!$item) {
                     throw new \RuntimeException('Invalid timeline reorder request.');
                 }
 
@@ -433,7 +428,7 @@ class GameService
     {
         $usedTrackIds = $room->usedTrackIds();
 
-        return ! $room->pack->activeTracks()->whereNotIn('id', $usedTrackIds)->exists();
+        return !$room->pack->activeTracks()->whereNotIn('id', $usedTrackIds)->exists();
     }
 
     /**

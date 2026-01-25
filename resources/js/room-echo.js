@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     channel.listen('.round.started', (event) => {
         console.log('Round started:', event);
         window.Livewire.dispatch('roundStarted', event);
-        
+
         // Also dispatch browser event for Alpine
         window.dispatchEvent(new CustomEvent('round-started', {
             detail: event

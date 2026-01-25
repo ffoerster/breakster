@@ -8,12 +8,12 @@ document.addEventListener('alpine:init', () => {
         sortable: null,
         init() {
             this.initSortable();
-            
+
             // Re-init on timeline updates
             this.$watch('$wire.$snapshot', () => {
                 this.$nextTick(() => this.initSortable());
             });
-            
+
             // Listen for manual re-init events
             window.addEventListener('timeline:updated', () => {
                 this.$nextTick(() => this.initSortable());

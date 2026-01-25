@@ -58,7 +58,7 @@ class Show extends Component
 
     public function startRound(GameService $gameService): void
     {
-        if (! $this->isHost) {
+        if (!$this->isHost) {
             return;
         }
 
@@ -72,7 +72,7 @@ class Show extends Component
     public function submitPlacement(GameService $gameService, ?int $insertAfterTrackId = null): void
     {
         $player = $this->currentPlayer;
-        if (! $player || ! $this->room->currentRound) {
+        if (!$player || !$this->room->currentRound) {
             return;
         }
 
@@ -103,7 +103,7 @@ class Show extends Component
 
     public function revealRound(GameService $gameService): void
     {
-        if (! $this->isHost || ! $this->room->currentRound) {
+        if (!$this->isHost || !$this->room->currentRound) {
             return;
         }
 
@@ -116,7 +116,7 @@ class Show extends Component
 
     public function nextRound(GameService $gameService): void
     {
-        if (! $this->isHost) {
+        if (!$this->isHost) {
             return;
         }
 
@@ -130,7 +130,7 @@ class Show extends Component
     public function leaveRoom(GameService $gameService): void
     {
         $player = $this->currentPlayer;
-        if (! $player) {
+        if (!$player) {
             return;
         }
 
@@ -146,7 +146,7 @@ class Show extends Component
     public function reorderTimeline(GameService $gameService, array $orderedTrackIds): void
     {
         $player = $this->currentPlayer;
-        if (! $player) {
+        if (!$player) {
             return;
         }
 

@@ -11,23 +11,23 @@
     placementUnlocksAt: @js($placementUnlocksAt?->toIso8601String()),
     remainingSeconds: 0,
     isLocked: false,
-    
+
     init() {
         this.updateCountdown();
         this.countdownInterval = setInterval(() => this.updateCountdown(), 100);
     },
-    
+
     updateCountdown() {
         if (!this.placementUnlocksAt) {
             this.isLocked = false;
             this.remainingSeconds = 0;
             return;
         }
-        
+
         const unlockTime = new Date(this.placementUnlocksAt).getTime();
         const now = Date.now();
         const remainingMs = unlockTime - now;
-        
+
         if (remainingMs <= 0) {
             this.isLocked = false;
             this.remainingSeconds = 0;
