@@ -26,7 +26,7 @@ class TracksTable
                 TextColumn::make('label')
                     ->label('Label')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
                 TextColumn::make('release_date')
                     ->date('Y')
                     ->sortable(),
@@ -35,6 +35,14 @@ class TracksTable
                     ->sortable(),
                 TextColumn::make('provider.name')
                     ->label('Provider')
+                    ->sortable(),
+                TextColumn::make('provider_track_id')
+                    ->label('Provider ID')
+                    ->searchable(),
+                TextColumn::make('external_url')
+                    ->label('External URL')
+                    ->url(fn ($record): ?string => $record->external_url)
+                    ->openUrlInNewTab()
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_active')
                     ->boolean()

@@ -4,7 +4,7 @@ use App\Domain\Providers\Tidal\TidalUrlParser;
 
 describe('TidalUrlParser', function () {
     beforeEach(function () {
-        $this->parser = new TidalUrlParser();
+        $this->parser = new TidalUrlParser;
     });
 
     it('parses track URL with browse path', function () {
@@ -26,7 +26,7 @@ describe('TidalUrlParser', function () {
     });
 
     it('parses track URL without browse path', function () {
-        $result = $this->parser->parse('https://listen.tidal.com/track/123456');
+        $result = $this->parser->parse('https://tidal.com/track/123456');
 
         expect($result)->toBe([
             'type' => 'track',
@@ -67,6 +67,24 @@ describe('TidalUrlParser', function () {
         expect($result)->toBe([
             'type' => 'track',
             'id' => '123456',
+        ]);
+    });
+
+    it('parses track URL with trailing segments', function () {
+        $result = $this->parser->parse('https://tidal.com/track/153133458/u');
+
+        expect($result)->toBe([
+            'type' => 'track',
+            'id' => '153133458',
+        ]);
+    });
+
+    it('parses track URL with query string without browse path', function () {
+        $result = $this->parser->parse('https://tidal.com/track/153133458?foo=bar');
+
+        expect($result)->toBe([
+            'type' => 'track',
+            'id' => '153133458',
         ]);
     });
 

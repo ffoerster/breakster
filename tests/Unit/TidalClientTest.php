@@ -92,12 +92,11 @@ describe('TidalApiClient', function () {
         $this->client->getTrack('123456', 'test-token-123');
 
         Http::assertSent(function ($request) {
-            return (
+            return
                 str_contains($request->url(), 'openapi.tidal.com/v2/')
                 && $request->hasHeader('Authorization', 'Bearer test-token-123')
-                && $request->hasHeader('Accept', 'application/vnd.tidal.v1+json')
-                && $request->hasHeader('Content-Type', 'application/vnd.tidal.v1+json')
-            );
+                && $request->hasHeader('Accept', 'application/vnd.api+json')
+                && $request->hasHeader('Content-Type', 'application/vnd.api+json');
         });
     });
 

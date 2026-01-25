@@ -6,6 +6,7 @@ namespace App\Domain\Providers\Tidal;
 
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class TidalApiClient
@@ -32,10 +33,11 @@ class TidalApiClient
     {
         $response = $this->get("tracks/{$id}", $accessToken, [
             'countryCode' => $this->countryCode,
-            'include' => 'artists,album',
+            'include' => 'albums,artists',
         ]);
 
         if (! $response->successful()) {
+            $this->debugLogUnsuccessfulResponse($response, "tracks/{$id}");
             throw new RuntimeException("TIDAL API request failed [{$response->status()}]: {$response->body()}");
         }
 
@@ -71,10 +73,12 @@ class TidalApiClient
         ]);
 
         if (in_array($response->status(), [401, 403], true)) {
+            $this->debugLogUnsuccessfulResponse($response, "playlists/{$playlistId}/relationships/items");
             throw new TidalPlaylistRequiresAdminTokenException('TIDAL playlist access requires a user token.');
         }
 
         if (! $response->successful()) {
+            $this->debugLogUnsuccessfulResponse($response, "playlists/{$playlistId}/relationships/items");
             throw new RuntimeException("TIDAL API request failed [{$response->status()}]: {$response->body()}");
         }
 
@@ -212,7 +216,13 @@ class TidalApiClient
         $album = $resource['relationships']['album']['data'] ?? null;
 
         if (! is_array($album) || ! isset($album['type'], $album['id'])) {
-            return null;
+            $albums = $resource['relationships']['albums']['data'] ?? null;
+
+            if (! is_array($albums) || ! isset($albums[0]['type'], $albums[0]['id'])) {
+                return null;
+            }
+
+            $album = $albums[0];
         }
 
         $albumResource = $includedIndex[(string) $album['type'].':'.(string) $album['id']] ?? null;
@@ -315,10 +325,25 @@ class TidalApiClient
         /** @var Response $response */
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
-            'Accept' => 'application/vnd.tidal.v1+json',
-            'Content-Type' => 'application/vnd.tidal.v1+json',
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
         ])->get(self::BASE_URL.'/'.ltrim($endpoint, '/'), $query);
 
         return $response;
+    }
+
+    private function debugLogUnsuccessfulResponse(Response $response, string $endpoint): void
+    {
+        if (! app()->environment('local')) {
+            return;
+        }
+
+        $body = $response->body();
+
+        Log::debug('TIDAL API non-2xx response', [
+            'endpoint' => $endpoint,
+            'status' => $response->status(),
+            'body' => substr($body, 0, 500),
+        ]);
     }
 }
