@@ -11,6 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
@@ -24,7 +25,7 @@ class Show extends Component
 
     public function mount(string $code): void
     {
-        $this->room = Room::where('code', strtoupper($code))->firstOrFail();
+        $this->room = Room::with('pack')->where('code', strtoupper($code))->firstOrFail();
     }
 
     #[Computed]
@@ -40,7 +41,8 @@ class Show extends Component
         }
 
         if (auth()->check()) {
-            return $this->room->players()
+            return $this->room
+                ->players()
                 ->where('user_id', auth()->id())
                 ->first();
         }
@@ -85,8 +87,8 @@ class Show extends Component
 
         RateLimiter::hit($key, 60);
 
-        $startedAt = $this->room->currentRound->started_at;
-        if ($startedAt !== null && now()->lt($startedAt->copy()->addSeconds(self::PLACEMENT_DELAY_SECONDS))) {
+        $placementUnlocksAt = $this->room->currentRound->placement_unlocks_at;
+        if ($placementUnlocksAt !== null && now()->lt($placementUnlocksAt)) {
             session()->flash('error', 'Placement will unlock in a moment.');
 
             return;
@@ -150,6 +152,10 @@ class Show extends Component
 
         try {
             $gameService->reorderTimeline($player, $orderedTrackIds);
+
+            // Refresh timeline and dispatch event for JS to re-init Sortable
+            $player->refresh();
+            $this->dispatch('timeline:updated');
         } catch (\RuntimeException $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -160,9 +166,75 @@ class Show extends Component
         return "Room {$this->room->code} - Breakster";
     }
 
+    /**
+     * Handle real-time event: players updated (join/leave)
+     */
+    #[On('roomPlayersUpdated')]
+    public function onRoomPlayersUpdated(): void
+    {
+        $this->refreshRoom();
+        unset($this->currentPlayer);
+    }
+
+    /**
+     * Handle real-time event: round started
+     */
+    #[On('roundStarted')]
+    public function onRoundStarted(): void
+    {
+        $this->refreshRoom();
+    }
+
+    /**
+     * Handle real-time event: placement submitted
+     */
+    #[On('placementSubmitted')]
+    public function onPlacementSubmitted(): void
+    {
+        $this->refreshRound();
+    }
+
+    /**
+     * Handle real-time event: round revealed
+     */
+    #[On('roundRevealed')]
+    public function onRoundRevealed(): void
+    {
+        $this->refreshRoom();
+    }
+
+    /**
+     * Handle real-time event: room state changed
+     */
+    #[On('roomStateChanged')]
+    public function onRoomStateChanged(): void
+    {
+        $this->refreshRoom();
+    }
+
+    /**
+     * Refresh room with relationships
+     */
+    private function refreshRoom(): void
+    {
+        $this->room->load(['pack', 'players', 'currentRound']);
+        $this->room->refresh();
+    }
+
+    /**
+     * Refresh only round data
+     */
+    private function refreshRound(): void
+    {
+        if ($this->room->currentRound) {
+            $this->room->currentRound->refresh();
+            $this->room->load('currentRound.placements');
+        }
+    }
+
     public function render(): View
     {
-        $this->room->refresh();
+        $this->refreshRoom();
 
         return view('livewire.room.show', [
             'state' => $this->room->state,

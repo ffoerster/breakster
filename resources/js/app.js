@@ -1,4 +1,5 @@
 import './bootstrap';
+import './room-echo';
 
 import Sortable from 'sortablejs';
 
@@ -6,8 +7,22 @@ document.addEventListener('alpine:init', () => {
     window.Alpine.data('timelineSortable', () => ({
         sortable: null,
         init() {
+            this.initSortable();
+            
+            // Re-init on timeline updates
+            this.$watch('$wire.$snapshot', () => {
+                this.$nextTick(() => this.initSortable());
+            });
+            
+            // Listen for manual re-init events
+            window.addEventListener('timeline:updated', () => {
+                this.$nextTick(() => this.initSortable());
+            });
+        },
+        initSortable() {
             if (this.sortable) {
                 this.sortable.destroy();
+                this.sortable = null;
             }
 
             const trackIds = this.getTrackIds();
@@ -17,7 +32,14 @@ document.addEventListener('alpine:init', () => {
 
             this.sortable = Sortable.create(this.$el, {
                 animation: 150,
-                ghostClass: 'opacity-60',
+                ghostClass: 'opacity-50',
+                handle: '.drag-handle',
+                fallbackOnBody: true,
+                swapThreshold: 0.65,
+                delay: 150,
+                delayOnTouchOnly: true,
+                touchStartThreshold: 5,
+                forceFallback: false,
                 onEnd: () => {
                     const ordered = this.getTrackIds();
                     if (ordered.length < 2) {

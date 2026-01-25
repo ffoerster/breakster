@@ -2,7 +2,13 @@
     <div class="flex justify-between items-start mb-6">
         <div>
             <h1 class="text-3xl font-bold">Room {{ $room->code }}</h1>
-            <p class="text-gray-400">{{ $room->pack->name }}</p>
+            <div class="mt-2">
+                <div class="text-sm text-gray-500 uppercase tracking-wide">Music Pack</div>
+                <p class="text-xl font-semibold text-purple-400">{{ $room->pack->name }}</p>
+                @if ($room->pack->description)
+                    <p class="text-sm text-gray-400 mt-1">{{ $room->pack->description }}</p>
+                @endif
+            </div>
         </div>
         <div class="text-right">
             <div class="text-sm text-gray-400">Share this code</div>

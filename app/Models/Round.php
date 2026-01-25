@@ -20,6 +20,7 @@ class Round extends Model
         'round_number',
         'status',
         'started_at',
+        'placement_unlocks_at',
         'revealed_at',
     ];
 
@@ -29,6 +30,7 @@ class Round extends Model
             'status' => RoundStatus::class,
             'round_number' => 'integer',
             'started_at' => 'datetime',
+            'placement_unlocks_at' => 'datetime',
             'revealed_at' => 'datetime',
         ];
     }

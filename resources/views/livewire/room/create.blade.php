@@ -27,20 +27,20 @@
                 </label>
                 <div class="space-y-2">
                     @foreach ($packs as $pack)
-                        <label class="flex items-center p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition border-2 {{ $packId == $pack->id ? 'border-purple-500' : 'border-transparent' }}">
+                        <label class="flex items-center p-4 rounded-lg cursor-pointer transition-all {{ $packId == $pack->id ? 'bg-purple-600 ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-800' : 'bg-gray-700/30 hover:bg-gray-700/50' }}">
                             <input
-                                wire:model="packId"
+                                wire:model.live="packId"
                                 type="radio"
                                 name="packId"
                                 value="{{ $pack->id }}"
                                 class="sr-only"
                             >
                             <div class="flex-1">
-                                <div class="font-medium">{{ $pack->name }}</div>
-                                <div class="text-sm text-gray-400">{{ $pack->tracks_count }} tracks</div>
+                                <div class="font-medium {{ $packId == $pack->id ? 'text-white' : '' }}">{{ $pack->name }}</div>
+                                <div class="text-sm {{ $packId == $pack->id ? 'text-purple-200' : 'text-gray-400' }}">{{ $pack->tracks_count }} tracks</div>
                             </div>
                             @if ($packId == $pack->id)
-                                <svg class="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                 </svg>
                             @endif

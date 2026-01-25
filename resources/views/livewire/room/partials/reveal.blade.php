@@ -15,9 +15,11 @@
                 <img src="{{ $track->artwork_url }}" alt="" class="w-32 h-32 rounded-lg shadow-lg">
             @endif
             <div class="text-left">
-                <h2 class="text-3xl font-bold">{{ $track->title }}</h2>
-                <p class="text-xl text-gray-300">{{ $track->artist }}</p>
-                <p class="text-2xl text-purple-400 font-bold mt-2">{{ $track->release_date->format('Y') }}</p>
+                <div class="text-4xl md:text-5xl font-black text-purple-400 leading-none mb-3">
+                    {{ $track->release_date->format('Y') }}
+                </div>
+                <h2 class="text-2xl font-bold">{{ $track->title }}</h2>
+                <p class="text-lg text-gray-300">{{ $track->artist }}</p>
             </div>
         </div>
     </div>

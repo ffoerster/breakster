@@ -1,4 +1,4 @@
-<div class="w-full max-w-4xl" wire:poll.2s>
+<div class="w-full max-w-4xl" data-room-code="{{ $room->code }}">
     @if (session('error'))
         <div class="mb-4 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
             {{ session('error') }}

@@ -4,13 +4,42 @@
     $timeline = $player->timeline();
     $hasPlaced = $player->hasPlacementForRound($round);
 
-    $placementDelaySeconds = 5;
-    $placementUnlockAt = $round?->started_at?->copy()->addSeconds($placementDelaySeconds);
-    $isPlacementLocked = $placementUnlockAt !== null && now()->lt($placementUnlockAt);
-    $placementUnlockIn = $isPlacementLocked ? now()->diffInSeconds($placementUnlockAt) : 0;
+    $placementUnlocksAt = $round?->placement_unlocks_at;
 @endphp
 
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+    placementUnlocksAt: @js($placementUnlocksAt?->toIso8601String()),
+    remainingSeconds: 0,
+    isLocked: false,
+    
+    init() {
+        this.updateCountdown();
+        this.countdownInterval = setInterval(() => this.updateCountdown(), 100);
+    },
+    
+    updateCountdown() {
+        if (!this.placementUnlocksAt) {
+            this.isLocked = false;
+            this.remainingSeconds = 0;
+            return;
+        }
+        
+        const unlockTime = new Date(this.placementUnlocksAt).getTime();
+        const now = Date.now();
+        const remainingMs = unlockTime - now;
+        
+        if (remainingMs <= 0) {
+            this.isLocked = false;
+            this.remainingSeconds = 0;
+        } else {
+            this.isLocked = true;
+            this.remainingSeconds = Math.ceil(remainingMs / 1000);
+        }
+    }
+}" @round-started.window="
+    placementUnlocksAt = $event.detail.placementUnlocksAt;
+    updateCountdown();
+">
     {{-- Track Player --}}
     <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-8 text-center">
         <div class="text-sm text-gray-400 mb-2">Round {{ $round->round_number }}</div>
@@ -46,11 +75,9 @@
     <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-8">
         <h3 class="text-xl font-bold mb-4">Your Timeline</h3>
 
-        @if ($isPlacementLocked)
-            <div class="p-4 bg-blue-500/20 border border-blue-500 rounded-lg text-center mb-4">
-                Placement unlocks in {{ $placementUnlockIn }}s
-            </div>
-        @endif
+        <div x-show="isLocked" x-cloak class="p-4 bg-blue-500/20 border border-blue-500 rounded-lg text-center mb-4">
+            <span x-text="remainingSeconds > 1 ? `Placement unlocks in ${remainingSeconds}s...` : (remainingSeconds === 1 ? 'Placement unlocks in 1s...' : 'Go!')"></span>
+        </div>
 
         @if ($hasPlaced)
             <div class="p-4 bg-green-500/20 border border-green-500 rounded-lg text-center mb-4">
@@ -65,7 +92,7 @@
                     wire:click="submitPlacement(null)"
                     class="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
                     wire:loading.attr="disabled"
-                    @disabled($isPlacementLocked)
+                    :disabled="isLocked"
                 >
                     Place Here
                 </button>
@@ -73,31 +100,43 @@
         @else
             @if ($timeline->isNotEmpty())
                 <div class="mb-6">
-                    <div class="text-sm text-gray-400 mb-2">Drag cards to reorder your timeline</div>
-                    <div x-data="timelineSortable" class="space-y-2">
+                    <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                        </svg>
+                        Drag cards to reorder your timeline
+                    </div>
+                    <ul wire:ignore x-data="timelineSortable" x-ref="timelineList" class="space-y-2">
                         @foreach ($timeline as $item)
-                            <div
-                                wire:key="timeline-item-{{ $item->id }}"
+                            <li
+                                wire:key="timeline-{{ $item->track_id }}"
                                 data-track-id="{{ $item->track_id }}"
-                                class="flex items-center gap-4 p-4 bg-gray-700/30 rounded-lg cursor-grab"
+                                class="flex items-center gap-3 p-4 bg-gray-700/30 rounded-lg transition-opacity"
                             >
+                                <button type="button" class="drag-handle cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 transition">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 3h2v2H9V3zm0 4h2v2H9V7zm0 4h2v2H9v-2zm0 4h2v2H9v-2zm0 4h2v2H9v-2zM13 3h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+                                    </svg>
+                                </button>
                                 @if ($item->track->artwork_url)
-                                    <img src="{{ $item->track->artwork_url }}" alt="" class="w-16 h-16 rounded object-cover">
+                                    <img src="{{ $item->track->artwork_url }}" alt="" class="w-16 h-16 rounded object-cover flex-shrink-0">
                                 @else
-                                    <div class="w-16 h-16 rounded bg-gray-600 flex items-center justify-center">
+                                    <div class="w-16 h-16 rounded bg-gray-600 flex items-center justify-center flex-shrink-0">
                                         <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/>
                                         </svg>
                                     </div>
                                 @endif
-                                <div class="flex-1">
-                                    <div class="font-medium">{{ $item->track->title }}</div>
-                                    <div class="text-sm text-gray-400">{{ $item->track->artist }}</div>
-                                    <div class="text-sm text-purple-400">{{ $item->track->release_date->format('Y') }}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-2xl md:text-3xl font-black text-purple-400 leading-none mb-1">
+                                        {{ $item->track->release_date->format('Y') }}
+                                    </div>
+                                    <div class="font-medium truncate">{{ $item->track->title }}</div>
+                                    <div class="text-sm text-gray-400 truncate">{{ $item->track->artist }}</div>
                                 </div>
-                            </div>
+                            </li>
                         @endforeach
-                    </div>
+                    </ul>
                 </div>
             @endif
 
@@ -108,7 +147,7 @@
                         <select
                             wire:model="insertAfterTrackId"
                             class="w-full px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700"
-                            @disabled($isPlacementLocked)
+                            :disabled="isLocked"
                         >
                             <option value="">At beginning</option>
                             @foreach ($timeline as $item)
@@ -121,7 +160,7 @@
                             wire:click="submitPlacement"
                             class="px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
                             wire:loading.attr="disabled"
-                            @disabled($isPlacementLocked)
+                            :disabled="isLocked"
                         >
                             Submit
                         </button>

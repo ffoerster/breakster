@@ -8,6 +8,11 @@ use App\Domain\Game\DTOs\PlacementResult;
 use App\Domain\Game\DTOs\RoundSummary;
 use App\Domain\Game\Enums\RoomState;
 use App\Domain\Game\Enums\RoundStatus;
+use App\Events\PlacementSubmitted;
+use App\Events\RoomPlayersUpdated;
+use App\Events\RoomStateChanged;
+use App\Events\RoundRevealed;
+use App\Events\RoundStarted;
 use App\Models\Pack;
 use App\Models\Placement;
 use App\Models\Room;
@@ -31,11 +36,8 @@ class GameService
     /**
      * Create a new room with the given pack and host.
      */
-    public function createRoom(
-        Pack $pack,
-        ?User $host = null,
-        ?string $guestDisplayName = null
-    ): Room {
+    public function createRoom(Pack $pack, ?User $host = null, ?string $guestDisplayName = null): Room
+    {
         return DB::transaction(function () use ($pack, $host, $guestDisplayName) {
             $room = Room::create([
                 'code' => $this->codeGenerator->generate(),
@@ -63,11 +65,8 @@ class GameService
     /**
      * Join an existing room by code.
      */
-    public function joinRoom(
-        string $code,
-        ?User $user = null,
-        ?string $guestDisplayName = null
-    ): RoomPlayer {
+    public function joinRoom(string $code, ?User $user = null, ?string $guestDisplayName = null): RoomPlayer
+    {
         $room = Room::where('code', strtoupper($code))->firstOrFail();
 
         // Check if room is joinable
@@ -82,12 +81,9 @@ class GameService
         }
 
         // Generate unique display name
-        $displayName = $this->ensureUniqueDisplayName(
-            $room,
-            $guestDisplayName ?? $user?->name ?? 'Player'
-        );
+        $displayName = $this->ensureUniqueDisplayName($room, $guestDisplayName ?? $user?->name ?? 'Player');
 
-        return RoomPlayer::create([
+        $player = RoomPlayer::create([
             'room_id' => $room->id,
             'user_id' => $user?->id,
             'display_name' => $displayName,
@@ -95,6 +91,11 @@ class GameService
             'is_host' => false,
             'joined_at' => now(),
         ]);
+
+        // Broadcast player joined
+        event(new RoomPlayersUpdated($room->code));
+
+        return $player;
     }
 
     /**
@@ -103,15 +104,14 @@ class GameService
     public function leaveRoom(RoomPlayer $player): void
     {
         $room = $player->room;
+        $roomCode = $room->code;
         $wasHost = $player->is_host;
 
         $player->delete();
 
         if ($wasHost) {
             // Transfer host to next player by join time
-            $newHost = $room->players()
-                ->orderBy('joined_at')
-                ->first();
+            $newHost = $room->players()->orderBy('joined_at')->first();
 
             if ($newHost) {
                 $newHost->update(['is_host' => true]);
@@ -120,6 +120,9 @@ class GameService
                 $room->update(['state' => RoomState::Finished]);
             }
         }
+
+        // Broadcast player left
+        event(new RoomPlayersUpdated($roomCode));
     }
 
     /**
@@ -136,11 +139,7 @@ class GameService
 
         // Get available tracks
         $usedTrackIds = $room->usedTrackIds();
-        $track = $room->pack
-            ->activeTracks()
-            ->whereNotIn('id', $usedTrackIds)
-            ->inRandomOrder()
-            ->first();
+        $track = $room->pack->activeTracks()->whereNotIn('id', $usedTrackIds)->inRandomOrder()->first();
 
         if (! $track) {
             // No more tracks available
@@ -158,12 +157,16 @@ class GameService
                 'track_id' => $track->id,
             ]);
 
+            $placementDelaySeconds = 3;
+            $startedAt = now();
+
             $round = Round::create([
                 'room_id' => $room->id,
                 'track_id' => $track->id,
                 'round_number' => $roundNumber,
                 'status' => RoundStatus::Active,
-                'started_at' => now(),
+                'started_at' => $startedAt,
+                'placement_unlocks_at' => $startedAt->copy()->addSeconds($placementDelaySeconds),
             ]);
 
             $room->update([
@@ -171,15 +174,24 @@ class GameService
                 'current_round_id' => $round->id,
             ]);
 
+            // Broadcast events after transaction commits
+            DB::afterCommit(function () use ($room, $round) {
+                event(new RoundStarted(
+                    $room->code,
+                    $round->id,
+                    $round->round_number,
+                    $round->placement_unlocks_at
+                ));
+                event(new RoomStateChanged($room->code, RoomState::InRound, $round->id));
+            });
+
             return $round;
         });
     }
 
     public function ensureSeedCards(Room $room): void
     {
-        $alreadySeeded = $room->players()
-            ->whereHas('timelineItems')
-            ->exists();
+        $alreadySeeded = $room->players()->whereHas('timelineItems')->exists();
 
         if ($alreadySeeded) {
             return;
@@ -194,7 +206,8 @@ class GameService
             }
 
             $usedTrackIds = $room->usedTrackIds();
-            $tracks = $room->pack
+            $tracks = $room
+                ->pack
                 ->activeTracks()
                 ->whereNotIn('id', $usedTrackIds)
                 ->inRandomOrder()
@@ -228,11 +241,8 @@ class GameService
     /**
      * Submit a placement for the current round.
      */
-    public function submitPlacement(
-        RoomPlayer $player,
-        Round $round,
-        ?int $insertAfterTrackId = null
-    ): Placement {
+    public function submitPlacement(RoomPlayer $player, Round $round, ?int $insertAfterTrackId = null): Placement
+    {
         // Validate round is active
         if (! $round->isActive()) {
             throw new \RuntimeException('This round is not active.');
@@ -246,22 +256,25 @@ class GameService
 
         // Validate insertAfterTrackId is in player's timeline (if not null)
         if ($insertAfterTrackId !== null) {
-            $hasTrack = $player->timelineItems()
-                ->where('track_id', $insertAfterTrackId)
-                ->exists();
+            $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
 
             if (! $hasTrack) {
                 throw new \RuntimeException('Invalid track reference for placement.');
             }
         }
 
-        return Placement::create([
+        $placement = Placement::create([
             'round_id' => $round->id,
             'room_player_id' => $player->id,
             'inserted_after_track_id' => $insertAfterTrackId,
             'is_correct' => null, // Will be set during reveal
             'points_earned' => 0,
         ]);
+
+        // Broadcast placement submitted
+        event(new PlacementSubmitted($player->room->code, $round->id, $player->id));
+
+        return $placement;
     }
 
     /**
@@ -287,16 +300,10 @@ class GameService
                 $player = $placement->player;
 
                 // Check correctness
-                $isCorrect = $this->placementValidator->isCorrect(
-                    $player,
-                    $track,
-                    $placement->inserted_after_track_id
-                );
+                $isCorrect = $this->placementValidator->isCorrect($player, $track, $placement->inserted_after_track_id);
 
                 // Calculate points
-                $secondsToSubmit = $round->started_at
-                    ? $placement->created_at->diffInSeconds($round->started_at)
-                    : 0;
+                $secondsToSubmit = $round->started_at ? $placement->created_at->diffInSeconds($round->started_at) : 0;
                 $points = $this->scoreCalculator->calculatePoints($isCorrect, (int) $secondsToSubmit);
 
                 // Update placement
@@ -327,6 +334,12 @@ class GameService
             // Update room state
             $room->update(['state' => RoomState::Reveal]);
 
+            // Broadcast events after transaction commits
+            DB::afterCommit(function () use ($room, $round) {
+                event(new RoundRevealed($room->code, $round->id));
+                event(new RoomStateChanged($room->code, RoomState::Reveal, $round->id));
+            });
+
             return RoundSummary::fromRound($round->fresh(), $results);
         });
     }
@@ -345,6 +358,9 @@ class GameService
             return $this->startRound($room);
         } catch (\RuntimeException $e) {
             // No more tracks - game is finished
+            // Broadcast game finished
+            event(new RoomStateChanged($room->code, RoomState::Finished, null));
+
             return null;
         }
     }
@@ -356,10 +372,7 @@ class GameService
      */
     public function getLeaderboard(Room $room): Collection
     {
-        $players = $room->players()
-            ->orderByDesc('score')
-            ->orderBy('joined_at')
-            ->get();
+        $players = $room->players()->orderByDesc('score')->orderBy('joined_at')->get();
 
         $rank = 0;
         $lastScore = null;
@@ -420,10 +433,7 @@ class GameService
     {
         $usedTrackIds = $room->usedTrackIds();
 
-        return ! $room->pack
-            ->activeTracks()
-            ->whereNotIn('id', $usedTrackIds)
-            ->exists();
+        return ! $room->pack->activeTracks()->whereNotIn('id', $usedTrackIds)->exists();
     }
 
     /**
@@ -462,9 +472,7 @@ class GameService
         $correctPosition = $this->placementValidator->findCorrectPosition($player, $track);
 
         // Shift existing items at or after this position
-        $player->timelineItems()
-            ->where('position', '>=', $correctPosition)
-            ->increment('position');
+        $player->timelineItems()->where('position', '>=', $correctPosition)->increment('position');
 
         // Insert the new item
         TimelineItem::create([
