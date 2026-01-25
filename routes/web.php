@@ -2,20 +2,45 @@
 
 use App\Http\Controllers\Auth\SpotifyAuthController;
 use App\Http\Controllers\Auth\TidalAuthController;
-use App\Livewire\Room\Create;
-use App\Livewire\Room\Join;
-use App\Livewire\Room\Show;
+use App\Http\Controllers\Room\RoomActionController;
+use App\Http\Controllers\Room\RoomCreateController;
+use App\Http\Controllers\Room\RoomJoinController;
+use App\Http\Controllers\Room\RoomShowController;
+use App\Http\Controllers\Room\RoomStateController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/room/create', Create::class)->name('room.create');
-Route::get('/room/join', Join::class)->name('room.join');
-Route::get('/room/{code}', Show::class)
+Route::get('/__inertia', function () {
+    return Inertia::render('Test', [
+        'message' => 'If you can see this page, Phase 1 is wired up correctly.',
+    ]);
+})->name('inertia.test');
+
+Route::get('/room/create', [RoomCreateController::class, 'create'])->name('room.create');
+Route::post('/room/create', [RoomCreateController::class, 'store'])->name('room.create.store');
+
+Route::get('/room/join', [RoomJoinController::class, 'create'])->name('room.join');
+Route::post('/room/join', [RoomJoinController::class, 'store'])->name('room.join.store');
+
+Route::get('/room/{code}', RoomShowController::class)
     ->where('code', '[A-Z0-9]{6,8}')
     ->name('room.show');
+
+Route::prefix('/room/{code}')
+    ->where(['code' => '[A-Z0-9]{6,8}'])
+    ->group(function (): void {
+        Route::get('/state', RoomStateController::class)->name('room.state');
+
+        Route::post('/provider', [RoomActionController::class, 'setPlaybackProvider'])->name('room.provider');
+        Route::post('/start', [RoomActionController::class, 'start'])->name('room.start');
+        Route::post('/place', [RoomActionController::class, 'place'])->name('room.place');
+        Route::post('/reveal', [RoomActionController::class, 'reveal'])->name('room.reveal');
+        Route::post('/next', [RoomActionController::class, 'next'])->name('room.next');
+    });
 
 Route::middleware(['auth'])->group(function (): void {
     // TIDAL OAuth routes

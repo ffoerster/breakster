@@ -17,6 +17,9 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
-        "sortablejs": "^1.15.6"
+        "@inertiajs/vue3": "^2.3.11",
+        "@vitejs/plugin-vue": "^6.0.3",
+        "sortablejs": "^1.15.6",
+        "vue": "^3.5.27"
     }
 }

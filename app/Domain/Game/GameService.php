@@ -15,6 +15,7 @@ use App\Events\RoundRevealed;
 use App\Events\RoundStarted;
 use App\Models\Pack;
 use App\Models\Placement;
+use App\Models\Provider;
 use App\Models\Room;
 use App\Models\RoomPlayer;
 use App\Models\RoomUsedTrack;
@@ -131,12 +132,12 @@ class GameService
     public function startRound(Room $room): Round
     {
         // Validate state
-        if (!$room->state->canStartRound()) {
+        if (! $room->state->canStartRound()) {
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
         // Require playback provider to be selected
-        if (!$room->playback_provider_id) {
+        if (! $room->playback_provider_id) {
             throw new \DomainException('Playback provider not selected.');
         }
 
@@ -144,9 +145,14 @@ class GameService
 
         // Get available tracks
         $usedTrackIds = $room->usedTrackIds();
-        $track = $room->pack->activeTracks()->whereNotIn('id', $usedTrackIds)->inRandomOrder()->first();
+        $track = $room->pack
+            ->activeTracks()
+            ->where('provider_id', $room->playback_provider_id)
+            ->whereNotIn('id', $usedTrackIds)
+            ->inRandomOrder()
+            ->first();
 
-        if (!$track) {
+        if (! $track) {
             // No more tracks available
             $room->update(['state' => RoomState::Finished]);
 
@@ -220,7 +226,7 @@ class GameService
 
             foreach ($players as $index => $player) {
                 $track = $tracks->get($index);
-                if (!$track) {
+                if (! $track) {
                     continue;
                 }
 
@@ -238,13 +244,38 @@ class GameService
         });
     }
 
+    public function setPlaybackProvider(Room $room, Provider $provider): void
+    {
+        if (! $room->isInLobby()) {
+            throw new \RuntimeException('Playback provider can only be changed in the lobby.');
+        }
+
+        if (! $provider->is_active) {
+            throw new \RuntimeException('Playback provider is not active.');
+        }
+
+        if (! in_array($provider->key, ['spotify', 'tidal'], true)) {
+            throw new \RuntimeException('Playback provider is not supported.');
+        }
+
+        DB::transaction(function () use ($room, $provider): void {
+            $room->update([
+                'playback_provider_id' => $provider->id,
+            ]);
+
+            DB::afterCommit(function () use ($room): void {
+                event(new RoomStateChanged($room->code, $room->state, $room->current_round_id));
+            });
+        });
+    }
+
     /**
      * Submit a placement for the current round.
      */
     public function submitPlacement(RoomPlayer $player, Round $round, ?int $insertAfterTrackId = null): Placement
     {
         // Validate round is active
-        if (!$round->isActive()) {
+        if (! $round->isActive()) {
             throw new \RuntimeException('This round is not active.');
         }
 
@@ -258,7 +289,7 @@ class GameService
         if ($insertAfterTrackId !== null) {
             $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
 
-            if (!$hasTrack) {
+            if (! $hasTrack) {
                 throw new \RuntimeException('Invalid track reference for placement.');
             }
         }
@@ -401,8 +432,8 @@ class GameService
     public function reorderTimeline(RoomPlayer $player, array $orderedTrackIds): void
     {
         $orderedTrackIds = collect($orderedTrackIds)
-            ->map(fn($id) => (int) $id)
-            ->filter(fn(int $id): bool => $id > 0)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id): bool => $id > 0)
             ->values()
             ->all();
 
@@ -417,7 +448,7 @@ class GameService
                 /** @var TimelineItem|null $item */
                 $item = $items->get($trackId);
 
-                if (!$item) {
+                if (! $item) {
                     throw new \RuntimeException('Invalid timeline reorder request.');
                 }
 
@@ -433,7 +464,11 @@ class GameService
     {
         $usedTrackIds = $room->usedTrackIds();
 
-        return !$room->pack->activeTracks()->whereNotIn('id', $usedTrackIds)->exists();
+        return ! $room->pack
+            ->activeTracks()
+            ->where('provider_id', $room->playback_provider_id)
+            ->whereNotIn('id', $usedTrackIds)
+            ->exists();
     }
 
     /**

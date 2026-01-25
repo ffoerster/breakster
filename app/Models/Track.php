@@ -72,6 +72,23 @@ class Track extends Model
         return $this->preview_url ?? $this->external_url;
     }
 
+    public function playbackUrlForProvider(Provider $provider): ?string
+    {
+        if ((int) $this->provider_id !== (int) $provider->id) {
+            return null;
+        }
+
+        if (! $this->provider_track_id) {
+            return null;
+        }
+
+        return match ($provider->key) {
+            'spotify' => "https://open.spotify.com/track/{$this->provider_track_id}",
+            'tidal' => "https://tidal.com/browse/track/{$this->provider_track_id}",
+            default => null,
+        };
+    }
+
     public function externalUrlForProvider(Provider $provider): string
     {
         $searchQuery = urlencode("{$this->artist} {$this->title}");
