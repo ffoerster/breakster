@@ -51,6 +51,16 @@ class SpotifyPlaybackService
     }
 
     /**
+     * Pause playback on a device.
+     */
+    public function pausePlayback(?User $user, string $deviceId): void
+    {
+        $token = $this->getValidToken($user);
+
+        $this->apiClient->pausePlayback($deviceId, $token);
+    }
+
+    /**
      * Get a valid access token for the user or guest, refreshing if necessary.
      */
     private function getValidToken(?User $user): string
@@ -119,6 +129,7 @@ class SpotifyPlaybackService
 
         $credentials = base64_encode("{$clientId}:{$clientSecret}");
 
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::asForm()
             ->withHeaders([
                 'Authorization' => "Basic {$credentials}",
@@ -168,6 +179,7 @@ class SpotifyPlaybackService
 
         $credentials = base64_encode("{$clientId}:{$clientSecret}");
 
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::asForm()
             ->withHeaders([
                 'Authorization' => "Basic {$credentials}",

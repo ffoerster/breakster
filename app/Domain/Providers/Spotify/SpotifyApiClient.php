@@ -349,10 +349,32 @@ class SpotifyApiClient
     }
 
     /**
+     * Pause playback on a device.
+     */
+    public function pausePlayback(string $deviceId, string $accessToken): void
+    {
+        $response = $this->putWithoutBody("me/player/pause?device_id={$deviceId}", $accessToken);
+
+        if ($response->status() === 403) {
+            throw new RuntimeException('Spotify Premium required for playback control.');
+        }
+
+        if ($response->status() === 404) {
+            // No active device / player state; treat as a no-op.
+            return;
+        }
+
+        if (!$response->successful() && $response->status() !== 204) {
+            $this->handleErrorResponse($response, 'me/player/pause');
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $query
      */
     private function get(string $endpoint, string $accessToken, array $query = []): Response
     {
+        /** @var Response $response */
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
             'Accept' => 'application/json',
@@ -378,6 +400,7 @@ class SpotifyApiClient
      */
     private function put(string $endpoint, string $accessToken, array $body = []): Response
     {
+        /** @var Response $response */
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
             'Content-Type' => 'application/json',
@@ -393,6 +416,28 @@ class SpotifyApiClient
             sleep(min($retryAfter, 60)); // Cap at 60 seconds
 
             return $this->put($endpoint, $accessToken, $body);
+        }
+
+        return $response;
+    }
+
+    private function putWithoutBody(string $endpoint, string $accessToken): Response
+    {
+        /** @var Response $response */
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$accessToken}",
+            'Content-Type' => 'application/json',
+        ])->put(self::BASE_URL . '/' . ltrim($endpoint, '/'));
+
+        if ($response->status() === 429) {
+            $retryAfter = (int) ($response->header('Retry-After') ?? 1);
+            Log::warning('Spotify API rate limited', [
+                'endpoint' => $endpoint,
+                'retry_after' => $retryAfter,
+            ]);
+            sleep(min($retryAfter, 60));
+
+            return $this->putWithoutBody($endpoint, $accessToken);
         }
 
         return $response;

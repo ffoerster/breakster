@@ -11,6 +11,7 @@ use App\Http\Requests\SetPlaybackProviderRequest;
 use App\Http\Requests\SubmitPlacementRequest;
 use App\Models\Provider;
 use App\Models\Room;
+use App\Domain\Providers\Spotify\SpotifyPlaybackService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -118,12 +119,30 @@ class RoomActionController extends Controller
     }
 
     public function next(
+        \Illuminate\Http\Request $request,
         string $code,
         RoomSession $roomSession,
         GameService $gameService,
+        SpotifyPlaybackService $spotifyPlaybackService,
     ): JsonResponse {
         $room = $this->room($code);
         $roomSession->requireHost($room);
+
+        $room->loadMissing('playbackProvider');
+
+        if ($room->playbackProvider?->key === 'spotify' && $room->spotify_device_id) {
+            $hasSpotifyToken = $request->user()
+                ? $request->user()->providerTokens()->where('provider_key', 'spotify')->exists()
+                : session()->has('spotify.guest_token');
+
+            if ($hasSpotifyToken) {
+                try {
+                    $spotifyPlaybackService->pausePlayback($request->user(), $room->spotify_device_id);
+                } catch (\RuntimeException) {
+                    // Best effort - do not block the game flow.
+                }
+            }
+        }
 
         try {
             $gameService->nextRound($room);
