@@ -16,5 +16,10 @@ class ProviderSeeder extends Seeder
             ['key' => 'tidal'],
             ['name' => 'TIDAL', 'is_active' => true],
         );
+
+        Provider::updateOrCreate(
+            ['key' => 'spotify'],
+            ['name' => 'Spotify', 'is_active' => true],
+        );
     }
 }

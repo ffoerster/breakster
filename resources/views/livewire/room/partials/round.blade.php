@@ -52,17 +52,19 @@
                     <source src="{{ $track->preview_url }}" type="audio/mpeg">
                     Your browser does not support the audio element.
                 </audio>
-            @else
+            @endif
+
+            @if ($room->playbackProvider)
                 <a
-                    href="{{ $track->external_url }}"
+                    href="{{ $track->externalUrlForProvider($room->playbackProvider) }}"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex items-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition"
+                    class="inline-flex items-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition {{ $track->preview_url ? 'mt-4' : '' }}"
                 >
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
                     </svg>
-                    Play in TIDAL
+                    Open in {{ $room->playbackProvider->name }}
                 </a>
             @endif
         </div>

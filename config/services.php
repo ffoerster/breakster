@@ -40,4 +40,11 @@ return [
         'redirect_uri' => env('TIDAL_REDIRECT_URI'),
         'country_code' => env('TIDAL_COUNTRY_CODE', 'DE'),
     ],
+
+    'spotify' => [
+        'client_id' => env('SPOTIFY_CLIENT_ID'),
+        'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
+        'redirect_uri' => env('SPOTIFY_REDIRECT_URI'),
+        'market' => env('SPOTIFY_MARKET', 'DE'),
+    ],
 ];

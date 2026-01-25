@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\SpotifyAuthController;
 use App\Http\Controllers\Auth\TidalAuthController;
 use App\Livewire\Room\Create;
 use App\Livewire\Room\Join;
@@ -17,7 +18,13 @@ Route::get('/room/{code}', Show::class)
     ->name('room.show');
 
 Route::middleware(['auth'])->group(function (): void {
+    // TIDAL OAuth routes
     Route::get('/auth/tidal/connect', [TidalAuthController::class, 'connect'])->name('tidal.connect');
     Route::get('/auth/tidal/callback', [TidalAuthController::class, 'callback'])->name('tidal.callback');
     Route::post('/auth/tidal/disconnect', [TidalAuthController::class, 'disconnect'])->name('tidal.disconnect');
+
+    // Spotify OAuth routes
+    Route::get('/auth/spotify/connect', [SpotifyAuthController::class, 'connect'])->name('spotify.connect');
+    Route::get('/auth/spotify/callback', [SpotifyAuthController::class, 'callback'])->name('spotify.callback');
+    Route::post('/auth/spotify/disconnect', [SpotifyAuthController::class, 'disconnect'])->name('spotify.disconnect');
 });

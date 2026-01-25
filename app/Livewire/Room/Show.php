@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Livewire\Room;
 
+use App\Domain\Game\Enums\RoomState;
 use App\Domain\Game\GameService;
+use App\Events\RoomStateChanged;
+use App\Models\Provider;
 use App\Models\Room;
 use App\Models\RoomPlayer;
+use Illuminate\Support\Collection;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
@@ -56,6 +60,39 @@ class Show extends Component
         return $this->currentPlayer?->is_host ?? false;
     }
 
+    /**
+     * @return Collection<int, Provider>
+     */
+    #[Computed]
+    public function playbackProviders(): Collection
+    {
+        return Provider::query()
+            ->whereIn('key', ['spotify', 'tidal'])
+            ->where('is_active', true)
+            ->get();
+    }
+
+    public function setPlaybackProvider(int $providerId): void
+    {
+        if (!$this->isHost) {
+            abort(403, 'Only the host can select the playback provider.');
+        }
+
+        if ($this->room->state !== RoomState::Lobby) {
+            return;
+        }
+
+        $provider = Provider::query()
+            ->whereIn('key', ['spotify', 'tidal'])
+            ->where('is_active', true)
+            ->findOrFail($providerId);
+
+        $this->room->update(['playback_provider_id' => $provider->id]);
+        $this->room->refresh();
+
+        event(new RoomStateChanged($this->room->code, $this->room->state, $this->room->current_round_id));
+    }
+
     public function startRound(GameService $gameService): void
     {
         if (!$this->isHost) {
@@ -64,7 +101,7 @@ class Show extends Component
 
         try {
             $gameService->startRound($this->room);
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException|\DomainException $e) {
             session()->flash('error', $e->getMessage());
         }
     }
@@ -221,7 +258,7 @@ class Show extends Component
      */
     private function refreshRoom(): void
     {
-        $this->room->load(['pack', 'players', 'currentRound']);
+        $this->room->load(['pack', 'players', 'currentRound', 'playbackProvider']);
         $this->room->refresh();
     }
 

@@ -135,6 +135,11 @@ class GameService
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
+        // Require playback provider to be selected
+        if (!$room->playback_provider_id) {
+            throw new \DomainException('Playback provider not selected.');
+        }
+
         $this->ensureSeedCards($room);
 
         // Get available tracks

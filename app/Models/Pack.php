@@ -16,6 +16,7 @@ class Pack extends Model
         'name',
         'description',
         'tidal_source',
+        'spotify_source',
         'is_active',
     ];
 

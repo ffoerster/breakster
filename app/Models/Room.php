@@ -18,6 +18,7 @@ class Room extends Model
         'code',
         'host_user_id',
         'pack_id',
+        'playback_provider_id',
         'state',
         'current_round_id',
     ];
@@ -32,6 +33,11 @@ class Room extends Model
     public function pack(): BelongsTo
     {
         return $this->belongsTo(Pack::class);
+    }
+
+    public function playbackProvider(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class, 'playback_provider_id');
     }
 
     public function host(): BelongsTo
