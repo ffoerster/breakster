@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Packs\Tables;
 
+use App\Domain\Providers\Tidal\TidalAdminTokenService;
+use App\Domain\Providers\Tidal\TidalUrlParser;
 use App\Jobs\ImportTidalTracksJob;
 use App\Models\Pack;
 use Filament\Actions\Action;
@@ -15,6 +17,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use InvalidArgumentException;
 
 class PacksTable
 {
@@ -47,17 +50,35 @@ class PacksTable
                     ->label('Import from TIDAL')
                     ->icon(Heroicon::ArrowDownTray)
                     ->modalHeading('Import from TIDAL')
-                    ->modalDescription('Paste a TIDAL playlist/album URL or ID. This will enqueue a database-backed job to import/refresh tracks for this pack.')
+                    ->modalDescription('Paste a TIDAL track or playlist URL (or type track:<id> / playlist:<id>). This will enqueue a database-backed job to import/refresh tracks for this pack.')
                     ->form([
                         TextInput::make('source')
-                            ->label('Playlist/album URL or ID')
+                            ->label('Track/playlist URL or ID')
                             ->required()
                             ->maxLength(255),
                     ])
                     ->action(function (array $data, Pack $record): void {
-                        $record->update([
-                            'tidal_source' => $data['source'],
-                        ]);
+                        try {
+                            $parsed = app(TidalUrlParser::class)->parse($data['source']);
+                        } catch (InvalidArgumentException $e) {
+                            Notification::make()
+                                ->title('Invalid TIDAL source')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        if ($parsed['type'] === 'playlist' && ! app(TidalAdminTokenService::class)->hasValidToken()) {
+                            Notification::make()
+                                ->title('Connect TIDAL to import playlists')
+                                ->body('Playlists require an admin connection. Open a pack and use the "Connect TIDAL" action first.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
 
                         ImportTidalTracksJob::dispatch($record->id, $data['source']);
 

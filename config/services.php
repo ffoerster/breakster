@@ -36,9 +36,10 @@ return [
     ],
 
     'tidal' => [
-        'mock' => env('TIDAL_MOCK', true),
         'client_id' => env('TIDAL_CLIENT_ID'),
         'client_secret' => env('TIDAL_CLIENT_SECRET'),
+        'redirect_uri' => env('TIDAL_REDIRECT_URI'),
+        'country_code' => env('TIDAL_COUNTRY_CODE', 'DE'),
     ],
 
 ];

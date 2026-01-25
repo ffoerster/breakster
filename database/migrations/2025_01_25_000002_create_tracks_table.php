@@ -11,10 +11,11 @@ return new class extends Migration
         Schema::create('tracks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pack_id')->constrained()->cascadeOnDelete();
-            $table->string('provider')->default('tidal');
-            $table->string('provider_track_id');
+            $table->foreignId('provider_id')->constrained()->cascadeOnDelete();
+            $table->string('provider_track_id')->index();
             $table->string('title');
             $table->string('artist');
+            $table->string('label')->nullable();
             $table->date('release_date');
             $table->string('artwork_url')->nullable();
             $table->string('preview_url')->nullable();
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('difficulty')->nullable();
             $table->timestamps();
 
-            $table->unique(['pack_id', 'provider', 'provider_track_id']);
+            $table->unique(['pack_id', 'provider_id', 'provider_track_id']);
             $table->index(['pack_id', 'is_active']);
             $table->index('release_date');
         });

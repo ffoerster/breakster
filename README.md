@@ -126,12 +126,24 @@ VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 5. Submit placement → Host sees update instantly
 6. Reveal → Both see results instantly
 
-TIDAL env vars
+TIDAL integration
 
-The MVP import pipeline supports a mocked client so you can test the end-to-end flow (admin action -> queued job -> DB upserts) without credentials.
+Required env vars in `.env`:
 
 ```dotenv
-TIDAL_MOCK=true
 TIDAL_CLIENT_ID=
 TIDAL_CLIENT_SECRET=
+TIDAL_REDIRECT_URI=https://breakster.ddev.site/auth/tidal/callback
+TIDAL_COUNTRY_CODE=DE
 ```
+
+Admin connect flow
+
+1) Open Filament: `https://breakster.ddev.site/admin`
+2) Open a Pack and click `Connect TIDAL`
+3) Complete the TIDAL OAuth flow
+
+Import examples
+
+- Track: `https://tidal.com/browse/track/<id>` or `track:<id>`
+- Playlist: `https://tidal.com/browse/playlist/<id>` or `playlist:<id>`
