@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  app:
+    image: itrcglobe/breakster:latest
+    ports:
+      - "80:80"
+    environment:
+      - APP_ENV=production
+      - APP_KEY=${APP_KEY}
+      - DB_HOST=db
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+    volumes:
+      - storage:/var/www/html/storage
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  queue:
+    image: itrcglobe/breakster:latest
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    environment:
+      - APP_ENV=production
+      - APP_KEY=${APP_KEY}
+      - DB_HOST=db
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+    volumes:
+      - storage:/var/www/html/storage
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  reverb:
+    image: itrcglobe/breakster:latest
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+      - APP_KEY=${APP_KEY}
+      - DB_HOST=db
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REVERB_APP_ID=${REVERB_APP_ID}
+      - REVERB_APP_KEY=${REVERB_APP_KEY}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  storage:
+  db-data:
+  redis-data:

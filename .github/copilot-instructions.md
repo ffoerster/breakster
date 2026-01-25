@@ -450,3 +450,31 @@ Authenticate before testing panel functionality. Filament uses Livewire, so use 
 - File visibility is `private` by default. Use `->visibility('public')` for public access.
 - `Grid`, `Section`, and `Fieldset` no longer span all columns by default.
 </laravel-boost-guidelines>
+
+## Breakster Project Rules
+
+### Architecture Overview
+Breakster is a timeline-based music party game where players chronologically place tracks in rooms. Core architecture uses Domain-Driven Design with business logic in `app/Domain/Game/`. GameService orchestrates room lifecycle, rounds, and scoring. Real-time updates via Laravel Reverb broadcast events to scoped channels (`room.{code}`).
+
+### Key Patterns
+- **Models**: Use `casts()` method instead of `$casts` property (e.g., `app/Models/Room.php`). Enums for states/statuses (e.g., `RoomState`, `RoundStatus`).
+- **Controllers**: Inject `GameService` and `RoomSession` for game actions. Room actions require host validation via `RoomSession::requireHost()`.
+- **Events**: All game events implement `ShouldBroadcast` and broadcast minimal payloads (IDs only) to prevent data leaks. Test with `Event::fake()` in Pest.
+- **Broadcasting**: Channels scoped by room code for security. Client listens via Echo in `resources/js/room-echo.js`.
+- **Domain Services**: Placement validation, scoring, and code generation in `app/Domain/Game/`. Use DTOs for complex returns (e.g., `PlacementResult`).
+- **Filament Admin**: Resources split into separate schema/table files (e.g., `app/Filament/Resources/Packs/`).
+
+### Critical Workflows
+- **Development**: Use DDEV (`ddev start`, `ddev composer install`, `ddev php artisan migrate --seed`).
+- **Real-time Testing**: Run `ddev php artisan reverb:start` in background for WebSocket updates.
+- **Queue Jobs**: `ddev php artisan queue:work` for track imports (Spotify/Tidal).
+- **Frontend**: `ddev npm run dev` for hot reload; `ddev npm run build` for production.
+- **Testing**: `ddev php artisan test` with Pest. Fake events for broadcasting tests (e.g., `Event::assertDispatched(RoomStateChanged::class)`).
+
+### Conventions
+- Tracks never stream full audio; use `preview_url` for HTML5 `<audio>` or `external_url` for deep links.
+- Room codes: 6-8 uppercase alphanumeric, generated via `RoomCodeGenerator`.
+- Placements: `inserted_after_track_id` null means start of timeline.
+- Imports: Queue jobs for Tidal/Spotify; admin connects via OAuth in Filament.
+
+Reference: `README.md` for setup, `app/Domain/Game/GameService.php` for logic, `tests/Feature/EventBroadcastingTest.php` for testing patterns.

@@ -1,0 +1,48 @@
+# Git
+.git
+.github
+.gitignore
+.gitattributes
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Development
+.ddev
+.vscode
+.claude
+.editorconfig
+.mcp.json
+node_modules
+vendor
+*.log
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+
+# Testing
+tests
+phpunit.xml
+
+# Build artifacts
+public/build
+public/hot
+
+# Documentation
+*.md
+!README.md
+
+# Lock files (we'll copy them explicitly)
+# composer.lock
+# package-lock.json
+
+# Other
+opencode.json
+boost.json
+release.sh
+Dockerfile
+.dockerignore
