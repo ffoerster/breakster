@@ -1,0 +1,387 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Game;
+
+use App\Domain\Game\DTOs\PlacementResult;
+use App\Domain\Game\DTOs\RoundSummary;
+use App\Domain\Game\Enums\RoomState;
+use App\Domain\Game\Enums\RoundStatus;
+use App\Models\Pack;
+use App\Models\Placement;
+use App\Models\Room;
+use App\Models\RoomPlayer;
+use App\Models\Round;
+use App\Models\TimelineItem;
+use App\Models\Track;
+use App\Models\User;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+
+class GameService
+{
+    public function __construct(
+        private readonly RoomCodeGenerator $codeGenerator,
+        private readonly PlacementValidator $placementValidator,
+        private readonly ScoreCalculator $scoreCalculator,
+    ) {}
+
+    /**
+     * Create a new room with the given pack and host.
+     */
+    public function createRoom(
+        Pack $pack,
+        ?User $host = null,
+        ?string $guestDisplayName = null
+    ): Room {
+        return DB::transaction(function () use ($pack, $host, $guestDisplayName) {
+            $room = Room::create([
+                'code' => $this->codeGenerator->generate(),
+                'host_user_id' => $host?->id,
+                'pack_id' => $pack->id,
+                'state' => RoomState::Lobby,
+            ]);
+
+            // Create host player
+            $displayName = $host?->name ?? $guestDisplayName ?? 'Host';
+
+            RoomPlayer::create([
+                'room_id' => $room->id,
+                'user_id' => $host?->id,
+                'display_name' => $displayName,
+                'session_id' => $host ? null : session()->getId(),
+                'is_host' => true,
+                'joined_at' => now(),
+            ]);
+
+            return $room;
+        });
+    }
+
+    /**
+     * Join an existing room by code.
+     */
+    public function joinRoom(
+        string $code,
+        ?User $user = null,
+        ?string $guestDisplayName = null
+    ): RoomPlayer {
+        $room = Room::where('code', strtoupper($code))->firstOrFail();
+
+        // Check if room is joinable
+        if ($room->state === RoomState::Finished) {
+            throw new \RuntimeException('This room has already finished.');
+        }
+
+        // Check for existing player
+        $existingPlayer = $this->findExistingPlayer($room, $user);
+        if ($existingPlayer) {
+            return $existingPlayer;
+        }
+
+        // Generate unique display name
+        $displayName = $this->ensureUniqueDisplayName(
+            $room,
+            $guestDisplayName ?? $user?->name ?? 'Player'
+        );
+
+        return RoomPlayer::create([
+            'room_id' => $room->id,
+            'user_id' => $user?->id,
+            'display_name' => $displayName,
+            'session_id' => $user ? null : session()->getId(),
+            'is_host' => false,
+            'joined_at' => now(),
+        ]);
+    }
+
+    /**
+     * Leave a room.
+     */
+    public function leaveRoom(RoomPlayer $player): void
+    {
+        $room = $player->room;
+        $wasHost = $player->is_host;
+
+        $player->delete();
+
+        if ($wasHost) {
+            // Transfer host to next player by join time
+            $newHost = $room->players()
+                ->orderBy('joined_at')
+                ->first();
+
+            if ($newHost) {
+                $newHost->update(['is_host' => true]);
+            } else {
+                // No players left, close room
+                $room->update(['state' => RoomState::Finished]);
+            }
+        }
+    }
+
+    /**
+     * Start a new round in the room.
+     */
+    public function startRound(Room $room): Round
+    {
+        // Validate state
+        if (! $room->state->canStartRound()) {
+            throw new \RuntimeException('Cannot start a round in the current state.');
+        }
+
+        // Get available tracks
+        $usedTrackIds = $room->usedTrackIds();
+        $track = $room->pack
+            ->activeTracks()
+            ->whereNotIn('id', $usedTrackIds)
+            ->inRandomOrder()
+            ->first();
+
+        if (! $track) {
+            // No more tracks available
+            $room->update(['state' => RoomState::Finished]);
+
+            throw new \RuntimeException('No more tracks available.');
+        }
+
+        return DB::transaction(function () use ($room, $track) {
+            // Calculate round number
+            $roundNumber = $room->rounds()->count() + 1;
+
+            $round = Round::create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+                'round_number' => $roundNumber,
+                'status' => RoundStatus::Active,
+                'started_at' => now(),
+            ]);
+
+            $room->update([
+                'state' => RoomState::InRound,
+                'current_round_id' => $round->id,
+            ]);
+
+            return $round;
+        });
+    }
+
+    /**
+     * Submit a placement for the current round.
+     */
+    public function submitPlacement(
+        RoomPlayer $player,
+        Round $round,
+        ?int $insertAfterTrackId = null
+    ): Placement {
+        // Validate round is active
+        if (! $round->isActive()) {
+            throw new \RuntimeException('This round is not active.');
+        }
+
+        // Check if player already placed
+        $existingPlacement = $round->getPlacementForPlayer($player);
+        if ($existingPlacement) {
+            throw new \RuntimeException('You have already submitted a placement for this round.');
+        }
+
+        // Validate insertAfterTrackId is in player's timeline (if not null)
+        if ($insertAfterTrackId !== null) {
+            $hasTrack = $player->timelineItems()
+                ->where('track_id', $insertAfterTrackId)
+                ->exists();
+
+            if (! $hasTrack) {
+                throw new \RuntimeException('Invalid track reference for placement.');
+            }
+        }
+
+        return Placement::create([
+            'round_id' => $round->id,
+            'room_player_id' => $player->id,
+            'inserted_after_track_id' => $insertAfterTrackId,
+            'is_correct' => null, // Will be set during reveal
+            'points_earned' => 0,
+        ]);
+    }
+
+    /**
+     * Check if all players have submitted placements.
+     */
+    public function allPlayersSubmitted(Round $round): bool
+    {
+        return $round->allPlayersSubmitted();
+    }
+
+    /**
+     * Reveal the round and calculate scores.
+     */
+    public function revealRound(Round $round): RoundSummary
+    {
+        $room = $round->room;
+        $track = $round->track;
+
+        return DB::transaction(function () use ($round, $room, $track) {
+            $results = collect();
+
+            foreach ($round->placements as $placement) {
+                $player = $placement->player;
+
+                // Check correctness
+                $isCorrect = $this->placementValidator->isCorrect(
+                    $player,
+                    $track,
+                    $placement->inserted_after_track_id
+                );
+
+                // Calculate points
+                $secondsToSubmit = $round->started_at
+                    ? $placement->created_at->diffInSeconds($round->started_at)
+                    : 0;
+                $points = $this->scoreCalculator->calculatePoints($isCorrect, (int) $secondsToSubmit);
+
+                // Update placement
+                $placement->update([
+                    'is_correct' => $isCorrect,
+                    'points_earned' => $points,
+                ]);
+
+                // If correct, add to timeline and update score
+                if ($isCorrect) {
+                    $this->addToTimeline($player, $track);
+                    $player->addScore($points);
+                }
+
+                $result = $isCorrect
+                    ? PlacementResult::correct($placement->fresh(), $points)
+                    : PlacementResult::incorrect($placement->fresh());
+
+                $results->put($player->id, $result);
+            }
+
+            // Update round status
+            $round->update([
+                'status' => RoundStatus::Revealed,
+                'revealed_at' => now(),
+            ]);
+
+            // Update room state
+            $room->update(['state' => RoomState::Reveal]);
+
+            return RoundSummary::fromRound($round->fresh(), $results);
+        });
+    }
+
+    /**
+     * Proceed to next round or finish game.
+     */
+    public function nextRound(Room $room): ?Round
+    {
+        // Mark current round as done
+        if ($room->current_round_id) {
+            $room->currentRound?->update(['status' => RoundStatus::Done]);
+        }
+
+        try {
+            return $this->startRound($room);
+        } catch (\RuntimeException $e) {
+            // No more tracks - game is finished
+            return null;
+        }
+    }
+
+    /**
+     * Get leaderboard for room.
+     *
+     * @return Collection<int, array{player: RoomPlayer, score: int, rank: int}>
+     */
+    public function getLeaderboard(Room $room): Collection
+    {
+        $players = $room->players()
+            ->orderByDesc('score')
+            ->orderBy('joined_at')
+            ->get();
+
+        $rank = 0;
+        $lastScore = null;
+        $sameRankCount = 0;
+
+        return $players->map(function (RoomPlayer $player) use (&$rank, &$lastScore, &$sameRankCount) {
+            if ($lastScore !== $player->score) {
+                $rank += 1 + $sameRankCount;
+                $sameRankCount = 0;
+            } else {
+                $sameRankCount++;
+            }
+            $lastScore = $player->score;
+
+            return [
+                'player' => $player,
+                'score' => $player->score,
+                'rank' => $rank,
+            ];
+        });
+    }
+
+    /**
+     * Check if game should end (no more tracks available).
+     */
+    public function isGameComplete(Room $room): bool
+    {
+        $usedTrackIds = $room->usedTrackIds();
+
+        return ! $room->pack
+            ->activeTracks()
+            ->whereNotIn('id', $usedTrackIds)
+            ->exists();
+    }
+
+    /**
+     * Find existing player in room for user or session.
+     */
+    private function findExistingPlayer(Room $room, ?User $user): ?RoomPlayer
+    {
+        if ($user) {
+            return $room->players()->where('user_id', $user->id)->first();
+        }
+
+        return $room->players()->where('session_id', session()->getId())->first();
+    }
+
+    /**
+     * Ensure display name is unique in the room.
+     */
+    private function ensureUniqueDisplayName(Room $room, string $baseName): string
+    {
+        $name = $baseName;
+        $suffix = 1;
+
+        while ($room->players()->where('display_name', $name)->exists()) {
+            $suffix++;
+            $name = "{$baseName} ({$suffix})";
+        }
+
+        return $name;
+    }
+
+    /**
+     * Add a track to player's timeline at the correct position.
+     */
+    private function addToTimeline(RoomPlayer $player, Track $track): void
+    {
+        $correctPosition = $this->placementValidator->findCorrectPosition($player, $track);
+
+        // Shift existing items at or after this position
+        $player->timelineItems()
+            ->where('position', '>=', $correctPosition)
+            ->increment('position');
+
+        // Insert the new item
+        TimelineItem::create([
+            'room_player_id' => $player->id,
+            'track_id' => $track->id,
+            'position' => $correctPosition,
+        ]);
+    }
+}

@@ -1,0 +1,63 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Track extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'pack_id',
+        'provider',
+        'provider_track_id',
+        'title',
+        'artist',
+        'release_date',
+        'artwork_url',
+        'preview_url',
+        'external_url',
+        'is_active',
+        'difficulty',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'release_date' => 'date',
+            'is_active' => 'boolean',
+            'difficulty' => 'integer',
+        ];
+    }
+
+    public function pack(): BelongsTo
+    {
+        return $this->belongsTo(Pack::class);
+    }
+
+    public function rounds(): HasMany
+    {
+        return $this->hasMany(Round::class);
+    }
+
+    public function timelineItems(): HasMany
+    {
+        return $this->hasMany(TimelineItem::class);
+    }
+
+    public function hasPreview(): bool
+    {
+        return $this->preview_url !== null;
+    }
+
+    public function getPlayUrl(): ?string
+    {
+        return $this->preview_url ?? $this->external_url;
+    }
+}
