@@ -372,12 +372,6 @@ class GameService
             throw new \RuntimeException('This round is not active.');
         }
 
-        // Check if player already placed
-        $existingPlacement = $round->getPlacementForPlayer($player);
-        if ($existingPlacement) {
-            throw new \RuntimeException('You have already submitted a placement for this round.');
-        }
-
         // Validate insertAfterTrackId is in player's timeline (if not null)
         if ($insertAfterTrackId !== null) {
             $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
@@ -387,18 +381,24 @@ class GameService
             }
         }
 
-        $placement = Placement::create([
+
+        $placement = Placement::query()->firstOrNew([
             'round_id' => $round->id,
             'room_player_id' => $player->id,
+        ]);
+
+        $placement->fill([
             'inserted_after_track_id' => $insertAfterTrackId,
             'is_correct' => null, // Will be set during reveal
             'points_earned' => 0,
         ]);
 
+        $placement->save();
+
         // Broadcast placement submitted
         event(new PlacementSubmitted($player->room->code, $round->id, $player->id));
 
-        return $placement;
+        return $placement->fresh();
     }
 
     /**

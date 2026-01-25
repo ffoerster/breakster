@@ -106,12 +106,21 @@ class RoomStateData
      */
     private function me(Room $room, RoomPlayer $me): array
     {
+        $placementInsertedAfterTrackId = null;
+
+        if ($room->currentRound) {
+            $placementInsertedAfterTrackId = $room->currentRound
+                ->getPlacementForPlayer($me)
+                ?->inserted_after_track_id;
+        }
+
         return [
             'id' => $me->id,
             'display_name' => $me->display_name,
             'score' => $me->score,
             'is_host' => $me->is_host,
             'has_placed' => $room->currentRound ? $me->hasPlacementForRound($room->currentRound) : false,
+            'placement_inserted_after_track_id' => $placementInsertedAfterTrackId,
         ];
     }
 

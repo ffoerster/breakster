@@ -226,15 +226,23 @@ describe('GameService::submitPlacement', function () {
             ->and($placement->round_id)->toBe($round->id);
     });
 
-    it('throws exception for duplicate placement', function () {
+    it('updates a placement when submitted again', function () {
         $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
         $player = $room->players->first();
         $round = $this->gameService->startRound($room);
 
-        $this->gameService->submitPlacement($player, $round, null);
+        $existingTrack = Track::factory()->for($this->pack)->create();
+        TimelineItem::create([
+            'room_player_id' => $player->id,
+            'track_id' => $existingTrack->id,
+            'position' => 0,
+        ]);
 
-        expect(fn () => $this->gameService->submitPlacement($player, $round, null))
-            ->toThrow(\RuntimeException::class, 'You have already submitted a placement for this round.');
+        $this->gameService->submitPlacement($player, $round, null);
+        $updated = $this->gameService->submitPlacement($player, $round, $existingTrack->id);
+
+        expect($updated->inserted_after_track_id)->toBe($existingTrack->id)
+            ->and(Placement::query()->where('round_id', $round->id)->where('room_player_id', $player->id)->count())->toBe(1);
     });
 
     it('throws exception for inactive round', function () {

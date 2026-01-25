@@ -31,6 +31,10 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    isPlacing: {
+        type: Boolean,
+        required: true,
+    },
     placeError: {
         type: String,
         required: true,
@@ -67,7 +71,51 @@ let mysterySortable = null;
 let placementSortable = null;
 
 const shouldEnablePlacementDnd = computed(() => {
+    return Boolean(!props.isPlacementLocked);
+});
+
+const shouldEnableMysterySourceDnd = computed(() => {
     return Boolean(!props.isPlacementLocked && !props.state.me?.has_placed);
+});
+
+const placementIndex = computed(() => {
+    if (!props.state.me?.has_placed) {
+        return null;
+    }
+
+    const afterId = props.state.me?.placement_inserted_after_track_id ?? null;
+    const timeline = props.state.timeline ?? [];
+
+    if (afterId === null) {
+        return 0;
+    }
+
+    const afterIndex = timeline.findIndex((t) => t.track_id === afterId);
+    if (afterIndex === -1) {
+        return 0;
+    }
+
+    return afterIndex + 1;
+});
+
+const timelineRenderItems = computed(() => {
+    const timeline = props.state.timeline ?? [];
+
+    const items = timeline.map((t) => ({
+        kind: 'track',
+        ...t,
+    }));
+
+    if (placementIndex.value === null) {
+        return items;
+    }
+
+    items.splice(placementIndex.value, 0, {
+        kind: 'mystery',
+        id: 'mystery',
+    });
+
+    return items;
 });
 
 const destroyPlacementDnD = () => {
@@ -89,21 +137,23 @@ const initPlacementDnD = () => {
 
     destroyPlacementDnD();
 
-    mysterySortable = Sortable.create(mysterySourceEl.value, {
-        group: {
-            name: 'placement',
-            pull: 'clone',
-            put: false,
-        },
-        sort: false,
-        animation: 150,
-        ghostClass: 'opacity-60',
-        dragClass: 'opacity-90',
-        delay: 120,
-        delayOnTouchOnly: true,
-        touchStartThreshold: 5,
-        fallbackOnBody: true,
-    });
+    if (shouldEnableMysterySourceDnd.value) {
+        mysterySortable = Sortable.create(mysterySourceEl.value, {
+            group: {
+                name: 'placement',
+                pull: 'clone',
+                put: false,
+            },
+            sort: false,
+            animation: 150,
+            ghostClass: 'opacity-60',
+            dragClass: 'opacity-90',
+            delay: 120,
+            delayOnTouchOnly: true,
+            touchStartThreshold: 5,
+            fallbackOnBody: true,
+        });
+    }
 
     placementSortable = Sortable.create(placementListEl.value, {
         group: {
@@ -111,12 +161,20 @@ const initPlacementDnD = () => {
             pull: false,
             put: true,
         },
-        sort: false,
+        sort: true,
+        draggable: '.timeline-item',
+        filter: '.timeline-track',
+        preventOnFilter: false,
         animation: 150,
         ghostClass: 'opacity-60',
         fallbackOnBody: true,
         swapThreshold: 0.65,
         onAdd: async (evt) => {
+            if (props.isPlacementLocked) {
+                evt.item.remove();
+                return;
+            }
+
             const newIndex = evt.newIndex;
             const timeline = props.state.timeline ?? [];
 
@@ -126,6 +184,25 @@ const initPlacementDnD = () => {
             }
 
             evt.item.remove();
+
+            await props.place(insertedAfterTrackId);
+        },
+        onEnd: async (evt) => {
+            if (props.isPlacementLocked) {
+                return;
+            }
+
+            if (!evt.item?.classList?.contains('timeline-guess')) {
+                return;
+            }
+
+            const newIndex = evt.newIndex;
+            const timeline = props.state.timeline ?? [];
+
+            let insertedAfterTrackId = null;
+            if (typeof newIndex === 'number' && newIndex > 0) {
+                insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
+            }
 
             await props.place(insertedAfterTrackId);
         },
@@ -144,6 +221,17 @@ watch(
         }
     },
     { immediate: true },
+);
+
+watch(
+    () => shouldEnableMysterySourceDnd.value,
+    async () => {
+        await nextTick();
+
+        if (shouldEnablePlacementDnd.value) {
+            initPlacementDnD();
+        }
+    },
 );
 
 onMounted(async () => {
@@ -252,14 +340,16 @@ const placementsProgress = computed(() => {
                     <div
                         ref="mysterySourceEl"
                         class="select-none"
-                        :class="isPlacementLocked || state.me.has_placed ? 'opacity-50' : ''"
+                        :class="isPlacementLocked ? 'opacity-50' : ''"
                     >
                         <div
-                            class="flex items-center gap-3 p-4 bg-linear-to-r from-purple-600/30 to-pink-600/30 border-2 border-purple-500/50 rounded-lg"
+                            class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-purple-600/30 to-pink-600/30 border-2 border-purple-500/50 rounded-lg"
                             :class="
-                                isPlacementLocked || state.me.has_placed
+                                isPlacementLocked
                                     ? 'cursor-not-allowed'
-                                    : 'cursor-grab active:cursor-grabbing'
+                                    : state.me.has_placed
+                                        ? 'cursor-default'
+                                        : 'cursor-grab active:cursor-grabbing'
                             "
                         >
                             <div class="w-16 h-16 rounded bg-purple-900/60 flex items-center justify-center shrink-0">
@@ -273,9 +363,29 @@ const placementsProgress = computed(() => {
                                 <div class="text-2xl font-black text-purple-300">???</div>
                                 <div class="text-sm text-gray-300 font-medium">Mystery Track</div>
                                 <div class="text-xs text-gray-400 mt-1">
-                                    <span v-if="state.me.has_placed">Placed</span>
-                                    <span v-else-if="isPlacementLocked">Locked</span>
+                                    <span v-if="isPlacementLocked">Locked</span>
+                                    <span v-else-if="state.me.has_placed">Move it in your timeline</span>
                                     <span v-else>Drag into your timeline</span>
+                                </div>
+                            </div>
+
+                            <div class="w-10 h-10 shrink-0 flex items-center justify-center">
+                                <div
+                                    v-if="isPlacing"
+                                    class="w-6 h-6 rounded-full border-2 border-gray-300/30 border-t-gray-200 animate-spin"
+                                />
+                                <div
+                                    v-else-if="state.me.has_placed"
+                                    class="w-8 h-8 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center"
+                                    title="Placement saved"
+                                >
+                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
                                 </div>
                             </div>
                         </div>
@@ -305,7 +415,7 @@ const placementsProgress = computed(() => {
                         v-if="state.me.has_placed"
                         class="p-4 bg-green-500/20 border border-green-500 rounded-lg text-center mb-4"
                     >
-                        You've placed your guess! Waiting for other players…
+                        Your guess is saved. You can change it until reveal.
                     </div>
 
                     <div v-if="placeError" class="p-4 bg-red-500/20 border border-red-500 rounded-lg text-center mb-4">
@@ -314,7 +424,7 @@ const placementsProgress = computed(() => {
 
                     <div class="text-sm text-gray-400 mb-3">
                         <span v-if="!state.me.has_placed">Drop the mystery card between years.</span>
-                        <span v-else>Timeline updates after reveal.</span>
+                        <span v-else>Drag your guess within the timeline to update it.</span>
                     </div>
 
                     <ul
@@ -327,24 +437,62 @@ const placementsProgress = computed(() => {
                         "
                     >
                         <li
-                            v-for="item in (state.timeline ?? [])"
-                            :key="item.track_id"
-                            class="flex items-center gap-3 p-4 bg-gray-700/30 rounded-lg"
+                            v-for="item in timelineRenderItems"
+                            :key="item.kind === 'track' ? item.track_id : item.id"
+                            class="flex items-center gap-3 p-4 rounded-lg"
+                            :class="
+                                item.kind === 'mystery'
+                                    ? 'timeline-item timeline-guess bg-purple-500/10 border border-purple-500/30 cursor-grab active:cursor-grabbing'
+                                    : 'timeline-item timeline-track bg-gray-700/30'
+                            "
                         >
-                            <img
-                                v-if="item.artwork_url"
-                                :src="item.artwork_url"
-                                alt=""
-                                class="w-16 h-16 rounded object-cover shrink-0"
-                            />
-                            <div v-else class="w-16 h-16 rounded bg-gray-600 shrink-0" />
-                            <div class="flex-1 min-w-0">
-                                <div class="text-2xl md:text-3xl font-black text-purple-400 leading-none mb-1">
-                                    {{ item.year }}
+                            <template v-if="item.kind === 'track'">
+                                <img
+                                    v-if="item.artwork_url"
+                                    :src="item.artwork_url"
+                                    alt=""
+                                    class="w-16 h-16 rounded object-cover shrink-0"
+                                />
+                                <div v-else class="w-16 h-16 rounded bg-gray-600 shrink-0" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-2xl md:text-3xl font-black text-purple-400 leading-none mb-1">
+                                        {{ item.year }}
+                                    </div>
+                                    <div class="font-medium truncate">{{ item.title }}</div>
+                                    <div class="text-sm text-gray-400 truncate">{{ item.artist }}</div>
                                 </div>
-                                <div class="font-medium truncate">{{ item.title }}</div>
-                                <div class="text-sm text-gray-400 truncate">{{ item.artist }}</div>
-                            </div>
+                            </template>
+
+                            <template v-else>
+                                <div class="w-16 h-16 rounded bg-purple-900/50 flex items-center justify-center shrink-0">
+                                    <svg class="w-8 h-8 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
+                                        />
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-2xl md:text-3xl font-black text-purple-200 leading-none mb-1">???</div>
+                                    <div class="font-medium truncate">Your guess</div>
+                                    <div class="text-sm text-gray-400 truncate">Drag to reposition</div>
+                                </div>
+
+                                <div class="w-8 h-8 shrink-0 flex items-center justify-center">
+                                    <div
+                                        v-if="isPlacing"
+                                        class="w-5 h-5 rounded-full border-2 border-gray-300/30 border-t-gray-200 animate-spin"
+                                    />
+                                    <div v-else class="w-6 h-6 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </template>
                         </li>
                     </ul>
 

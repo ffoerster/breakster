@@ -57,6 +57,7 @@ const {
     canStart,
     place,
     placeError,
+    isPlacing,
     revealRound,
     nextRound,
     finishGame,
@@ -196,6 +197,7 @@ onBeforeUnmount(() => {
                 :copy-play-url="copyPlayUrl"
                 :remaining-seconds="remainingSeconds"
                 :is-placement-locked="isPlacementLocked"
+                :is-placing="isPlacing"
                 :place-error="placeError"
                 :place="place"
                 :reveal-round="revealRound"

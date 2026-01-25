@@ -92,7 +92,11 @@ export function useRoomState(props) {
     const isPlacing = ref(false);
 
     const place = async (insertedAfterTrackId) => {
-        if (!isInRound.value || state.me?.has_placed) {
+        if (!isInRound.value) {
+            return;
+        }
+
+        if (isPlacing.value) {
             return;
         }
 
