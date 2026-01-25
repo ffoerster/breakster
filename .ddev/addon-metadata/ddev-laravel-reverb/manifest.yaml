@@ -1,0 +1,7 @@
+name: ddev-laravel-reverb
+version: 1.0.1
+install_date: "2026-01-25T12:13:12+01:00"
+project_files:
+    - config.laravel-reverb.yaml
+global_files: []
+removal_actions: []

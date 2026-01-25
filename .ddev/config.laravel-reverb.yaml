@@ -1,0 +1,12 @@
+#ddev-generated
+
+ddev_version_constraint: '>=v1.23.0'
+web_extra_exposed_ports:
+  - name: reverb
+    container_port: 8080
+    http_port: 8081
+    https_port: 8080
+web_extra_daemons:
+  - name: reverb
+    command: bash -c 'php artisan reverb:start'
+    directory: /var/www/html
