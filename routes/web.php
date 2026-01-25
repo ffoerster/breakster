@@ -8,6 +8,7 @@ use App\Http\Controllers\Room\RoomCreateController;
 use App\Http\Controllers\Room\RoomJoinController;
 use App\Http\Controllers\Room\RoomShowController;
 use App\Http\Controllers\Room\RoomStateController;
+use App\Http\Controllers\Room\SpotifyDeviceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -32,9 +33,7 @@ Route::post('/room/create', [RoomCreateController::class, 'store'])->name('room.
 Route::get('/room/join', [RoomJoinController::class, 'create'])->name('room.join');
 Route::post('/room/join', [RoomJoinController::class, 'store'])->name('room.join.store');
 
-Route::get('/room/{code}', RoomShowController::class)
-    ->where('code', '[A-Z0-9]{6,8}')
-    ->name('room.show');
+Route::get('/room/{code}', RoomShowController::class)->where('code', '[A-Z0-9]{6,8}')->name('room.show');
 
 Route::prefix('/room/{code}')
     ->where(['code' => '[A-Z0-9]{6,8}'])
@@ -47,6 +46,11 @@ Route::prefix('/room/{code}')
         Route::post('/reveal', [RoomActionController::class, 'reveal'])->name('room.reveal');
         Route::post('/next', [RoomActionController::class, 'next'])->name('room.next');
         Route::post('/finish', [RoomActionController::class, 'finish'])->name('room.finish');
+
+        // Spotify device management routes (auth checked in controller)
+        Route::get('/spotify/devices', [SpotifyDeviceController::class, 'index'])->name('room.spotify.devices');
+        Route::post('/spotify/device', [SpotifyDeviceController::class, 'store'])->name('room.spotify.device');
+        Route::post('/spotify/play', [SpotifyDeviceController::class, 'play'])->name('room.spotify.play');
     });
 
 Route::middleware(['auth'])->group(function (): void {
@@ -54,9 +58,9 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/auth/tidal/connect', [TidalAuthController::class, 'connect'])->name('tidal.connect');
     Route::get('/auth/tidal/callback', [TidalAuthController::class, 'callback'])->name('tidal.callback');
     Route::post('/auth/tidal/disconnect', [TidalAuthController::class, 'disconnect'])->name('tidal.disconnect');
-
-    // Spotify OAuth routes
-    Route::get('/auth/spotify/connect', [SpotifyAuthController::class, 'connect'])->name('spotify.connect');
-    Route::get('/auth/spotify/callback', [SpotifyAuthController::class, 'callback'])->name('spotify.callback');
-    Route::post('/auth/spotify/disconnect', [SpotifyAuthController::class, 'disconnect'])->name('spotify.disconnect');
 });
+
+// Spotify OAuth routes (authentication checked in controller)
+Route::get('/auth/spotify/connect', [SpotifyAuthController::class, 'connect'])->name('spotify.connect');
+Route::get('/auth/spotify/callback', [SpotifyAuthController::class, 'callback'])->name('spotify.callback');
+Route::post('/auth/spotify/disconnect', [SpotifyAuthController::class, 'disconnect'])->name('spotify.disconnect');

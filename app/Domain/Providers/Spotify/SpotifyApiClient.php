@@ -35,13 +35,13 @@ class SpotifyApiClient
             'market' => $this->market,
         ]);
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             $this->handleErrorResponse($response, "tracks/{$id}");
         }
 
         $track = $response->json();
 
-        if (! is_array($track) || ! isset($track['id'])) {
+        if (!is_array($track) || !isset($track['id'])) {
             throw new RuntimeException('Unexpected Spotify response shape.');
         }
 
@@ -75,19 +75,21 @@ class SpotifyApiClient
             ]);
 
             if (in_array($response->status(), [401, 403], true)) {
-                throw new SpotifyPlaylistRequiresAdminTokenException('Spotify playlist access requires user authorization.');
+                throw new SpotifyPlaylistRequiresAdminTokenException(
+                    'Spotify playlist access requires user authorization.',
+                );
             }
 
-            if (! $response->successful()) {
+            if (!$response->successful()) {
                 $this->handleErrorResponse($response, "playlists/{$playlistId}/tracks");
             }
 
             $data = $response->json();
 
-            foreach (($data['items'] ?? []) as $item) {
+            foreach ($data['items'] ?? [] as $item) {
                 $track = $item['track'] ?? null;
 
-                if (! is_array($track) || ! isset($track['id'])) {
+                if (!is_array($track) || !isset($track['id'])) {
                     continue;
                 }
 
@@ -118,7 +120,7 @@ class SpotifyApiClient
             'market' => $this->market,
         ]);
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             return null;
         }
 
@@ -144,12 +146,15 @@ class SpotifyApiClient
 
         // Extract artists
         $artists = $track['artists'] ?? [];
-        $artistNames = array_map(fn ($a) => $a['name'] ?? '', $artists);
+        $artistNames = array_map(fn($a) => $a['name'] ?? '', $artists);
         $artist = implode(', ', array_filter($artistNames)) ?: 'Unknown Artist';
 
         // Extract album info
         $album = $track['album'] ?? [];
-        $releaseDate = $this->normalizeReleaseDate($album['release_date'] ?? null, $album['release_date_precision'] ?? null);
+        $releaseDate = $this->normalizeReleaseDate(
+            $album['release_date'] ?? null,
+            $album['release_date_precision'] ?? null,
+        );
         $artworkUrl = $this->extractArtworkUrl($album['images'] ?? []);
 
         // Fetch label from album (requires additional API call)
@@ -198,11 +203,14 @@ class SpotifyApiClient
         $title = (string) ($track['name'] ?? 'Unknown Title');
 
         $artists = $track['artists'] ?? [];
-        $artistNames = array_map(fn ($a) => $a['name'] ?? '', $artists);
+        $artistNames = array_map(fn($a) => $a['name'] ?? '', $artists);
         $artist = implode(', ', array_filter($artistNames)) ?: 'Unknown Artist';
 
         $album = $track['album'] ?? [];
-        $releaseDate = $this->normalizeReleaseDate($album['release_date'] ?? null, $album['release_date_precision'] ?? null);
+        $releaseDate = $this->normalizeReleaseDate(
+            $album['release_date'] ?? null,
+            $album['release_date_precision'] ?? null,
+        );
         $artworkUrl = $this->extractArtworkUrl($album['images'] ?? []);
 
         // Skip label for playlist imports (would require N+1 album API calls)
@@ -223,7 +231,7 @@ class SpotifyApiClient
 
     private function normalizeReleaseDate(?string $date, ?string $precision): string
     {
-        if (! is_string($date) || $date === '') {
+        if (!is_string($date) || $date === '') {
             return now()->format('Y-m-d');
         }
 
@@ -256,6 +264,91 @@ class SpotifyApiClient
     }
 
     /**
+     * Get available Spotify Connect devices for the user.
+     *
+     * @return array{devices: array<int, array{id: string, name: string, type: string, is_active: bool}>}
+     */
+    public function getDevices(string $accessToken): array
+    {
+        $response = $this->get('me/player/devices', $accessToken);
+
+        if ($response->status() === 403) {
+            throw new RuntimeException('Spotify Premium required for playback control.');
+        }
+
+        if (!$response->successful()) {
+            $this->handleErrorResponse($response, 'me/player/devices');
+        }
+
+        $data = $response->json();
+
+        return [
+            'devices' => array_map(fn($device) => [
+                'id' => (string) $device['id'],
+                'name' => (string) $device['name'],
+                'type' => (string) $device['type'],
+                'is_active' => (bool) $device['is_active'],
+            ], $data['devices'] ?? []),
+        ];
+    }
+
+    /**
+     * Transfer playback to a specific device.
+     */
+    public function transferPlayback(string $deviceId, string $accessToken, bool $play = false): void
+    {
+        $response = $this->put('me/player', $accessToken, [
+            'device_ids' => [$deviceId],
+            'play' => $play,
+        ]);
+
+        if ($response->status() === 403) {
+            throw new RuntimeException('Spotify Premium required for playback control.');
+        }
+
+        if ($response->status() === 404) {
+            throw new RuntimeException(
+                'No active Spotify device found. Open Spotify on a device and start playback once.',
+            );
+        }
+
+        if (!$response->successful() && $response->status() !== 204) {
+            $this->handleErrorResponse($response, 'me/player');
+        }
+    }
+
+    /**
+     * Start playback of a specific track on a device.
+     */
+    public function startPlayback(string $deviceId, string $trackUri, string $accessToken): void
+    {
+        $response = $this->put("me/player/play?device_id={$deviceId}", $accessToken, [
+            'uris' => [$trackUri],
+        ]);
+
+        if ($response->status() === 403) {
+            throw new RuntimeException('Spotify Premium required for playback control.');
+        }
+
+        if ($response->status() === 404) {
+            $body = $response->json();
+            $reason = $body['error']['reason'] ?? 'NO_ACTIVE_DEVICE';
+
+            if ($reason === 'NO_ACTIVE_DEVICE') {
+                throw new RuntimeException(
+                    'No active Spotify device found. Open Spotify on a device and start playback once.',
+                );
+            }
+
+            throw new RuntimeException('Spotify playback failed: ' . $reason);
+        }
+
+        if (!$response->successful() && $response->status() !== 204) {
+            $this->handleErrorResponse($response, 'me/player/play');
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $query
      */
     private function get(string $endpoint, string $accessToken, array $query = []): Response
@@ -263,7 +356,7 @@ class SpotifyApiClient
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
             'Accept' => 'application/json',
-        ])->get(self::BASE_URL.'/'.ltrim($endpoint, '/'), $query);
+        ])->get(self::BASE_URL . '/' . ltrim($endpoint, '/'), $query);
 
         // Handle rate limiting with Retry-After header
         if ($response->status() === 429) {
@@ -280,6 +373,31 @@ class SpotifyApiClient
         return $response;
     }
 
+    /**
+     * @param  array<string, mixed>  $body
+     */
+    private function put(string $endpoint, string $accessToken, array $body = []): Response
+    {
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$accessToken}",
+            'Content-Type' => 'application/json',
+        ])->withBody(json_encode($body), 'application/json')->put(self::BASE_URL . '/' . ltrim($endpoint, '/'));
+
+        // Handle rate limiting with Retry-After header
+        if ($response->status() === 429) {
+            $retryAfter = (int) ($response->header('Retry-After') ?? 1);
+            Log::warning('Spotify API rate limited', [
+                'endpoint' => $endpoint,
+                'retry_after' => $retryAfter,
+            ]);
+            sleep(min($retryAfter, 60)); // Cap at 60 seconds
+
+            return $this->put($endpoint, $accessToken, $body);
+        }
+
+        return $response;
+    }
+
     private function handleErrorResponse(Response $response, string $endpoint): never
     {
         $this->debugLogUnsuccessfulResponse($response, $endpoint);
@@ -288,7 +406,7 @@ class SpotifyApiClient
 
     private function debugLogUnsuccessfulResponse(Response $response, string $endpoint): void
     {
-        if (! app()->environment('local')) {
+        if (!app()->environment('local')) {
             return;
         }
 

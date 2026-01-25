@@ -19,6 +19,7 @@ class Room extends Model
         'host_user_id',
         'pack_id',
         'playback_provider_id',
+        'spotify_device_id',
         'state',
         'current_round_id',
     ];

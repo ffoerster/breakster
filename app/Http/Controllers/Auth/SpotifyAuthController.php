@@ -22,16 +22,16 @@ class SpotifyAuthController extends Controller
     public function connect(Request $request): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user?->is_admin === true, 403);
+        $isGuest = !$user;
 
         $clientId = config('services.spotify.client_id');
         $redirectUri = config('services.spotify.redirect_uri');
 
-        if (! is_string($clientId) || $clientId === '') {
+        if (!is_string($clientId) || $clientId === '') {
             throw new RuntimeException('SPOTIFY_CLIENT_ID is not configured.');
         }
 
-        if (! is_string($redirectUri) || $redirectUri === '') {
+        if (!is_string($redirectUri) || $redirectUri === '') {
             throw new RuntimeException('SPOTIFY_REDIRECT_URI is not configured.');
         }
 
@@ -43,29 +43,30 @@ class SpotifyAuthController extends Controller
             'spotify.oauth.state' => $state,
             'spotify.oauth.code_verifier' => $codeVerifier,
             'spotify.oauth.redirect' => $request->string('redirect')->toString(),
+            'spotify.oauth.is_guest' => $isGuest,
         ]);
 
         $query = http_build_query([
             'response_type' => 'code',
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
-            'scope' => 'playlist-read-private playlist-read-collaborative',
+            'scope' => 'playlist-read-private playlist-read-collaborative user-modify-playback-state user-read-playback-state',
             'code_challenge' => $codeChallenge,
             'code_challenge_method' => 'S256',
             'state' => $state,
         ]);
 
-        return redirect()->away(self::AUTHORIZE_ENDPOINT.'?'.$query);
+        return redirect()->away(self::AUTHORIZE_ENDPOINT . '?' . $query);
     }
 
     public function callback(Request $request, SpotifyAdminTokenService $adminTokenService): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user?->is_admin === true, 403);
+        $isGuest = $request->session()->pull('spotify.oauth.is_guest', false);
 
         $expectedState = $request->session()->pull('spotify.oauth.state');
         $codeVerifier = $request->session()->pull('spotify.oauth.code_verifier');
-        $redirectTo = $request->session()->pull('spotify.oauth.redirect') ?: '/admin';
+        $redirectTo = $request->session()->pull('spotify.oauth.redirect') ?: ($isGuest ? '/' : '/admin');
 
         $state = $request->string('state')->toString();
         $code = $request->string('code')->toString();
@@ -78,15 +79,15 @@ class SpotifyAuthController extends Controller
         $clientSecret = config('services.spotify.client_secret');
         $redirectUri = config('services.spotify.redirect_uri');
 
-        if (! is_string($clientId) || $clientId === '') {
+        if (!is_string($clientId) || $clientId === '') {
             throw new RuntimeException('SPOTIFY_CLIENT_ID is not configured.');
         }
 
-        if (! is_string($clientSecret) || $clientSecret === '') {
+        if (!is_string($clientSecret) || $clientSecret === '') {
             throw new RuntimeException('SPOTIFY_CLIENT_SECRET is not configured.');
         }
 
-        if (! is_string($redirectUri) || $redirectUri === '') {
+        if (!is_string($redirectUri) || $redirectUri === '') {
             throw new RuntimeException('SPOTIFY_REDIRECT_URI is not configured.');
         }
 
@@ -104,26 +105,37 @@ class SpotifyAuthController extends Controller
                 'code_verifier' => $codeVerifier,
             ]);
 
-        if (! $response->successful()) {
-            throw new RuntimeException('Failed to obtain Spotify token: '.$response->body());
+        if (!$response->successful()) {
+            throw new RuntimeException('Failed to obtain Spotify token: ' . $response->body());
         }
 
         $data = $response->json();
 
-        if (! isset($data['access_token'], $data['expires_in'])) {
-            throw new RuntimeException('Invalid token response from Spotify: '.$response->body());
+        if (!isset($data['access_token'], $data['expires_in'])) {
+            throw new RuntimeException('Invalid token response from Spotify: ' . $response->body());
         }
 
         $expiresAt = CarbonImmutable::now()->addSeconds((int) $data['expires_in']);
         $scopes = $this->normalizeScopes($data['scope'] ?? null);
 
-        $adminTokenService->storeTokenForUser(
-            user: $user,
-            accessToken: (string) $data['access_token'],
-            refreshToken: isset($data['refresh_token']) ? (string) $data['refresh_token'] : null,
-            expiresAt: $expiresAt,
-            scopes: $scopes,
-        );
+        if ($isGuest) {
+            // Store tokens in session for guest users
+            $request->session()->put('spotify.guest_token', [
+                'access_token' => (string) $data['access_token'],
+                'refresh_token' => isset($data['refresh_token']) ? (string) $data['refresh_token'] : null,
+                'expires_at' => $expiresAt->toIso8601String(),
+                'scopes' => $scopes,
+            ]);
+        } else {
+            // Store in database for authenticated users
+            $adminTokenService->storeTokenForUser(
+                user: $user,
+                accessToken: (string) $data['access_token'],
+                refreshToken: isset($data['refresh_token']) ? (string) $data['refresh_token'] : null,
+                expiresAt: $expiresAt,
+                scopes: $scopes,
+            );
+        }
 
         $request->session()->flash('spotify.connected', true);
 
@@ -133,11 +145,14 @@ class SpotifyAuthController extends Controller
     public function disconnect(Request $request): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user?->is_admin === true, 403);
 
-        $user->providerTokens()
-            ->where('provider_key', 'spotify')
-            ->delete();
+        if ($user) {
+            // Remove from database for authenticated users
+            $user->providerTokens()->where('provider_key', 'spotify')->delete();
+        } else {
+            // Remove from session for guests
+            $request->session()->forget('spotify.guest_token');
+        }
 
         $request->session()->flash('spotify.disconnected', true);
 
@@ -169,7 +184,7 @@ class SpotifyAuthController extends Controller
      */
     private function normalizeScopes(?string $scopes): array
     {
-        if (! is_string($scopes) || $scopes === '') {
+        if (!is_string($scopes) || $scopes === '') {
             return [];
         }
 

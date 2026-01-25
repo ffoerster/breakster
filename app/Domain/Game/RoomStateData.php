@@ -33,6 +33,7 @@ class RoomStateData
             'pack',
             'playbackProvider',
             'players',
+            'host.providerTokens',
             'currentRound.track',
             'currentRound.placements.player',
             'currentRound.placements.insertedAfterTrack',
@@ -40,7 +41,7 @@ class RoomStateData
 
         $me = $this->roomSession->currentPlayer($room);
 
-        if (! $me) {
+        if (!$me) {
             return [
                 'room' => $this->room($room, null),
                 'me' => null,
@@ -76,13 +77,28 @@ class RoomStateData
                 'spotify_tracks_count' => $room->pack->spotify_tracks_count ?? null,
                 'tidal_tracks_count' => $room->pack->tidal_tracks_count ?? null,
             ],
-            'playback_provider' => $room->playbackProvider ? [
-                'id' => $room->playbackProvider->id,
-                'key' => $room->playbackProvider->key,
-                'name' => $room->playbackProvider->name,
-            ] : null,
+            'playback_provider' => $room->playbackProvider
+                ? [
+                    'id' => $room->playbackProvider->id,
+                    'key' => $room->playbackProvider->key,
+                    'name' => $room->playbackProvider->name,
+                ] : null,
+            'host_user_id' => $room->host_user_id,
+            'spotify_device_id' => $room->spotify_device_id,
+            'host_has_spotify_token' => $this->hostHasSpotifyToken($room),
             'is_host' => (bool) ($me?->is_host ?? false),
         ];
+    }
+
+    private function hostHasSpotifyToken(Room $room): bool
+    {
+        // Check database for authenticated hosts
+        if ($room->host_user_id && $room->host) {
+            return $room->host->providerTokens()->where('provider_key', 'spotify')->exists();
+        }
+
+        // Check session for guest hosts
+        return session()->has('spotify.guest_token');
     }
 
     /**
@@ -108,7 +124,7 @@ class RoomStateData
             ->players
             ->sortBy('joined_at')
             ->values()
-            ->map(fn (RoomPlayer $player): array => [
+            ->map(fn(RoomPlayer $player): array => [
                 'id' => $player->id,
                 'display_name' => $player->display_name,
                 'score' => $player->score,
@@ -127,7 +143,7 @@ class RoomStateData
             ->whereIn('key', ['spotify', 'tidal'])
             ->where('is_active', true)
             ->get()
-            ->map(fn (Provider $provider): array => [
+            ->map(fn(Provider $provider): array => [
                 'id' => $provider->id,
                 'key' => $provider->key,
                 'name' => $provider->name,
@@ -140,7 +156,7 @@ class RoomStateData
      */
     private function round(Room $room, ?RoomPlayer $me): ?array
     {
-        if (! $room->currentRound) {
+        if (!$room->currentRound) {
             return null;
         }
 
@@ -182,7 +198,7 @@ class RoomStateData
 
             $base['placements'] = $round
                 ->placements
-                ->map(fn ($placement): array => [
+                ->map(fn($placement): array => [
                     'id' => $placement->id,
                     'player' => [
                         'id' => $placement->player->id,
@@ -209,21 +225,15 @@ class RoomStateData
     private function timeline(RoomPlayer $me): array
     {
         /** @var Collection<int, TimelineItem> $items */
-        $items = $me
-            ->timelineItems()
-            ->with('track')
-            ->orderBy('position')
-            ->get();
+        $items = $me->timelineItems()->with('track')->orderBy('position')->get();
 
-        return $items
-            ->map(fn (TimelineItem $item): array => [
-                'track_id' => $item->track_id,
-                'position' => $item->position,
-                'year' => $item->track->release_date->format('Y'),
-                'title' => $item->track->title,
-                'artist' => $item->track->artist,
-                'artwork_url' => $item->track->artwork_url,
-            ])
-            ->all();
+        return $items->map(fn(TimelineItem $item): array => [
+            'track_id' => $item->track_id,
+            'position' => $item->position,
+            'year' => $item->track->release_date->format('Y'),
+            'title' => $item->track->title,
+            'artist' => $item->track->artist,
+            'artwork_url' => $item->track->artwork_url,
+        ])->all();
     }
 }

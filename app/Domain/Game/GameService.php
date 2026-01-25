@@ -8,6 +8,7 @@ use App\Domain\Game\DTOs\PlacementResult;
 use App\Domain\Game\DTOs\RoundSummary;
 use App\Domain\Game\Enums\RoomState;
 use App\Domain\Game\Enums\RoundStatus;
+use App\Domain\Providers\Spotify\SpotifyPlaybackService;
 use App\Events\PlacementSubmitted;
 use App\Events\RoomPlayersUpdated;
 use App\Events\RoomStateChanged;
@@ -25,6 +26,7 @@ use App\Models\Track;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GameService
 {
@@ -32,6 +34,7 @@ class GameService
         private readonly RoomCodeGenerator $codeGenerator,
         private readonly PlacementValidator $placementValidator,
         private readonly ScoreCalculator $scoreCalculator,
+        private readonly ?SpotifyPlaybackService $spotifyPlayback = null,
     ) {}
 
     /**
@@ -158,12 +161,12 @@ class GameService
     public function startRound(Room $room): Round
     {
         // Validate state
-        if (! $room->state->canStartRound()) {
+        if (!$room->state->canStartRound()) {
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
         // Require playback provider to be selected
-        if (! $room->playback_provider_id) {
+        if (!$room->playback_provider_id) {
             throw new \DomainException('Playback provider not selected.');
         }
 
@@ -171,14 +174,15 @@ class GameService
 
         // Get available tracks
         $usedTrackIds = $room->usedTrackIds();
-        $track = $room->pack
+        $track = $room
+            ->pack
             ->activeTracks()
             ->where('provider_id', $room->playback_provider_id)
             ->whereNotIn('id', $usedTrackIds)
             ->inRandomOrder()
             ->first();
 
-        if (! $track) {
+        if (!$track) {
             // No more tracks available
             $room->update(['state' => RoomState::Finished]);
 
@@ -212,13 +216,76 @@ class GameService
             ]);
 
             // Broadcast events after transaction commits
-            DB::afterCommit(function () use ($room, $round) {
+            DB::afterCommit(function () use ($room, $round, $track) {
                 event(new RoundStarted($room->code, $round->id, $round->round_number, $round->placement_unlocks_at));
                 event(new RoomStateChanged($room->code, RoomState::InRound, $round->id));
+
+                // Trigger Spotify playback if configured
+                $this->triggerSpotifyPlayback($room, $track);
             });
 
             return $round;
         });
+    }
+
+    /**
+     * Attempt to start Spotify playback for the round track.
+     * Failures are logged but do not fail the round.
+     */
+    private function triggerSpotifyPlayback(Room $room, Track $track): void
+    {
+        // Only trigger if Spotify is the provider and device is configured
+        if (!$room->playbackProvider || $room->playbackProvider->key !== 'spotify') {
+            return;
+        }
+
+        if (!$room->spotify_device_id || !$room->host_user_id) {
+            return;
+        }
+
+        // Require Spotify playback service
+        if (!$this->spotifyPlayback) {
+            Log::warning('SpotifyPlaybackService not available for room', [
+                'room_code' => $room->code,
+            ]);
+
+            return;
+        }
+
+        // Get Spotify track URI
+        $spotifyTrackId = $track->provider_track_id;
+        if (!$spotifyTrackId) {
+            Log::info('Track has no Spotify provider_track_id, skipping auto-play', [
+                'room_code' => $room->code,
+                'track_id' => $track->id,
+            ]);
+
+            return;
+        }
+
+        $spotifyUri = "spotify:track:{$spotifyTrackId}";
+
+        try {
+            $room->load('host');
+            $host = $room->host; // Can be null for guest hosts
+
+            $this->spotifyPlayback->startPlayback($host, $room->spotify_device_id, $spotifyUri);
+
+            Log::info('Spotify playback started successfully', [
+                'room_code' => $room->code,
+                'track_uri' => $spotifyUri,
+                'device_id' => $room->spotify_device_id,
+            ]);
+        } catch (\Throwable $e) {
+            // Log the error but don't fail the round
+            Log::error('Failed to start Spotify playback', [
+                'room_code' => $room->code,
+                'error' => $e->getMessage(),
+                'track_uri' => $spotifyUri,
+            ]);
+
+            // TODO: Broadcast a playback.failed event for UI feedback
+        }
     }
 
     public function ensureSeedCards(Room $room): void
@@ -252,7 +319,7 @@ class GameService
 
             foreach ($players as $index => $player) {
                 $track = $tracks->get($index);
-                if (! $track) {
+                if (!$track) {
                     continue;
                 }
 
@@ -272,15 +339,15 @@ class GameService
 
     public function setPlaybackProvider(Room $room, Provider $provider): void
     {
-        if (! $room->isInLobby()) {
+        if (!$room->isInLobby()) {
             throw new \RuntimeException('Playback provider can only be changed in the lobby.');
         }
 
-        if (! $provider->is_active) {
+        if (!$provider->is_active) {
             throw new \RuntimeException('Playback provider is not active.');
         }
 
-        if (! in_array($provider->key, ['spotify', 'tidal'], true)) {
+        if (!in_array($provider->key, ['spotify', 'tidal'], true)) {
             throw new \RuntimeException('Playback provider is not supported.');
         }
 
@@ -301,7 +368,7 @@ class GameService
     public function submitPlacement(RoomPlayer $player, Round $round, ?int $insertAfterTrackId = null): Placement
     {
         // Validate round is active
-        if (! $round->isActive()) {
+        if (!$round->isActive()) {
             throw new \RuntimeException('This round is not active.');
         }
 
@@ -315,7 +382,7 @@ class GameService
         if ($insertAfterTrackId !== null) {
             $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
 
-            if (! $hasTrack) {
+            if (!$hasTrack) {
                 throw new \RuntimeException('Invalid track reference for placement.');
             }
         }
@@ -458,8 +525,8 @@ class GameService
     public function reorderTimeline(RoomPlayer $player, array $orderedTrackIds): void
     {
         $orderedTrackIds = collect($orderedTrackIds)
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id): bool => $id > 0)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn(int $id): bool => $id > 0)
             ->values()
             ->all();
 
@@ -474,7 +541,7 @@ class GameService
                 /** @var TimelineItem|null $item */
                 $item = $items->get($trackId);
 
-                if (! $item) {
+                if (!$item) {
                     throw new \RuntimeException('Invalid timeline reorder request.');
                 }
 
@@ -490,7 +557,8 @@ class GameService
     {
         $usedTrackIds = $room->usedTrackIds();
 
-        return ! $room->pack
+        return !$room
+            ->pack
             ->activeTracks()
             ->where('provider_id', $room->playback_provider_id)
             ->whereNotIn('id', $usedTrackIds)
