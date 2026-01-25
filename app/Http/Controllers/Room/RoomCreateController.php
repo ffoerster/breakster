@@ -36,7 +36,7 @@ class RoomCreateController extends Controller
             ])
             ->orderBy('name')
             ->get()
-            ->map(fn (Pack $pack): array => [
+            ->map(fn(Pack $pack): array => [
                 'id' => $pack->id,
                 'name' => $pack->name,
                 'description' => $pack->description,

@@ -2,10 +2,10 @@
 
 use App\Http\Controllers\Auth\SpotifyAuthController;
 use App\Http\Controllers\Auth\TidalAuthController;
+use App\Http\Controllers\PackImageController;
 use App\Http\Controllers\Play\PlayRedirectController;
 use App\Http\Controllers\Room\RoomActionController;
 use App\Http\Controllers\Room\RoomCreateController;
-use App\Http\Controllers\PackImageController;
 use App\Http\Controllers\Room\RoomJoinController;
 use App\Http\Controllers\Room\RoomShowController;
 use App\Http\Controllers\Room\RoomStateController;
