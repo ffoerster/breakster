@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Packs\Tables;
 
+use App\Jobs\ImportTidalTracksJob;
 use App\Models\Pack;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -46,7 +47,7 @@ class PacksTable
                     ->label('Import from TIDAL')
                     ->icon(Heroicon::ArrowDownTray)
                     ->modalHeading('Import from TIDAL')
-                    ->modalDescription('Paste a TIDAL playlist/album URL or ID. (Import execution is wired in Epic F; for now this saves the source on the pack.)')
+                    ->modalDescription('Paste a TIDAL playlist/album URL or ID. This will enqueue a database-backed job to import/refresh tracks for this pack.')
                     ->form([
                         TextInput::make('source')
                             ->label('Playlist/album URL or ID')
@@ -58,9 +59,11 @@ class PacksTable
                             'tidal_source' => $data['source'],
                         ]);
 
+                        ImportTidalTracksJob::dispatch($record->id, $data['source']);
+
                         Notification::make()
-                            ->title('Saved TIDAL source')
-                            ->body('Next: wire this to the queued import job (Epic F).')
+                            ->title('Import queued')
+                            ->body('The import job has been queued. Run `ddev php artisan queue:work` to process it.')
                             ->success()
                             ->send();
                     }),

@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'tidal' => [
+        'mock' => env('TIDAL_MOCK', true),
+        'client_id' => env('TIDAL_CLIENT_ID'),
+        'client_secret' => env('TIDAL_CLIENT_SECRET'),
+    ],
+
 ];

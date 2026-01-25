@@ -21,9 +21,11 @@ class TrackForm
                     ->required(),
                 TextInput::make('provider')
                     ->default('tidal')
-                    ->disabled(),
+                    ->required()
+                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
                 TextInput::make('provider_track_id')
-                    ->disabled(),
+                    ->required()
+                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
                 TextInput::make('title')
                     ->required(),
                 TextInput::make('artist')
