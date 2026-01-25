@@ -1,5 +1,7 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3';
+import AppLayout from '../Layouts/AppLayout.vue';
+import GlassCard from '../Components/Ui/GlassCard.vue';
 
 const props = defineProps({
     initial_display_name: {
@@ -23,19 +25,11 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col">
-        <header class="py-4 px-6">
-            <Link href="/" class="text-2xl font-bold text-purple-400 hover:text-purple-300 transition">
-                Breakster
-            </Link>
-        </header>
+    <AppLayout container-class="w-full max-w-md">
+        <GlassCard class="p-8">
+            <h1 class="text-3xl font-bold text-center mb-8">Join a Room</h1>
 
-        <main class="flex-1 flex items-center justify-center px-4 py-8">
-            <div class="w-full max-w-md">
-                <div class="bg-gray-800/50 backdrop-blur rounded-2xl shadow-xl p-8">
-                    <h1 class="text-3xl font-bold text-center mb-8">Join a Room</h1>
-
-                    <form @submit.prevent="submit" class="space-y-6">
+            <form @submit.prevent="submit" class="space-y-6">
                         <div>
                             <label for="code" class="block text-sm font-medium text-gray-300 mb-2">Room Code</label>
                             <input
@@ -76,17 +70,14 @@ const submit = () => {
                         >
                             {{ form.processing ? 'Joining…' : 'Join Room' }}
                         </button>
-                    </form>
 
-                    <div class="mt-6 text-center">
-                        <Link href="/room/create" class="text-purple-400 hover:text-purple-300 transition">
-                            Or create a new room
-                        </Link>
-                    </div>
-                </div>
+            </form>
+
+            <div class="mt-6 text-center">
+                <Link href="/room/create" class="text-purple-400 hover:text-purple-300 transition">
+                    Or create a new room
+                </Link>
             </div>
-        </main>
-
-        <footer class="py-4 text-center text-gray-500 text-sm">A timeline music game</footer>
-    </div>
+        </GlassCard>
+    </AppLayout>
 </template>
