@@ -4,7 +4,7 @@ use App\Domain\Providers\Tidal\TidalUrlParser;
 
 describe('TidalUrlParser', function () {
     beforeEach(function () {
-        $this->parser = new TidalUrlParser;
+        $this->parser = new TidalUrlParser();
     });
 
     it('parses track URL with browse path', function () {

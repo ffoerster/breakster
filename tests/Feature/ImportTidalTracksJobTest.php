@@ -50,15 +50,16 @@ describe('ImportTidalTracksJob', function () {
                 ],
                 'included' => [
                     ['type' => 'artist', 'id' => 'artist-1', 'attributes' => ['name' => 'Test Artist']],
-                    ['type' => 'album', 'id' => 'album-1', 'attributes' => ['label' => 'Test Label', 'releaseDate' => '2024-01-15']],
+                    [
+                        'type' => 'album',
+                        'id' => 'album-1',
+                        'attributes' => ['label' => 'Test Label', 'releaseDate' => '2024-01-15'],
+                    ],
                 ],
             ], 200),
         ]);
 
-        $job = new ImportTidalTracksJob(
-            packId: $this->pack->id,
-            source: 'https://tidal.com/browse/track/123',
-        );
+        $job = new ImportTidalTracksJob(packId: $this->pack->id, source: 'https://tidal.com/browse/track/123');
 
         $job->handle(
             app(TidalUrlParser::class),
@@ -98,10 +99,7 @@ describe('ImportTidalTracksJob', function () {
 
         $source = 'https://tidal.com/browse/track/123';
 
-        $job = new ImportTidalTracksJob(
-            packId: $this->pack->id,
-            source: $source,
-        );
+        $job = new ImportTidalTracksJob(packId: $this->pack->id, source: $source);
 
         $job->handle(
             app(TidalUrlParser::class),
@@ -134,10 +132,7 @@ describe('ImportTidalTracksJob', function () {
         ]);
 
         // First import
-        $job1 = new ImportTidalTracksJob(
-            packId: $this->pack->id,
-            source: 'https://tidal.com/browse/track/123',
-        );
+        $job1 = new ImportTidalTracksJob(packId: $this->pack->id, source: 'https://tidal.com/browse/track/123');
         $job1->handle(
             app(TidalUrlParser::class),
             app(TidalApiClient::class),
@@ -148,10 +143,7 @@ describe('ImportTidalTracksJob', function () {
         $initialCount = Track::where('pack_id', $this->pack->id)->count();
 
         // Second import of same source
-        $job2 = new ImportTidalTracksJob(
-            packId: $this->pack->id,
-            source: 'https://tidal.com/browse/track/123',
-        );
+        $job2 = new ImportTidalTracksJob(packId: $this->pack->id, source: 'https://tidal.com/browse/track/123');
         $job2->handle(
             app(TidalUrlParser::class),
             app(TidalApiClient::class),
@@ -185,10 +177,7 @@ describe('ImportTidalTracksJob', function () {
 
         Provider::where('key', 'tidal')->delete();
 
-        $job = new ImportTidalTracksJob(
-            packId: $this->pack->id,
-            source: 'https://tidal.com/browse/track/123',
-        );
+        $job = new ImportTidalTracksJob(packId: $this->pack->id, source: 'https://tidal.com/browse/track/123');
 
         $job->handle(
             app(TidalUrlParser::class),
@@ -220,10 +209,7 @@ describe('ImportTidalTracksJob', function () {
             ], 200),
         ]);
 
-        $job = new ImportTidalTracksJob(
-            packId: $this->pack->id,
-            source: 'https://tidal.com/browse/track/123',
-        );
+        $job = new ImportTidalTracksJob(packId: $this->pack->id, source: 'https://tidal.com/browse/track/123');
 
         $job->handle(
             app(TidalUrlParser::class),
@@ -245,8 +231,7 @@ describe('ImportTidalTracksJob', function () {
         ImportTidalTracksJob::dispatch($this->pack->id, 'https://tidal.com/browse/track/123');
 
         Queue::assertPushed(ImportTidalTracksJob::class, function ($job) {
-            return $job->packId === $this->pack->id
-                && $job->source === 'https://tidal.com/browse/track/123';
+            return $job->packId === $this->pack->id && $job->source === 'https://tidal.com/browse/track/123';
         });
     });
 
@@ -271,10 +256,7 @@ describe('ImportTidalTracksJob', function () {
             ], 200),
         ]);
 
-        $job = new ImportTidalTracksJob(
-            packId: $this->pack->id,
-            source: 'https://tidal.com/browse/track/123',
-        );
+        $job = new ImportTidalTracksJob(packId: $this->pack->id, source: 'https://tidal.com/browse/track/123');
 
         $job->handle(
             app(TidalUrlParser::class),

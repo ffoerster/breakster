@@ -27,10 +27,12 @@ describe('TidalClientCredentialsTokenService', function () {
         expect($token)->toBe('test-token-123');
 
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://auth.tidal.com/v1/oauth2/token'
+            return (
+                $request->url() === 'https://auth.tidal.com/v1/oauth2/token'
                 && $request->hasHeader('Authorization')
                 && str_contains($request->header('Authorization')[0], 'Basic')
-                && $request['grant_type'] === 'client_credentials';
+                && $request['grant_type'] === 'client_credentials'
+            );
         });
     });
 
@@ -96,7 +98,7 @@ describe('TidalClientCredentialsTokenService', function () {
         $this->service->getAccessToken();
 
         Http::assertSent(function ($request) {
-            $expected = 'Basic '.base64_encode('test-client-id:test-client-secret');
+            $expected = 'Basic ' . base64_encode('test-client-id:test-client-secret');
 
             return $request->header('Authorization')[0] === $expected;
         });

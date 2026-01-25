@@ -24,8 +24,8 @@ try {
     echo "Fetching from: {$playlistUrl}\n";
     $job->handle($client);
     echo "Job handled successfully\n";
-    echo 'Tracks imported: '.$pack->tracks()->count()."\n";
+    echo 'Tracks imported: ' . $pack->tracks()->count() . "\n";
 } catch (\Exception $e) {
-    echo 'Error: '.$e->getMessage()."\n";
-    echo 'Trace: '.$e->getTraceAsString()."\n";
+    echo 'Error: ' . $e->getMessage() . "\n";
+    echo 'Trace: ' . $e->getTraceAsString() . "\n";
 }

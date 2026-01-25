@@ -15,7 +15,9 @@ class TidalUrlParser
         $input = trim($input);
 
         if ($input === '') {
-            throw new InvalidArgumentException('Invalid TIDAL input: (empty). Expected URL or typed ID (track:<id>, playlist:<id>).');
+            throw new InvalidArgumentException(
+                'Invalid TIDAL input: (empty). Expected URL or typed ID (track:<id>, playlist:<id>).',
+            );
         }
 
         if (preg_match('/^(?<type>track|playlist):(?<id>[a-zA-Z0-9\-]+)$/i', $input, $matches)) {
@@ -30,7 +32,9 @@ class TidalUrlParser
             return $this->parseUrl($input);
         }
 
-        throw new InvalidArgumentException("Invalid TIDAL input: {$input}. Expected URL or typed ID (track:<id>, playlist:<id>).");
+        throw new InvalidArgumentException(
+            "Invalid TIDAL input: {$input}. Expected URL or typed ID (track:<id>, playlist:<id>).",
+        );
     }
 
     private function parseUrl(string $url): array
@@ -50,7 +54,7 @@ class TidalUrlParser
         if (preg_match($pattern, $url, $matches)) {
             $type = strtolower($matches['type']);
 
-            if (! in_array($type, self::RESOURCE_TYPES, true)) {
+            if (!in_array($type, self::RESOURCE_TYPES, true)) {
                 throw new InvalidArgumentException("Unsupported TIDAL resource type: {$type}");
             }
 
@@ -61,7 +65,7 @@ class TidalUrlParser
         }
 
         throw new InvalidArgumentException(
-            "Could not parse TIDAL URL: {$url}. Expected format: tidal.com/browse/{type}/{id}"
+            "Could not parse TIDAL URL: {$url}. Expected format: tidal.com/browse/{type}/{id}",
         );
     }
 }
