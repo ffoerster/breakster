@@ -34,7 +34,7 @@ defineProps({
                     class="w-32 h-32 rounded-lg shadow-lg"
                 />
                 <div class="text-left">
-                    <div class="text-5xl font-black text-purple-400 leading-none mb-3">
+                    <div class="text-5xl font-black text-accent-400 leading-none mb-3">
                         {{ state.round.track?.year }}
                     </div>
                     <h2 class="text-2xl font-bold">{{ state.round.track?.title }}</h2>
@@ -75,7 +75,7 @@ defineProps({
                         v-for="p in leaderboard"
                         :key="p.id"
                         class="flex items-center justify-between p-3 rounded-lg"
-                        :class="p.is_me ? 'bg-purple-500/20' : 'bg-gray-700/30'"
+                        :class="p.is_me ? 'bg-accent-500/20' : 'bg-gray-700/30'"
                     >
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold text-sm">
@@ -83,7 +83,7 @@ defineProps({
                             </div>
                             <span>{{ p.display_name }}</span>
                         </div>
-                        <span class="font-bold text-purple-400">{{ p.score }} pts</span>
+                        <span class="font-bold text-accent-400">{{ p.score }} pts</span>
                     </div>
                 </div>
             </GlassCard>

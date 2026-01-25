@@ -85,7 +85,7 @@ defineProps({
                     <label class="text-sm font-medium">Select Device:</label>
                     <button
                         type="button"
-                        class="text-sm text-purple-400 hover:text-purple-300"
+                        class="text-sm text-accent-400 hover:text-accent-300"
                         :disabled="isLoadingDevices"
                         @click="loadSpotifyDevices"
                     >

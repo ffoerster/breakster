@@ -343,7 +343,7 @@ const placementsProgress = computed(() => {
                         :class="isPlacementLocked ? 'opacity-50' : ''"
                     >
                         <div
-                            class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-purple-600/30 to-pink-600/30 border-2 border-purple-500/50 rounded-lg"
+                            class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-accent-600/30 to-pink-600/30 border-2 border-accent-500/50 rounded-lg"
                             :class="
                                 isPlacementLocked
                                     ? 'cursor-not-allowed'
@@ -352,15 +352,15 @@ const placementsProgress = computed(() => {
                                         : 'cursor-grab active:cursor-grabbing'
                             "
                         >
-                            <div class="w-16 h-16 rounded bg-purple-900/60 flex items-center justify-center shrink-0">
-                                <svg class="w-8 h-8 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+                            <div class="w-16 h-16 rounded bg-accent-900/60 flex items-center justify-center shrink-0">
+                                <svg class="w-8 h-8 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
                                     <path
                                         d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
                                     />
                                 </svg>
                             </div>
                             <div class="flex-1 min-w-0 text-center">
-                                <div class="text-2xl font-black text-purple-300">???</div>
+                                <div class="text-2xl font-black text-accent-300">???</div>
                                 <div class="text-sm text-gray-300 font-medium">Mystery Track</div>
                                 <div class="text-xs text-gray-400 mt-1">
                                     <span v-if="isPlacementLocked">Locked</span>
@@ -401,7 +401,7 @@ const placementsProgress = computed(() => {
                     </div>
 
                     <div class="h-2 rounded bg-gray-700/60 overflow-hidden mb-6">
-                        <div class="h-full bg-purple-500/70" :style="{ width: `${placementsProgress}%` }" />
+                        <div class="h-full bg-accent-500/70" :style="{ width: `${placementsProgress}%` }" />
                     </div>
 
                     <div
@@ -432,7 +432,7 @@ const placementsProgress = computed(() => {
                         class="space-y-2 min-h-[4rem] p-3 rounded-lg border-2 border-dashed lg:max-h-[52vh] lg:overflow-auto"
                         :class="
                             shouldEnablePlacementDnd
-                                ? 'border-purple-500/40 bg-gray-900/20'
+                                ? 'border-accent-500/40 bg-gray-900/20'
                                 : 'border-gray-700/60 bg-gray-900/10'
                         "
                     >
@@ -442,7 +442,7 @@ const placementsProgress = computed(() => {
                             class="flex items-center gap-3 p-4 rounded-lg"
                             :class="
                                 item.kind === 'mystery'
-                                    ? 'timeline-item timeline-guess bg-purple-500/10 border border-purple-500/30 cursor-grab active:cursor-grabbing'
+                                    ? 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/30 cursor-grab active:cursor-grabbing'
                                     : 'timeline-item timeline-track bg-gray-700/30'
                             "
                         >
@@ -455,7 +455,7 @@ const placementsProgress = computed(() => {
                                 />
                                 <div v-else class="w-16 h-16 rounded bg-gray-600 shrink-0" />
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-2xl md:text-3xl font-black text-purple-400 leading-none mb-1">
+                                    <div class="text-2xl md:text-3xl font-black text-accent-400 leading-none mb-1">
                                         {{ item.year }}
                                     </div>
                                     <div class="font-medium truncate">{{ item.title }}</div>
@@ -464,15 +464,15 @@ const placementsProgress = computed(() => {
                             </template>
 
                             <template v-else>
-                                <div class="w-16 h-16 rounded bg-purple-900/50 flex items-center justify-center shrink-0">
-                                    <svg class="w-8 h-8 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
+                                <div class="w-16 h-16 rounded bg-accent-900/50 flex items-center justify-center shrink-0">
+                                    <svg class="w-8 h-8 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
                                         <path
                                             d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
                                         />
                                     </svg>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-2xl md:text-3xl font-black text-purple-200 leading-none mb-1">???</div>
+                                    <div class="text-2xl md:text-3xl font-black text-accent-200 leading-none mb-1">???</div>
                                     <div class="font-medium truncate">Your guess</div>
                                     <div class="text-sm text-gray-400 truncate">Drag to reposition</div>
                                 </div>

@@ -36,7 +36,7 @@ defineProps({
                         p.rank === 1
                             ? 'bg-yellow-500/20 border border-yellow-500'
                             : p.is_me
-                                ? 'bg-purple-500/20'
+                                ? 'bg-accent-500/20'
                                 : 'bg-gray-700/30'
                     "
                 >
@@ -52,13 +52,13 @@ defineProps({
                             <span v-if="p.is_me" class="text-gray-400">(You)</span>
                         </span>
                     </div>
-                    <span class="font-bold text-purple-400">{{ p.score }} pts</span>
+                    <span class="font-bold text-accent-400">{{ p.score }} pts</span>
                 </div>
             </div>
         </GlassCard>
 
         <div class="flex justify-center gap-4">
-            <Link href="/room/create" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition">
+            <Link href="/room/create" class="px-6 py-3 bg-accent-600 hover:bg-accent-700 rounded-lg font-bold transition">
                 Play Again
             </Link>
             <Link href="/" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold transition">Home</Link>

@@ -6,10 +6,22 @@
 
         <title inertia>{{ config('app.name', 'Breakster') }}</title>
 
+        <!-- Theme initialization script (before Vue mounts) -->
+        <script>
+            (function() {
+                const theme = localStorage.getItem('theme') || 'system';
+                const isDark = theme === 'dark' ||
+                    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
+
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @inertiaHead
     </head>
-    <body class="min-h-full bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+    <body class="min-h-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50">
         @inertia
     </body>
 </html>

@@ -20,7 +20,7 @@ defineProps({
                 <h1 class="text-3xl font-bold">Room {{ room.code }}</h1>
                 <div class="mt-3">
                     <div class="text-sm text-gray-500 uppercase tracking-wide">Music Pack</div>
-                    <p class="text-xl font-semibold text-purple-400">{{ room.pack.name }}</p>
+                    <p class="text-xl font-semibold text-accent-400">{{ room.pack.name }}</p>
                     <p v-if="room.pack.description" class="text-sm text-gray-400 mt-1">
                         {{ room.pack.description }}
                     </p>

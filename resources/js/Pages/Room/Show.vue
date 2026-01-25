@@ -151,17 +151,17 @@ onBeforeUnmount(() => {
     <AppLayout container-class="w-full max-w-6xl">
         <template #header-right>
             <div class="text-right">
-                <div class="text-xs text-gray-400">Room code</div>
-                <div class="font-mono font-bold text-purple-300 tracking-widest">{{ state.room.code }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Room code</div>
+                <div class="font-mono font-bold text-accent-500 tracking-widest">{{ state.room.code }}</div>
             </div>
         </template>
 
         <div v-if="!state.me">
             <GlassCard class="p-8 text-center">
-                <h2 class="text-2xl font-bold mb-4">You're not in this room</h2>
+                <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-50">You're not in this room</h2>
                 <Link
                     :href="`/room/join?code=${state.room.code}`"
-                    class="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition"
+                    class="inline-block px-6 py-3 bg-accent-500 hover:bg-accent-600 rounded-lg font-bold transition text-white"
                 >
                     Join Room {{ state.room.code }}
                 </Link>
