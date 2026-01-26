@@ -7,6 +7,9 @@ import AudioPlayer from '../../Ui/AudioPlayer.vue';
 import CountdownRing from '../../Ui/CountdownRing.vue';
 import GlassCard from '../../Ui/GlassCard.vue';
 import PlayersList from '../PlayersList.vue';
+import AmenButton from './AmenButton.vue';
+import AmenGuessForm from './AmenGuessForm.vue';
+import AmenResult from './AmenResult.vue';
 
 const props = defineProps({
     state: {
@@ -64,6 +67,31 @@ const props = defineProps({
     playSpotifyTrack: {
         type: Function,
         required: true,
+    },
+    // AMEN props
+    claimAmen: {
+        type: Function,
+        required: true,
+    },
+    isClaimingAmen: {
+        type: Boolean,
+        required: true,
+    },
+    amenClaimError: {
+        type: String,
+        default: '',
+    },
+    submitAmenGuess: {
+        type: Function,
+        required: true,
+    },
+    isSubmittingAmenGuess: {
+        type: Boolean,
+        required: true,
+    },
+    amenGuessError: {
+        type: String,
+        default: '',
     },
 });
 
@@ -400,6 +428,50 @@ const placementsProgress = computed(() => {
                         </div>
                     </div>
                 </GlassCard>
+
+                <!-- AMEN Section -->
+                <div v-if="state.round?.amen" class="space-y-4">
+                    <!-- AMEN Button (when can claim) -->
+                    <GlassCard v-if="state.round.amen.can_claim && !state.round.amen.claimed_by" class="p-6">
+                        <AmenButton
+                            :can-claim="state.round.amen.can_claim"
+                            :is-claiming="isClaimingAmen"
+                            :error="amenClaimError"
+                            :claim-amen="claimAmen"
+                        />
+                    </GlassCard>
+
+                    <!-- AMEN Guess Form (for claimant who hasn't guessed yet) -->
+                    <template v-if="state.round.amen.claimed_by">
+                        <AmenGuessForm
+                            v-if="state.round.amen.is_claimant && !state.round.amen.has_guess"
+                            :is-submitting="isSubmittingAmenGuess"
+                            :error="amenGuessError"
+                            :submit-guess="submitAmenGuess"
+                        />
+
+                        <!-- AMEN Result (when resolved) -->
+                        <AmenResult
+                            v-else-if="state.round.amen.resolved"
+                            :claimant-name="state.round.amen.claimant_name"
+                            :guess="state.round.amen.guess"
+                            :actual="state.round.amen.actual"
+                            :correct="state.round.amen.correct"
+                            :awarded-points="state.round.amen.awarded_points"
+                            :votes="state.round.amen.votes"
+                        />
+
+                        <!-- Waiting state for claimant after guess -->
+                        <GlassCard
+                            v-else-if="state.round.amen.is_claimant && state.round.amen.has_guess"
+                            class="p-6 bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50"
+                        >
+                            <p class="text-center text-amber-300 font-medium">
+                                Waiting for reveal...
+                            </p>
+                        </GlassCard>
+                    </template>
+                </div>
 
                 <GlassCard class="p-8">
                     <div class="flex items-center justify-between gap-4 mb-4">

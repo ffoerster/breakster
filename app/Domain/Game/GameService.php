@@ -9,11 +9,17 @@ use App\Domain\Game\DTOs\RoundSummary;
 use App\Domain\Game\Enums\RoomState;
 use App\Domain\Game\Enums\RoundStatus;
 use App\Domain\Providers\Spotify\SpotifyPlaybackService;
+use App\Events\AmenClaimed;
+use App\Events\AmenGuessSubmitted;
+use App\Events\AmenResolved;
+use App\Events\AmenVoteSubmitted;
 use App\Events\PlacementSubmitted;
 use App\Events\RoomPlayersUpdated;
 use App\Events\RoomStateChanged;
 use App\Events\RoundRevealed;
 use App\Events\RoundStarted;
+use App\Models\AmenGuess;
+use App\Models\AmenVote;
 use App\Models\Pack;
 use App\Models\Placement;
 use App\Models\Provider;
@@ -161,12 +167,12 @@ class GameService
     public function startRound(Room $room): Round
     {
         // Validate state
-        if (!$room->state->canStartRound()) {
+        if (! $room->state->canStartRound()) {
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
         // Require playback provider to be selected
-        if (!$room->playback_provider_id) {
+        if (! $room->playback_provider_id) {
             throw new \DomainException('Playback provider not selected.');
         }
 
@@ -182,7 +188,7 @@ class GameService
             ->inRandomOrder()
             ->first();
 
-        if (!$track) {
+        if (! $track) {
             // No more tracks available
             $room->update(['state' => RoomState::Finished]);
 
@@ -235,16 +241,16 @@ class GameService
     private function triggerSpotifyPlayback(Room $room, Track $track): void
     {
         // Only trigger if Spotify is the provider and device is configured
-        if (!$room->playbackProvider || $room->playbackProvider->key !== 'spotify') {
+        if (! $room->playbackProvider || $room->playbackProvider->key !== 'spotify') {
             return;
         }
 
-        if (!$room->spotify_device_id || !$room->host_user_id) {
+        if (! $room->spotify_device_id || ! $room->host_user_id) {
             return;
         }
 
         // Require Spotify playback service
-        if (!$this->spotifyPlayback) {
+        if (! $this->spotifyPlayback) {
             Log::warning('SpotifyPlaybackService not available for room', [
                 'room_code' => $room->code,
             ]);
@@ -254,7 +260,7 @@ class GameService
 
         // Get Spotify track URI
         $spotifyTrackId = $track->provider_track_id;
-        if (!$spotifyTrackId) {
+        if (! $spotifyTrackId) {
             Log::info('Track has no Spotify provider_track_id, skipping auto-play', [
                 'room_code' => $room->code,
                 'track_id' => $track->id,
@@ -319,7 +325,7 @@ class GameService
 
             foreach ($players as $index => $player) {
                 $track = $tracks->get($index);
-                if (!$track) {
+                if (! $track) {
                     continue;
                 }
 
@@ -339,15 +345,15 @@ class GameService
 
     public function setPlaybackProvider(Room $room, Provider $provider): void
     {
-        if (!$room->isInLobby()) {
+        if (! $room->isInLobby()) {
             throw new \RuntimeException('Playback provider can only be changed in the lobby.');
         }
 
-        if (!$provider->is_active) {
+        if (! $provider->is_active) {
             throw new \RuntimeException('Playback provider is not active.');
         }
 
-        if (!in_array($provider->key, ['spotify', 'tidal'], true)) {
+        if (! in_array($provider->key, ['spotify', 'tidal'], true)) {
             throw new \RuntimeException('Playback provider is not supported.');
         }
 
@@ -368,7 +374,7 @@ class GameService
     public function submitPlacement(RoomPlayer $player, Round $round, ?int $insertAfterTrackId = null): Placement
     {
         // Validate round is active
-        if (!$round->isActive()) {
+        if (! $round->isActive()) {
             throw new \RuntimeException('This round is not active.');
         }
 
@@ -376,11 +382,10 @@ class GameService
         if ($insertAfterTrackId !== null) {
             $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
 
-            if (!$hasTrack) {
+            if (! $hasTrack) {
                 throw new \RuntimeException('Invalid track reference for placement.');
             }
         }
-
 
         $placement = Placement::query()->firstOrNew([
             'round_id' => $round->id,
@@ -525,8 +530,8 @@ class GameService
     public function reorderTimeline(RoomPlayer $player, array $orderedTrackIds): void
     {
         $orderedTrackIds = collect($orderedTrackIds)
-            ->map(fn($id) => (int) $id)
-            ->filter(fn(int $id): bool => $id > 0)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id): bool => $id > 0)
             ->values()
             ->all();
 
@@ -541,7 +546,7 @@ class GameService
                 /** @var TimelineItem|null $item */
                 $item = $items->get($trackId);
 
-                if (!$item) {
+                if (! $item) {
                     throw new \RuntimeException('Invalid timeline reorder request.');
                 }
 
@@ -557,12 +562,196 @@ class GameService
     {
         $usedTrackIds = $room->usedTrackIds();
 
-        return !$room
+        return ! $room
             ->pack
             ->activeTracks()
             ->where('provider_id', $room->playback_provider_id)
             ->whereNotIn('id', $usedTrackIds)
             ->exists();
+    }
+
+    /**
+     * Claim AMEN for the current round.
+     * Only one player can claim per round, first-write-wins.
+     */
+    public function claimAmen(Round $round, RoomPlayer $player): Round
+    {
+        return DB::transaction(function () use ($round, $player): Round {
+            // Lock the round row to prevent race conditions
+            $round = Round::query()->lockForUpdate()->find($round->id);
+
+            if (! $round->isActive()) {
+                throw new \RuntimeException('This round is not active.');
+            }
+
+            if ($round->hasAmenClaim()) {
+                throw new \RuntimeException('AMEN has already been claimed for this round.');
+            }
+
+            // Require at least 2 players for AMEN (need voters)
+            $playerCount = $round->room->players()->count();
+            if ($playerCount < 2) {
+                throw new \RuntimeException('AMEN requires at least 2 players.');
+            }
+
+            $round->update([
+                'amen_claimed_by_room_player_id' => $player->id,
+                'amen_claimed_at' => now(),
+            ]);
+
+            $roomCode = $round->room->code;
+            $displayName = $player->display_name;
+
+            DB::afterCommit(function () use ($roomCode, $round, $player, $displayName): void {
+                event(new AmenClaimed($roomCode, $round->id, $player->id, $displayName));
+            });
+
+            return $round->fresh();
+        });
+    }
+
+    /**
+     * Submit an AMEN guess (artist and title).
+     * Only the claimant can submit a guess.
+     */
+    public function submitAmenGuess(Round $round, RoomPlayer $player, string $artist, string $title): AmenGuess
+    {
+        if ($round->amen_claimed_by_room_player_id !== $player->id) {
+            throw new \RuntimeException('Only the AMEN claimant can submit a guess.');
+        }
+
+        if ($round->amenGuess()->exists()) {
+            throw new \RuntimeException('An AMEN guess has already been submitted for this round.');
+        }
+
+        $guess = AmenGuess::create([
+            'round_id' => $round->id,
+            'room_player_id' => $player->id,
+            'artist_guess' => $artist,
+            'title_guess' => $title,
+        ]);
+
+        $roomCode = $round->room->code;
+
+        event(new AmenGuessSubmitted($roomCode, $round->id));
+
+        return $guess;
+    }
+
+    /**
+     * Submit an AMEN vote.
+     * Only non-claimants can vote, and only once per round.
+     */
+    public function submitAmenVote(Round $round, RoomPlayer $voter, bool $vote): AmenVote
+    {
+        if (! $round->isRevealed()) {
+            throw new \RuntimeException('Amen voting is only allowed after reveal.');
+        }
+
+        if (! $round->hasAmenClaim()) {
+            throw new \RuntimeException('No AMEN claim exists for this round.');
+        }
+
+        if (! $round->amenGuess()->exists()) {
+            throw new \RuntimeException('The AMEN claimant has not submitted a guess yet.');
+        }
+
+        if ($round->amen_claimed_by_room_player_id === $voter->id) {
+            throw new \RuntimeException('The AMEN claimant cannot vote.');
+        }
+
+        if ($voter->hasVotedForAmenInRound($round)) {
+            throw new \RuntimeException('You have already voted for this round.');
+        }
+
+        $amenVote = AmenVote::create([
+            'round_id' => $round->id,
+            'voter_room_player_id' => $voter->id,
+            'vote' => $vote,
+        ]);
+
+        $roomCode = $round->room->code;
+        $voteCount = $round->amenVotes()->count();
+
+        event(new AmenVoteSubmitted($roomCode, $round->id, $voteCount));
+
+        // Check if all eligible voters have voted and auto-resolve
+        $eligibleVoters = $round->room->players()->count() - 1; // Exclude claimant
+        if ($voteCount >= $eligibleVoters) {
+            $this->resolveAmen($round->fresh());
+        }
+
+        return $amenVote;
+    }
+
+    /**
+     * Resolve the AMEN claim and award/penalize points.
+     */
+    public function resolveAmen(Round $round): Round
+    {
+        if (! $round->hasAmenClaim()) {
+            throw new \RuntimeException('No AMEN claim exists for this round.');
+        }
+
+        if ($round->isAmenResolved()) {
+            return $round;
+        }
+
+        return DB::transaction(function () use ($round): Round {
+            $round = Round::query()->lockForUpdate()->find($round->id);
+
+            // Double-check not already resolved
+            if ($round->isAmenResolved()) {
+                return $round;
+            }
+
+            $yesVotes = $round->amenVotes()->where('vote', true)->count();
+            $noVotes = $round->amenVotes()->where('vote', false)->count();
+            $totalVotes = $yesVotes + $noVotes;
+
+            // Determine points based on voting
+            $points = 0;
+            $wasCorrect = false;
+
+            if ($totalVotes >= 2 && $yesVotes > $noVotes) {
+                // Majority voted yes
+                $points = ScoreCalculator::AMEN_BONUS_POINTS;
+                $wasCorrect = true;
+            } elseif ($totalVotes >= 2 && $noVotes > $yesVotes) {
+                // Majority voted no
+                $points = ScoreCalculator::AMEN_PENALTY_POINTS;
+                $wasCorrect = false;
+            }
+            // Tie or insufficient votes = 0 points
+
+            // Apply points to claimant
+            $claimant = $round->amenClaimant;
+            if ($claimant && $points !== 0) {
+                $claimant->addScore($points);
+            }
+
+            $round->update([
+                'amen_awarded_points' => $points,
+                'amen_resolved_at' => now(),
+            ]);
+
+            $roomCode = $round->room->code;
+            $guess = $round->amenGuess;
+            $track = $round->track;
+
+            DB::afterCommit(function () use ($roomCode, $round, $wasCorrect, $points, $guess, $track): void {
+                event(new AmenResolved(
+                    $roomCode,
+                    $round->id,
+                    $wasCorrect,
+                    $points,
+                    $guess ? ['artist' => $guess->artist_guess, 'title' => $guess->title_guess] : null,
+                    $track ? ['artist' => $track->artist, 'title' => $track->title] : null,
+                ));
+            });
+
+            return $round->fresh();
+        });
     }
 
     /**

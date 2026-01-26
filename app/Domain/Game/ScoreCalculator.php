@@ -22,6 +22,16 @@ class ScoreCalculator
     public const SPEED_BONUS_WINDOW_SECONDS = 30;
 
     /**
+     * Bonus points awarded for a correct AMEN claim (majority vote yes).
+     */
+    public const AMEN_BONUS_POINTS = 2;
+
+    /**
+     * Penalty points for an incorrect AMEN claim (majority vote no).
+     */
+    public const AMEN_PENALTY_POINTS = -1;
+
+    /**
      * Calculate total points for a placement.
      *
      * @param  bool  $isCorrect  Whether the placement was correct

@@ -53,6 +53,11 @@ class RoomPlayer extends Model
         return $this->hasMany(TimelineItem::class);
     }
 
+    public function amenVotes(): HasMany
+    {
+        return $this->hasMany(AmenVote::class, 'voter_room_player_id');
+    }
+
     public function isHost(): bool
     {
         return $this->is_host;
@@ -79,5 +84,10 @@ class RoomPlayer extends Model
     public function addScore(int $points): void
     {
         $this->increment('score', $points);
+    }
+
+    public function hasVotedForAmenInRound(Round $round): bool
+    {
+        return $this->amenVotes()->where('round_id', $round->id)->exists();
     }
 }

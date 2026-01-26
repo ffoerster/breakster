@@ -31,6 +31,15 @@ const onSwiperReady = (swiper) => {
     emit('update:modelValue', pack.id);
   }
 };
+
+const onImageError = (event, packId) => {
+  const img = event?.target;
+  if (!img) {
+    return;
+  }
+
+  img.src = `/packs/${packId}/placeholder.svg`;
+};
 </script>
 
 <template>
@@ -59,7 +68,12 @@ const onSwiperReady = (swiper) => {
           :aria-pressed="modelValue === pack.id"
           @click="select(pack.id)"
         >
-          <img :src="pack.image_url" :alt="pack.name" class="h-full w-full object-cover" />
+          <img
+            :src="pack.image_url"
+            :alt="pack.name"
+            class="h-full w-full object-cover"
+            @error="(e) => onImageError(e, pack.id)"
+          />
 
           <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent p-3">
             <div class="text-white font-semibold truncate">{{ pack.name }}</div>

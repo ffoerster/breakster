@@ -6,12 +6,15 @@ namespace App\Http\Controllers\Room;
 
 use App\Domain\Game\GameService;
 use App\Domain\Game\RoomSession;
+use App\Domain\Providers\Spotify\SpotifyPlaybackService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SetPlaybackProviderRequest;
+use App\Http\Requests\SubmitAmenGuessRequest;
+use App\Http\Requests\SubmitAmenVoteRequest;
 use App\Http\Requests\SubmitPlacementRequest;
 use App\Models\Provider;
 use App\Models\Room;
-use App\Domain\Providers\Spotify\SpotifyPlaybackService;
+use App\Models\Round;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -166,10 +169,92 @@ class RoomActionController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function claimAmen(
+        string $code,
+        int $roundId,
+        RoomSession $roomSession,
+        GameService $gameService,
+    ): JsonResponse {
+        $room = $this->room($code);
+        $player = $roomSession->requirePlayer($room);
+
+        $round = $this->round($roundId, $room);
+
+        $key = sprintf('amen-claim:%d', $player->id);
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            abort(429, 'Too many AMEN attempts. Please slow down.');
+        }
+
+        RateLimiter::hit($key, 60);
+
+        try {
+            $gameService->claimAmen($round, $player);
+        } catch (\RuntimeException $e) {
+            abort(409, $e->getMessage());
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function submitAmenGuess(
+        SubmitAmenGuessRequest $request,
+        string $code,
+        int $roundId,
+        RoomSession $roomSession,
+        GameService $gameService,
+    ): JsonResponse {
+        $room = $this->room($code);
+        $player = $roomSession->requirePlayer($room);
+
+        $round = $this->round($roundId, $room);
+
+        $artist = $request->validated('artist');
+        $title = $request->validated('title');
+
+        try {
+            $gameService->submitAmenGuess($round, $player, $artist, $title);
+        } catch (\RuntimeException $e) {
+            abort(409, $e->getMessage());
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function submitAmenVote(
+        SubmitAmenVoteRequest $request,
+        string $code,
+        int $roundId,
+        RoomSession $roomSession,
+        GameService $gameService,
+    ): JsonResponse {
+        $room = $this->room($code);
+        $player = $roomSession->requirePlayer($room);
+
+        $round = $this->round($roundId, $room);
+
+        $vote = (bool) $request->validated('vote');
+
+        try {
+            $gameService->submitAmenVote($round, $player, $vote);
+        } catch (\RuntimeException $e) {
+            abort(409, $e->getMessage());
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
     private function room(string $code): Room
     {
         return Room::query()
             ->where('code', strtoupper($code))
+            ->firstOrFail();
+    }
+
+    private function round(int $roundId, Room $room): Round
+    {
+        return Round::query()
+            ->where('id', $roundId)
+            ->where('room_id', $room->id)
             ->firstOrFail();
     }
 }

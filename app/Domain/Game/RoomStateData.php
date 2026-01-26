@@ -8,6 +8,7 @@ use App\Domain\Game\Enums\RoomState;
 use App\Models\Provider;
 use App\Models\Room;
 use App\Models\RoomPlayer;
+use App\Models\Round;
 use App\Models\TimelineItem;
 use Illuminate\Support\Collection;
 
@@ -37,11 +38,14 @@ class RoomStateData
             'currentRound.track',
             'currentRound.placements.player',
             'currentRound.placements.insertedAfterTrack',
+            'currentRound.amenClaimant',
+            'currentRound.amenGuess',
+            'currentRound.amenVotes',
         ]);
 
         $me = $this->roomSession->currentPlayer($room);
 
-        if (!$me) {
+        if (! $me) {
             return [
                 'room' => $this->room($room, null),
                 'me' => null,
@@ -133,7 +137,7 @@ class RoomStateData
             ->players
             ->sortBy('joined_at')
             ->values()
-            ->map(fn(RoomPlayer $player): array => [
+            ->map(fn (RoomPlayer $player): array => [
                 'id' => $player->id,
                 'display_name' => $player->display_name,
                 'score' => $player->score,
@@ -152,7 +156,7 @@ class RoomStateData
             ->whereIn('key', ['spotify', 'tidal'])
             ->where('is_active', true)
             ->get()
-            ->map(fn(Provider $provider): array => [
+            ->map(fn (Provider $provider): array => [
                 'id' => $provider->id,
                 'key' => $provider->key,
                 'name' => $provider->name,
@@ -165,7 +169,7 @@ class RoomStateData
      */
     private function round(Room $room, ?RoomPlayer $me): ?array
     {
-        if (!$room->currentRound) {
+        if (! $room->currentRound) {
             return null;
         }
 
@@ -175,6 +179,7 @@ class RoomStateData
             'id' => $round->id,
             'round_number' => $round->round_number,
             'status' => $round->status->value,
+            'is_revealed' => $round->isRevealed(),
             'started_at' => $round->started_at?->toIso8601String(),
             'placement_unlocks_at' => $round->placement_unlocks_at?->toIso8601String(),
             'revealed_at' => $round->revealed_at?->toIso8601String(),
@@ -207,7 +212,7 @@ class RoomStateData
 
             $base['placements'] = $round
                 ->placements
-                ->map(fn($placement): array => [
+                ->map(fn ($placement): array => [
                     'id' => $placement->id,
                     'player' => [
                         'id' => $placement->player->id,
@@ -225,6 +230,9 @@ class RoomStateData
             $base['placements'] = null;
         }
 
+        // Add AMEN state
+        $base['amen'] = $this->amenState($round, $me, $room->players()->count());
+
         return $base;
     }
 
@@ -236,7 +244,7 @@ class RoomStateData
         /** @var Collection<int, TimelineItem> $items */
         $items = $me->timelineItems()->with('track')->orderBy('position')->get();
 
-        return $items->map(fn(TimelineItem $item): array => [
+        return $items->map(fn (TimelineItem $item): array => [
             'track_id' => $item->track_id,
             'position' => $item->position,
             'year' => $item->track->release_date->format('Y'),
@@ -244,5 +252,76 @@ class RoomStateData
             'artist' => $item->track->artist,
             'artwork_url' => $item->track->artwork_url,
         ])->all();
+    }
+
+    /**
+     * Build AMEN state for the current round.
+     *
+     * @return array<string, mixed>
+     */
+    private function amenState(Round $round, ?RoomPlayer $me, int $playerCount): array
+    {
+        $isResolved = $round->isAmenResolved();
+        $hasClaim = $round->hasAmenClaim();
+        $claimant = $round->amenClaimant;
+        $guess = $round->amenGuess;
+        $isClaimant = $me && $round->amen_claimed_by_room_player_id === $me->id;
+
+        $votingOpen = $round->isRevealed() && $hasClaim && ! $isResolved;
+
+        // Count votes
+        $yesVotes = $round->amenVotes->where('vote', true)->count();
+        $noVotes = $round->amenVotes->where('vote', false)->count();
+
+        // Determine if current player can vote
+        $canVote = false;
+        if ($votingOpen && $guess && $me && ! $isClaimant) {
+            $canVote = ! $me->hasVotedForAmenInRound($round);
+        }
+
+        // Get current player's vote (if any)
+        $myVote = null;
+        if ($me && $hasClaim) {
+            $vote = $round->amenVotes->firstWhere('voter_room_player_id', $me->id);
+            $myVote = $vote?->vote;
+        }
+
+        // Build guess data - only show to claimant until resolved
+        $guessData = null;
+        if ($guess && ($isClaimant || $isResolved || $votingOpen)) {
+            $guessData = [
+                'artist' => $guess->artist_guess,
+                'title' => $guess->title_guess,
+            ];
+        }
+
+        // Build actual track data - only after resolved
+        $actualData = null;
+        if ($isResolved && $round->track) {
+            $actualData = [
+                'artist' => $round->track->artist,
+                'title' => $round->track->title,
+            ];
+        }
+
+        return [
+            'claimed_by' => $round->amen_claimed_by_room_player_id,
+            'claimant_name' => $claimant?->display_name,
+            'is_claimant' => $isClaimant,
+            'has_guess' => $guess !== null,
+            'guess' => $guessData,
+            'actual' => $actualData,
+            'votes' => [
+                'yes' => $yesVotes,
+                'no' => $noVotes,
+            ],
+            'my_vote' => $myVote,
+            'resolved' => $isResolved,
+            'correct' => $isResolved ? ($round->amen_awarded_points > 0) : null,
+            'awarded_points' => $round->amen_awarded_points,
+            'can_claim' => $round->canClaimAmen() && $playerCount >= 2,
+            'voting_open' => $votingOpen,
+            'can_vote' => $canVote,
+        ];
     }
 }

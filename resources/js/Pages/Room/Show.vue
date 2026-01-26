@@ -62,6 +62,16 @@ const {
     nextRound,
     finishGame,
     leaderboard,
+    // AMEN
+    claimAmen,
+    isClaimingAmen,
+    amenClaimError,
+    submitAmenGuess,
+    isSubmittingAmenGuess,
+    amenGuessError,
+    submitAmenVote,
+    isSubmittingAmenVote,
+    amenVoteError,
 } = useRoomState(props);
 
 const nowMs = ref(Date.now());
@@ -126,6 +136,11 @@ onMounted(() => {
     channel.listen('.placement.submitted', scheduleRefresh);
     channel.listen('.round.revealed', scheduleRefresh);
     channel.listen('.room.state.changed', scheduleRefresh);
+    // AMEN events
+    channel.listen('.amen.claimed', scheduleRefresh);
+    channel.listen('.amen.guess.submitted', scheduleRefresh);
+    channel.listen('.amen.vote.submitted', scheduleRefresh);
+    channel.listen('.amen.resolved', scheduleRefresh);
 
     scheduleRefresh();
 
@@ -208,6 +223,12 @@ onBeforeUnmount(() => {
                     :spotify-play-error="spotifyPlayError"
                     :is-playing-spotify="isPlayingSpotify"
                     :play-spotify-track="playSpotifyTrack"
+                    :claim-amen="claimAmen"
+                    :is-claiming-amen="isClaimingAmen"
+                    :amen-claim-error="amenClaimError"
+                    :submit-amen-guess="submitAmenGuess"
+                    :is-submitting-amen-guess="isSubmittingAmenGuess"
+                    :amen-guess-error="amenGuessError"
                 />
 
                 <RevealView
@@ -217,6 +238,12 @@ onBeforeUnmount(() => {
                     :is-host="isHost"
                     :leaderboard="leaderboard"
                     :next-round="nextRound"
+                    :submit-amen-guess="submitAmenGuess"
+                    :is-submitting-amen-guess="isSubmittingAmenGuess"
+                    :amen-guess-error="amenGuessError"
+                    :submit-amen-vote="submitAmenVote"
+                    :is-submitting-amen-vote="isSubmittingAmenVote"
+                    :amen-vote-error="amenVoteError"
                 />
 
                 <FinishedView v-else-if="isFinished" key="finished" :leaderboard="leaderboard" />

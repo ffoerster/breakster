@@ -49,6 +49,17 @@ Route::prefix('/room/{code}')
         Route::post('/next', [RoomActionController::class, 'next'])->name('room.next');
         Route::post('/finish', [RoomActionController::class, 'finish'])->name('room.finish');
 
+        // AMEN routes
+        Route::post('/round/{roundId}/amen', [RoomActionController::class, 'claimAmen'])
+            ->whereNumber('roundId')
+            ->name('room.amen.claim');
+        Route::post('/round/{roundId}/amen/guess', [RoomActionController::class, 'submitAmenGuess'])
+            ->whereNumber('roundId')
+            ->name('room.amen.guess');
+        Route::post('/round/{roundId}/amen/vote', [RoomActionController::class, 'submitAmenVote'])
+            ->whereNumber('roundId')
+            ->name('room.amen.vote');
+
         // Spotify device management routes (auth checked in controller)
         Route::get('/spotify/devices', [SpotifyDeviceController::class, 'index'])->name('room.spotify.devices');
         Route::post('/spotify/device', [SpotifyDeviceController::class, 'store'])->name('room.spotify.device');

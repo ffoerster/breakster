@@ -159,6 +159,77 @@ export function useRoomState(props) {
         await refreshState();
     };
 
+    // AMEN feature
+    const isClaimingAmen = ref(false);
+    const amenClaimError = ref('');
+    const isSubmittingAmenGuess = ref(false);
+    const amenGuessError = ref('');
+    const isSubmittingAmenVote = ref(false);
+    const amenVoteError = ref('');
+
+    const claimAmen = async () => {
+        if (!isInRound.value || !state.round?.id) {
+            return;
+        }
+
+        if (isClaimingAmen.value) {
+            return;
+        }
+
+        isClaimingAmen.value = true;
+        amenClaimError.value = '';
+
+        try {
+            await window.axios.post(`/room/${code.value}/round/${state.round.id}/amen`);
+            await refreshState();
+        } catch (e) {
+            amenClaimError.value = e?.response?.data?.message ?? 'Could not claim AMEN.';
+        } finally {
+            isClaimingAmen.value = false;
+        }
+    };
+
+    const submitAmenGuess = async (artist, title) => {
+        if (!state.round?.id || isSubmittingAmenGuess.value) {
+            return;
+        }
+
+        isSubmittingAmenGuess.value = true;
+        amenGuessError.value = '';
+
+        try {
+            await window.axios.post(`/room/${code.value}/round/${state.round.id}/amen/guess`, {
+                artist,
+                title,
+            });
+            await refreshState();
+        } catch (e) {
+            amenGuessError.value = e?.response?.data?.message ?? 'Could not submit guess.';
+        } finally {
+            isSubmittingAmenGuess.value = false;
+        }
+    };
+
+    const submitAmenVote = async (vote) => {
+        if (!state.round?.id || isSubmittingAmenVote.value) {
+            return;
+        }
+
+        isSubmittingAmenVote.value = true;
+        amenVoteError.value = '';
+
+        try {
+            await window.axios.post(`/room/${code.value}/round/${state.round.id}/amen/vote`, {
+                vote,
+            });
+            await refreshState();
+        } catch (e) {
+            amenVoteError.value = e?.response?.data?.message ?? 'Could not submit vote.';
+        } finally {
+            isSubmittingAmenVote.value = false;
+        }
+    };
+
     const leaderboard = computed(() => {
         const players = [...state.players];
         players.sort((a, b) => {
@@ -226,6 +297,17 @@ export function useRoomState(props) {
         revealRound,
         nextRound,
         finishGame,
+
+        // AMEN
+        claimAmen,
+        isClaimingAmen,
+        amenClaimError,
+        submitAmenGuess,
+        isSubmittingAmenGuess,
+        amenGuessError,
+        submitAmenVote,
+        isSubmittingAmenVote,
+        amenVoteError,
 
         leaderboard,
     };

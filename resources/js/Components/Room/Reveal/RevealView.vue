@@ -1,7 +1,8 @@
 <script setup>
-import { computed } from 'vue';
-
 import GlassCard from '../../Ui/GlassCard.vue';
+import AmenGuessForm from '../Round/AmenGuessForm.vue';
+import AmenResult from '../Round/AmenResult.vue';
+import AmenVotePanel from '../Round/AmenVotePanel.vue';
 
 const props = defineProps({
     state: {
@@ -19,6 +20,30 @@ const props = defineProps({
     nextRound: {
         type: Function,
         required: true,
+    },
+    submitAmenGuess: {
+        type: Function,
+        required: true,
+    },
+    isSubmittingAmenGuess: {
+        type: Boolean,
+        required: true,
+    },
+    amenGuessError: {
+        type: String,
+        default: '',
+    },
+    submitAmenVote: {
+        type: Function,
+        required: true,
+    },
+    isSubmittingAmenVote: {
+        type: Boolean,
+        required: true,
+    },
+    amenVoteError: {
+        type: String,
+        default: '',
     },
 });
 </script>
@@ -54,6 +79,77 @@ const props = defineProps({
                 </div>
             </div>
         </GlassCard>
+
+        <div v-if="state.round?.amen?.claimed_by" class="space-y-6">
+            <!-- AMEN Result (resolved) -->
+            <AmenResult
+                v-if="state.round.amen.resolved"
+                :claimant-name="state.round.amen.claimant_name"
+                :guess="state.round.amen.guess"
+                :actual="state.round.amen.actual"
+                :correct="state.round.amen.correct"
+                :awarded-points="state.round.amen.awarded_points"
+                :votes="state.round.amen.votes"
+            />
+
+            <!-- AMEN Voting (only after reveal) -->
+            <template v-else-if="state.round.is_revealed && state.round.amen.voting_open">
+                <AmenGuessForm
+                    v-if="state.round.amen.is_claimant && !state.round.amen.has_guess"
+                    :is-submitting="isSubmittingAmenGuess"
+                    :error="amenGuessError"
+                    :submit-guess="submitAmenGuess"
+                />
+
+                <AmenVotePanel
+                    v-else-if="!state.round.amen.is_claimant && state.round.amen.has_guess"
+                    :claimant-name="state.round.amen.claimant_name"
+                    :guess="state.round.amen.guess"
+                    :actual="state.round.track ? { artist: state.round.track.artist, title: state.round.track.title } : null"
+                    :can-vote="state.round.amen.can_vote"
+                    :my-vote="state.round.amen.my_vote"
+                    :votes="state.round.amen.votes"
+                    :is-submitting="isSubmittingAmenVote"
+                    :error="amenVoteError"
+                    :submit-vote="submitAmenVote"
+                />
+
+                <GlassCard
+                    v-else-if="state.round.amen.is_claimant && state.round.amen.has_guess"
+                    class="p-6 bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50"
+                >
+                    <h3 class="text-lg font-bold text-amber-300 mb-2 text-center">
+                        Waiting for votes...
+                    </h3>
+
+                    <div v-if="state.round.amen.guess && state.round.track" class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="text-center">
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Guessed</p>
+                            <p class="font-bold text-white">{{ state.round.amen.guess.artist }}</p>
+                            <p class="text-gray-300">{{ state.round.amen.guess.title }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Actual</p>
+                            <p class="font-bold text-white">{{ state.round.track.artist }}</p>
+                            <p class="text-gray-300">{{ state.round.track.title }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex justify-center gap-6 text-sm">
+                        <span class="text-green-400">
+                            <span class="font-bold">{{ state.round.amen.votes.yes }}</span> Ja
+                        </span>
+                        <span class="text-red-400">
+                            <span class="font-bold">{{ state.round.amen.votes.no }}</span> Nein
+                        </span>
+                    </div>
+                </GlassCard>
+
+                <GlassCard v-else class="p-6 bg-gray-800/30 border border-white/10">
+                    <p class="text-center text-gray-300">Waiting for the AMEN guess…</p>
+                </GlassCard>
+            </template>
+        </div>
 
         <div class="grid gap-6 lg:grid-cols-12">
             <GlassCard class="p-8 lg:col-span-7">
