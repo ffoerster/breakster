@@ -9,6 +9,44 @@ set -e  # Exit on any error
 DOCKER_HUB_REPO="itrcglobe/breakster"
 IMAGE_NAME="${DOCKER_HUB_REPO}"
 
+# Prefer production env vars, falling back to local .env if needed
+ENV_FILE=""
+if [ -f ".env.production" ]; then
+    ENV_FILE=".env.production"
+elif [ -f ".env" ]; then
+    ENV_FILE=".env"
+fi
+
+if [ -n "$ENV_FILE" ]; then
+    echo "Loading build environment from ${ENV_FILE}"
+    set -o allexport
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +o allexport
+else
+    echo "Warning: no .env.production or .env file found; relying on existing environment variables"
+fi
+
+# Map REVERB_* to VITE_* if VITE_* not explicitly set
+VITE_REVERB_APP_KEY="${VITE_REVERB_APP_KEY:-${REVERB_APP_KEY}}"
+VITE_REVERB_HOST="${VITE_REVERB_HOST:-${REVERB_HOST}}"
+VITE_REVERB_PORT="${VITE_REVERB_PORT:-${REVERB_PORT}}"
+VITE_REVERB_SCHEME="${VITE_REVERB_SCHEME:-${REVERB_SCHEME}}"
+
+REQUIRED_ENV_VARS=(
+    "VITE_REVERB_APP_KEY"
+    "VITE_REVERB_HOST"
+    "VITE_REVERB_PORT"
+    "VITE_REVERB_SCHEME"
+)
+
+for var in "${REQUIRED_ENV_VARS[@]}"; do
+    if [ -z "${!var:-}" ]; then
+        echo "Error: ${var} is not set. Ensure production env vars are available for the Docker build."
+        exit 1
+    fi
+done
+
 # Get version from argument or git tag
 if [ -n "$1" ]; then
     VERSION="$1"
@@ -35,6 +73,10 @@ fi
 echo "Building image with SBOM and provenance attestations..."
 docker buildx build \
     --platform linux/amd64 \
+    --build-arg "VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY}" \
+    --build-arg "VITE_REVERB_HOST=${VITE_REVERB_HOST}" \
+    --build-arg "VITE_REVERB_PORT=${VITE_REVERB_PORT}" \
+    --build-arg "VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}" \
     --tag "${IMAGE_NAME}:${VERSION}" \
     --tag "${IMAGE_NAME}:latest" \
     --sbom=true \

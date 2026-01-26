@@ -5,6 +5,18 @@ FROM oven/bun AS frontend-builder
 
 WORKDIR /var/www/html
 
+# build-time args (provided by Coolify build args)
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
+
+# make them visible to bun/vite during build
+ENV VITE_REVERB_APP_KEY=$VITE_REVERB_APP_KEY \
+    VITE_REVERB_HOST=$VITE_REVERB_HOST \
+    VITE_REVERB_PORT=$VITE_REVERB_PORT \
+    VITE_REVERB_SCHEME=$VITE_REVERB_SCHEME
+
 # Copy package files
 COPY package.json bun.lock ./
 
@@ -15,7 +27,9 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Build assets
-RUN bun run build
+# Ensure local env files don't override build-time args
+RUN rm -f .env .env.local .env.development .env.production .env.* || true \
+    && bun run build
 
 # Production stage: PHP-FPM + Nginx
 FROM serversideup/php:8.4-fpm-nginx
