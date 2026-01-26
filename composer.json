@@ -1,9 +1,18 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "breakster/breakster",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Breakster - Timeline Music Game.",
+    "keywords": [
+        "breakster",
+        "game",
+        "music",
+        "timeline",
+        "laravel",
+        "filament",
+        "inertia",
+        "livewire"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",

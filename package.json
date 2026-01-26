@@ -1,5 +1,7 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
+    "name": "breakster",
+    "description": "Breakster - Timeline Music Game.",
     "private": true,
     "type": "module",
     "scripts": {
