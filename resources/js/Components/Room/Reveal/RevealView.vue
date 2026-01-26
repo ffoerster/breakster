@@ -1,5 +1,6 @@
 <script setup>
 import GlassCard from '../../Ui/GlassCard.vue';
+import BottomActionBar from '../../Ui/BottomActionBar.vue';
 import AmenGuessForm from '../Round/AmenGuessForm.vue';
 import AmenResult from '../Round/AmenResult.vue';
 import AmenVotePanel from '../Round/AmenVotePanel.vue';
@@ -18,6 +19,10 @@ const props = defineProps({
         required: true,
     },
     nextRound: {
+        type: Function,
+        required: true,
+    },
+    openDetails: {
         type: Function,
         required: true,
     },
@@ -70,7 +75,7 @@ const props = defineProps({
                         v-motion
                         :initial="{ y: 20, opacity: 0 }"
                         :enter="{ y: 0, opacity: 1, transition: { delay: 100, type: 'spring', stiffness: 300, damping: 25 } }"
-                        class="text-5xl font-black text-accent-400 leading-none mb-3"
+                        class="text-[clamp(2.75rem,10vw,4rem)] font-black text-accent-400 leading-none mb-3"
                     >
                         {{ state.round.track?.year }}
                     </div>
@@ -206,7 +211,7 @@ const props = defineProps({
             </GlassCard>
         </div>
 
-        <div v-if="isHost" class="flex justify-center">
+        <div v-if="isHost" class="hidden lg:flex justify-center">
             <div class="flex flex-col sm:flex-row gap-3">
                 <button
                     type="button"
@@ -218,5 +223,33 @@ const props = defineProps({
             </div>
         </div>
         <div v-else class="text-center text-gray-400">Waiting for host to start the next round…</div>
+
+        <BottomActionBar class="lg:hidden" max-width-class="max-w-6xl">
+            <div class="grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    @click="openDetails"
+                >
+                    Details
+                </button>
+
+                <button
+                    v-if="isHost"
+                    type="button"
+                    class="btn-interactive min-h-[44px] px-4 py-3 bg-green-600 text-white font-bold rounded-xl"
+                    @click="nextRound"
+                >
+                    Next
+                </button>
+
+                <div
+                    v-else
+                    class="min-h-[44px] px-4 py-3 bg-gray-900/40 text-gray-300 font-bold rounded-xl text-center flex items-center justify-center"
+                >
+                    Waiting…
+                </div>
+            </div>
+        </BottomActionBar>
     </div>
 </template>

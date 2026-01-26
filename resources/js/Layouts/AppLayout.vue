@@ -6,6 +6,14 @@ defineProps({
         type: String,
         default: 'w-full max-w-6xl',
     },
+    mainClass: {
+        type: String,
+        default: 'flex-1 flex items-center justify-center px-4 py-8',
+    },
+    showFooter: {
+        type: Boolean,
+        default: true,
+    },
 });
 </script>
 
@@ -22,12 +30,12 @@ defineProps({
             </div>
         </header>
 
-        <main class="flex-1 flex items-center justify-center px-4 py-8">
+        <main :class="mainClass">
             <div :class="containerClass">
                 <slot />
             </div>
         </main>
 
-        <footer class="py-4 text-center text-gray-500 text-sm">A timeline music game</footer>
+        <footer v-if="showFooter" class="py-4 text-center text-gray-500 text-sm">A timeline music game</footer>
     </div>
 </template>

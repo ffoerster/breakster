@@ -1,15 +1,16 @@
 <script setup>
-import QrcodeVue from 'qrcode.vue';
 import Sortable from 'sortablejs';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
-import AudioPlayer from '../../Ui/AudioPlayer.vue';
+import BottomActionBar from '../../Ui/BottomActionBar.vue';
+import BottomSheet from '../../Ui/BottomSheet.vue';
 import CountdownRing from '../../Ui/CountdownRing.vue';
 import GlassCard from '../../Ui/GlassCard.vue';
 import PlayersList from '../PlayersList.vue';
 import AmenButton from './AmenButton.vue';
 import AmenGuessForm from './AmenGuessForm.vue';
 import AmenResult from './AmenResult.vue';
+import RoundListenPanel from './RoundListenPanel.vue';
 
 const props = defineProps({
     state: {
@@ -49,6 +50,10 @@ const props = defineProps({
         required: true,
     },
     revealRound: {
+        type: Function,
+        required: true,
+    },
+    openDetails: {
         type: Function,
         required: true,
     },
@@ -95,10 +100,59 @@ const props = defineProps({
     },
 });
 
+const isListenOpen = ref(false);
+
+const openListen = () => {
+    isListenOpen.value = true;
+};
+
+const closeListen = () => {
+    isListenOpen.value = false;
+};
+
 const mysterySourceEl = ref(null);
 const placementListEl = ref(null);
 let mysterySortable = null;
 let placementSortable = null;
+
+const queuedInsertedAfterTrackId = ref(undefined);
+
+const requestPlace = async (insertedAfterTrackId) => {
+    if (props.isPlacementLocked) {
+        return;
+    }
+
+    if (props.isPlacing) {
+        queuedInsertedAfterTrackId.value = insertedAfterTrackId;
+        return;
+    }
+
+    await props.place(insertedAfterTrackId);
+};
+
+watch(
+    () => props.isPlacing,
+    (placing) => {
+        if (placing) {
+            return;
+        }
+
+        if (queuedInsertedAfterTrackId.value === undefined) {
+            return;
+        }
+
+        const next = queuedInsertedAfterTrackId.value;
+        queuedInsertedAfterTrackId.value = undefined;
+        requestPlace(next);
+    },
+);
+
+watch(
+    () => props.state.round?.id,
+    () => {
+        queuedInsertedAfterTrackId.value = undefined;
+    },
+);
 
 const shouldEnablePlacementDnd = computed(() => {
     return Boolean(!props.isPlacementLocked);
@@ -220,7 +274,7 @@ const initPlacementDnD = () => {
 
             evt.item.remove();
 
-            await props.place(insertedAfterTrackId);
+            await requestPlace(insertedAfterTrackId);
         },
         onEnd: async (evt) => {
             if (props.isPlacementLocked) {
@@ -239,7 +293,7 @@ const initPlacementDnD = () => {
                 insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
             }
 
-            await props.place(insertedAfterTrackId);
+            await requestPlace(insertedAfterTrackId);
         },
     });
 };
@@ -296,79 +350,17 @@ const placementsProgress = computed(() => {
 <template>
     <div class="space-y-6">
         <div class="grid gap-6 lg:grid-cols-12 lg:items-start">
-            <div class="lg:col-span-4 lg:sticky lg:top-6 space-y-6">
-                <GlassCard class="p-8 text-center">
-                    <div class="text-sm text-gray-400 mb-2">Round {{ state.round.round_number }}</div>
-                    <h2 class="text-2xl font-bold mb-6">Listen and place this track!</h2>
-
-                    <div v-if="isHost" class="max-w-sm mx-auto mb-6">
-                        <div
-                            v-if="isSpotifyProvider && state.room.spotify_device_id"
-                            class="mb-6"
-                        >
-                            <button
-                                type="button"
-                                class="btn-interactive w-full px-6 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-bold flex items-center justify-center gap-3"
-                                :disabled="isPlayingSpotify"
-                                @click="playSpotifyTrack"
-                            >
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                        d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.540.780.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"
-                                    />
-                                </svg>
-                                <span v-if="isPlayingSpotify">Playing...</span>
-                                <span v-else>Play on Spotify</span>
-                            </button>
-                            <div v-if="spotifyPlayError" class="mt-2 text-sm text-red-400 text-center">
-                                {{ spotifyPlayError }}
-                            </div>
-                            <div class="mt-2 text-xs text-gray-400 text-center">Plays on your selected Spotify device</div>
-                        </div>
-
-                        <div class="text-sm text-gray-400 mb-3">
-                            Scan to open in {{ state.room.playback_provider?.name ?? 'your app' }}
-                        </div>
-
-                        <QrcodeVue
-                            v-if="playUrl"
-                            :value="playUrl"
-                            :size="220"
-                            level="M"
-                            class="mx-auto bg-white p-3 rounded-xl"
-                        />
-
-                        <div class="mt-3 text-xs text-gray-400 break-all font-mono">{{ playUrl }}</div>
-
-                        <button
-                            type="button"
-                            class="btn-interactive mt-3 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold"
-                            @click="copyPlayUrl"
-                        >
-                            Copy link
-                        </button>
-                    </div>
-
-                    <div class="max-w-sm mx-auto">
-                        <AudioPlayer
-                            v-if="state.round.playback?.preview_url"
-                            :src="state.round.playback.preview_url"
-                            autoplay
-                        />
-
-                        <a
-                            v-if="state.round.playback?.external_url"
-                            :href="state.round.playback.external_url"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="btn-interactive inline-flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold mt-4"
-                        >
-                            Open in {{ state.round.playback.provider_name }}
-                        </a>
-                    </div>
-
-                    <p class="mt-4 text-gray-400 text-sm">No titles, no artists, no years — just your ears.</p>
-                </GlassCard>
+            <div class="hidden lg:block lg:col-span-4 lg:sticky lg:top-6 space-y-6">
+                <RoundListenPanel
+                    :state="state"
+                    :is-host="isHost"
+                    :play-url="playUrl"
+                    :copy-play-url="copyPlayUrl"
+                    :is-spotify-provider="isSpotifyProvider"
+                    :spotify-play-error="spotifyPlayError"
+                    :is-playing-spotify="isPlayingSpotify"
+                    :play-spotify-track="playSpotifyTrack"
+                />
             </div>
 
             <div class="lg:col-span-5 space-y-6">
@@ -432,7 +424,7 @@ const placementsProgress = computed(() => {
                 <!-- AMEN Section -->
                 <div v-if="state.round?.amen" class="space-y-4">
                     <!-- AMEN Button (when can claim) -->
-                    <GlassCard v-if="state.round.amen.can_claim && !state.round.amen.claimed_by" class="p-6">
+                    <GlassCard v-if="state.round.amen.can_claim && !state.round.amen.claimed_by" class="p-6 hidden lg:block">
                         <AmenButton
                             :can-claim="state.round.amen.can_claim"
                             :is-claiming="isClaimingAmen"
@@ -539,7 +531,9 @@ const placementsProgress = computed(() => {
                             class="flex items-center gap-3 p-4 rounded-lg"
                             :class="
                                 item.kind === 'mystery'
-                                    ? 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/30 cursor-grab active:cursor-grabbing'
+                                    ? shouldEnablePlacementDnd
+                                        ? 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/30 cursor-grab active:cursor-grabbing'
+                                        : 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/20 cursor-not-allowed opacity-70'
                                     : 'timeline-item timeline-track bg-gray-700/30'
                             "
                         >
@@ -552,7 +546,7 @@ const placementsProgress = computed(() => {
                                 />
                                 <div v-else class="w-16 h-16 rounded bg-gray-600 shrink-0" />
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-2xl md:text-3xl font-black text-accent-400 leading-none mb-1">
+                                    <div class="text-[clamp(1.6rem,6vw,2.25rem)] font-black text-accent-400 leading-none mb-1">
                                         {{ item.year }}
                                     </div>
                                     <div class="font-medium truncate">{{ item.title }}</div>
@@ -569,7 +563,7 @@ const placementsProgress = computed(() => {
                                     </svg>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-2xl md:text-3xl font-black text-accent-200 leading-none mb-1">???</div>
+                                    <div class="text-[clamp(1.6rem,6vw,2.25rem)] font-black text-accent-200 leading-none mb-1">???</div>
                                     <div class="font-medium truncate">Your guess</div>
                                     <div class="text-sm text-gray-400 truncate">Drag to reposition</div>
                                 </div>
@@ -598,7 +592,7 @@ const placementsProgress = computed(() => {
                     </div>
                 </GlassCard>
 
-                <GlassCard class="p-4">
+                <GlassCard class="p-4 hidden lg:block">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div class="text-sm text-gray-400">
                             {{ state.round.placements_count }} / {{ state.round.players_count }} players have placed
@@ -624,5 +618,66 @@ const placementsProgress = computed(() => {
                 </GlassCard>
             </div>
         </div>
+
+        <BottomActionBar class="lg:hidden" max-width-class="max-w-6xl">
+            <div class="grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    @click="openDetails"
+                >
+                    Details
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    @click="openListen"
+                >
+                    Listen
+                </button>
+
+                <div v-if="state.round?.amen?.can_claim && !state.round.amen.claimed_by" class="col-span-2">
+                    <AmenButton
+                        variant="compact"
+                        :can-claim="state.round.amen.can_claim"
+                        :is-claiming="isClaimingAmen"
+                        :error="amenClaimError"
+                        :claim-amen="claimAmen"
+                    />
+                </div>
+
+                <button
+                    v-if="isHost"
+                    type="button"
+                    class="btn-interactive col-span-2 min-h-[44px] px-4 py-3 rounded-xl font-bold bg-yellow-600 text-white"
+                    :disabled="state.round.players_count === 0"
+                    @click="revealRound"
+                >
+                    Reveal Answers
+                </button>
+            </div>
+        </BottomActionBar>
+
+        <BottomSheet
+            :open="isListenOpen"
+            title="Listen"
+            max-width-class="max-w-6xl"
+            @close="closeListen"
+        >
+            <div v-if="isListenOpen" class="space-y-4">
+                <RoundListenPanel
+                    :state="state"
+                    :is-host="isHost"
+                    :play-url="playUrl"
+                    :copy-play-url="copyPlayUrl"
+                    :is-spotify-provider="isSpotifyProvider"
+                    :spotify-play-error="spotifyPlayError"
+                    :is-playing-spotify="isPlayingSpotify"
+                    :play-spotify-track="playSpotifyTrack"
+                    compact
+                />
+            </div>
+        </BottomSheet>
     </div>
 </template>

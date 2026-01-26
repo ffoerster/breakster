@@ -1,5 +1,6 @@
 <script setup>
 import GlassCard from '../../Ui/GlassCard.vue';
+import BottomActionBar from '../../Ui/BottomActionBar.vue';
 import PlayersList from '../PlayersList.vue';
 import ProviderPicker from './ProviderPicker.vue';
 import SpotifyHostSetup from './SpotifyHostSetup.vue';
@@ -22,6 +23,10 @@ defineProps({
         required: true,
     },
     startGame: {
+        type: Function,
+        required: true,
+    },
+    openDetails: {
         type: Function,
         required: true,
     },
@@ -98,7 +103,7 @@ defineProps({
                     />
                 </div>
 
-                <div class="mt-6 flex gap-4">
+                <div class="mt-6 hidden lg:flex gap-4">
                     <button
                         v-if="isHost"
                         type="button"
@@ -126,5 +131,35 @@ defineProps({
                 <PlayersList :players="state.players" show-host-badge />
             </GlassCard>
         </div>
+
+        <BottomActionBar class="lg:hidden" max-width-class="max-w-6xl">
+            <div class="grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    @click="openDetails"
+                >
+                    Details
+                </button>
+
+                <button
+                    v-if="isHost"
+                    type="button"
+                    class="btn-interactive min-h-[44px] px-4 py-3 font-bold rounded-xl"
+                    :class="canStart ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-400'"
+                    :disabled="!canStart"
+                    @click="startGame"
+                >
+                    Start
+                </button>
+
+                <div
+                    v-else
+                    class="min-h-[44px] px-4 py-3 bg-gray-900/40 text-gray-300 font-bold rounded-xl text-center flex items-center justify-center"
+                >
+                    Waiting…
+                </div>
+            </div>
+        </BottomActionBar>
     </div>
 </template>

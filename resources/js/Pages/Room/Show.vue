@@ -1,11 +1,13 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import GlassCard from '../../Components/Ui/GlassCard.vue';
+import BottomSheet from '../../Components/Ui/BottomSheet.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import FinishedView from '../../Components/Room/Finished/FinishedView.vue';
 import LobbyView from '../../Components/Room/Lobby/LobbyView.vue';
+import PlayersList from '../../Components/Room/PlayersList.vue';
 import RevealView from '../../Components/Room/Reveal/RevealView.vue';
 import RoomIntroCard from '../../Components/Room/RoomIntroCard.vue';
 import RoundView from '../../Components/Room/Round/RoundView.vue';
@@ -77,6 +79,16 @@ const {
 const nowMs = ref(Date.now());
 let countdownIntervalId = null;
 
+const isDetailsOpen = ref(false);
+
+const openDetails = () => {
+    isDetailsOpen.value = true;
+};
+
+const closeDetails = () => {
+    isDetailsOpen.value = false;
+};
+
 const placementUnlocksAtMs = computed(() => {
     const iso = state.round?.placement_unlocks_at;
     if (!iso) {
@@ -102,6 +114,33 @@ const remainingSeconds = computed(() => {
 });
 
 const isPlacementLocked = computed(() => isInRound.value && remainingSeconds.value > 0);
+
+const playersListMode = computed(() => {
+    if (isInLobby.value) {
+        return { showHostBadge: true, showScore: false };
+    }
+
+    return { showHostBadge: false, showScore: true };
+});
+
+const startCountdownTimer = () => {
+    if (countdownIntervalId) {
+        return;
+    }
+
+    countdownIntervalId = setInterval(() => {
+        nowMs.value = Date.now();
+    }, 250);
+};
+
+const stopCountdownTimer = () => {
+    if (!countdownIntervalId) {
+        return;
+    }
+
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+};
 
 const {
     spotifyDevices,
@@ -143,18 +182,24 @@ onMounted(() => {
     channel.listen('.amen.resolved', scheduleRefresh);
 
     scheduleRefresh();
-
-    countdownIntervalId = setInterval(() => {
-        nowMs.value = Date.now();
-    }, 200);
 });
+
+watch(
+    () => isPlacementLocked.value,
+    (locked) => {
+        if (locked) {
+            startCountdownTimer();
+        } else {
+            stopCountdownTimer();
+        }
+    },
+    { immediate: true },
+);
 
 onBeforeUnmount(() => {
     cleanup();
 
-    if (countdownIntervalId) {
-        clearInterval(countdownIntervalId);
-    }
+    stopCountdownTimer();
 
     if (window.Echo) {
         window.Echo.leave(`room.${code.value}`);
@@ -163,7 +208,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <AppLayout container-class="w-full max-w-6xl">
+    <AppLayout
+        container-class="w-full max-w-6xl"
+        main-class="flex-1 px-4 pt-6 pb-80 lg:pb-8"
+        :show-footer="false"
+    >
         <template #header-right>
             <div class="text-right">
                 <div class="text-xs text-gray-500 dark:text-gray-400">Room code</div>
@@ -176,7 +225,7 @@ onBeforeUnmount(() => {
                 <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-50">You're not in this room</h2>
                 <Link
                     :href="`/room/join?code=${state.room.code}`"
-                    class="inline-block px-6 py-3 bg-accent-500 hover:bg-accent-600 rounded-lg font-bold transition text-white"
+                    class="btn-interactive inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-accent-500 hover:bg-accent-600 rounded-lg font-bold transition text-white"
                 >
                     Join Room {{ state.room.code }}
                 </Link>
@@ -184,7 +233,9 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else class="space-y-6">
-            <RoomIntroCard :room="state.room" :me="state.me" />
+            <div class="hidden lg:block">
+                <RoomIntroCard :room="state.room" :me="state.me" />
+            </div>
 
             <Transition name="view-fade" mode="out-in">
                 <LobbyView
@@ -195,6 +246,7 @@ onBeforeUnmount(() => {
                     :can-start="canStart"
                     :select-provider="selectProvider"
                     :start-game="startGame"
+                    :open-details="openDetails"
                     :is-spotify-provider="isSpotifyProvider"
                     :has-spotify-token="hasSpotifyToken"
                     :spotify-devices="spotifyDevices"
@@ -219,6 +271,7 @@ onBeforeUnmount(() => {
                     :place-error="placeError"
                     :place="place"
                     :reveal-round="revealRound"
+                    :open-details="openDetails"
                     :is-spotify-provider="isSpotifyProvider"
                     :spotify-play-error="spotifyPlayError"
                     :is-playing-spotify="isPlayingSpotify"
@@ -238,6 +291,7 @@ onBeforeUnmount(() => {
                     :is-host="isHost"
                     :leaderboard="leaderboard"
                     :next-round="nextRound"
+                    :open-details="openDetails"
                     :submit-amen-guess="submitAmenGuess"
                     :is-submitting-amen-guess="isSubmittingAmenGuess"
                     :amen-guess-error="amenGuessError"
@@ -250,7 +304,7 @@ onBeforeUnmount(() => {
             </Transition>
 
             <Transition name="view-fade">
-                <div v-if="isHost && !isFinished" class="pt-10">
+                <div v-if="isHost && !isFinished" class="pt-10 hidden lg:block">
                     <div class="bg-gray-800/30 backdrop-blur rounded-2xl border border-white/10 p-6 flex justify-center">
                         <button
                             type="button"
@@ -262,6 +316,36 @@ onBeforeUnmount(() => {
                     </div>
                 </div>
             </Transition>
+
+            <BottomSheet
+                :open="isDetailsOpen"
+                title="Details"
+                max-width-class="max-w-6xl"
+                @close="closeDetails"
+            >
+                <div class="space-y-4">
+                    <RoomIntroCard :room="state.room" :me="state.me" />
+
+                    <GlassCard class="p-6">
+                        <h2 class="text-lg font-bold mb-4">Players ({{ state.players.length }})</h2>
+                        <PlayersList
+                            :players="state.players"
+                            :show-host-badge="playersListMode.showHostBadge"
+                            :show-score="playersListMode.showScore"
+                        />
+                    </GlassCard>
+
+                    <div v-if="isHost && !isFinished" class="pt-2">
+                        <button
+                            type="button"
+                            class="btn-interactive w-full min-h-[44px] px-6 py-3 bg-red-600 text-white font-bold rounded-xl"
+                            @click="finishGame"
+                        >
+                            Close Game
+                        </button>
+                    </div>
+                </div>
+            </BottomSheet>
         </div>
     </AppLayout>
 </template>

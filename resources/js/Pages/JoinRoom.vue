@@ -65,7 +65,7 @@ const submit = () => {
 
                         <button
                             type="submit"
-                            class="w-full py-4 px-6 bg-accent-500 hover:bg-accent-600 text-white font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="btn-interactive w-full min-h-[44px] py-4 px-6 bg-accent-500 hover:bg-accent-600 text-white font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                             :disabled="form.processing"
                         >
                             {{ form.processing ? 'Joining…' : 'Join Room' }}

@@ -2,6 +2,11 @@
 import { ref } from 'vue';
 
 const props = defineProps({
+    variant: {
+        type: String,
+        default: 'full',
+        validator: (value) => ['full', 'compact'].includes(value),
+    },
     canClaim: {
         type: Boolean,
         required: true,
@@ -21,6 +26,14 @@ const props = defineProps({
 });
 
 const amenAudio = ref(null);
+
+const buttonClass = () => {
+    if (props.variant === 'compact') {
+        return 'btn-interactive w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200';
+    }
+
+    return 'btn-interactive relative px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-2xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200';
+};
 
 const handleClick = async () => {
     if (!props.canClaim || props.isClaiming) {
@@ -43,7 +56,7 @@ const handleClick = async () => {
 
         <button
             type="button"
-            class="btn-interactive relative px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-2xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200"
+            :class="buttonClass()"
             :disabled="!canClaim || isClaiming"
             :title="canClaim ? 'Nur drücken, wenn du\'s wirklich weißt.' : ''"
             @click="handleClick"
@@ -55,7 +68,7 @@ const handleClick = async () => {
             <span v-else>AMEN</span>
         </button>
 
-        <p v-if="canClaim" class="mt-2 text-xs text-gray-400">
+        <p v-if="variant === 'full' && canClaim" class="mt-2 text-xs text-gray-400">
             Nur drücken, wenn du's wirklich weißt.
         </p>
 

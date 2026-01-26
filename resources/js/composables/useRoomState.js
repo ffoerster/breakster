@@ -1,7 +1,7 @@
-import { computed, reactive, ref } from 'vue';
+import { computed, ref, shallowReactive } from 'vue';
 
 export function useRoomState(props) {
-    const state = reactive({
+    const state = shallowReactive({
         room: props.room,
         me: props.me,
         players: props.players,
@@ -9,6 +9,15 @@ export function useRoomState(props) {
         round: props.round,
         timeline: props.timeline,
     });
+
+    const applyState = (data) => {
+        state.room = data.room;
+        state.me = data.me;
+        state.players = data.players;
+        state.providers = data.providers;
+        state.round = data.round;
+        state.timeline = data.timeline;
+    };
 
     const isHost = computed(() => Boolean(state.me?.is_host));
     const isInLobby = computed(() => state.room.state === 'lobby');
@@ -49,7 +58,7 @@ export function useRoomState(props) {
 
         try {
             const res = await window.axios.get(`/room/${code.value}/state`);
-            Object.assign(state, res.data);
+            applyState(res.data);
         } finally {
             isRefreshing.value = false;
         }
