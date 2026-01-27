@@ -107,10 +107,12 @@ class ImportSpotifyTracksJob implements ShouldQueue
                 'preview_url',
                 'external_url',
             ] as $field) {
-                if ($current->getAttribute($field) === $attributes[$field]) { continue; }
+                if ($current->getAttribute($field) === $attributes[$field]) {
+                    continue;
+                }
 
-$dirty = true;
-                    break;
+                $dirty = true;
+                break;
             }
 
             if (!$dirty) {

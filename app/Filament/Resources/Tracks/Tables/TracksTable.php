@@ -64,15 +64,29 @@ class TracksTable
                 TernaryFilter::make('spotify')
                     ->label('Spotify')
                     ->queries(
-                        true: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', 'spotify')),
-                        false: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', '!=', 'spotify')),
+                        true: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where(
+                            'key',
+                            'spotify',
+                        )),
+                        false: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where(
+                            'key',
+                            '!=',
+                            'spotify',
+                        )),
                         blank: static fn($query) => $query,
                     ),
                 TernaryFilter::make('tidal')
                     ->label('Tidal')
                     ->queries(
-                        true: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', 'tidal')),
-                        false: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', '!=', 'tidal')),
+                        true: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where(
+                            'key',
+                            'tidal',
+                        )),
+                        false: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where(
+                            'key',
+                            '!=',
+                            'tidal',
+                        )),
                         blank: static fn($query) => $query,
                     ),
                 TernaryFilter::make('is_active'),

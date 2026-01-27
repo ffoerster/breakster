@@ -550,9 +550,12 @@ describe('AMEN API endpoints', function () {
 
         session()->put('room_player_id', $player2->id);
 
-        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", [
-            'vote' => true,
-        ])->assertStatus(409)->assertJsonPath('message', 'Amen voting is only allowed after reveal.');
+        $this
+            ->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", [
+                'vote' => true,
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Amen voting is only allowed after reveal.');
     });
 
     it('returns 409 when claimant tries to vote', function () {
@@ -595,9 +598,12 @@ describe('AMEN API endpoints', function () {
 
         session()->put('room_player_id', $host->id);
 
-        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", [
-            'vote' => true,
-        ])->assertStatus(409)->assertJsonPath('message', 'The AMEN claimant cannot vote.');
+        $this
+            ->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", [
+                'vote' => true,
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'The AMEN claimant cannot vote.');
     });
 
     it('submits AMEN guess via API', function () {

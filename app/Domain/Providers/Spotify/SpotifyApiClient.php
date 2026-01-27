@@ -255,9 +255,11 @@ class SpotifyApiClient
 
         // Prefer largest image (first in array from Spotify)
         foreach ($images as $image) {
-            if (!(isset($image['url']) && is_string($image['url']))) { continue; }
+            if (!( isset($image['url']) && is_string($image['url']) )) {
+                continue;
+            }
 
-return $image['url'];
+            return $image['url'];
         }
 
         return null;
@@ -295,8 +297,11 @@ return $image['url'];
     /**
      * Transfer playback to a specific device.
      */
-    public function transferPlayback(string $deviceId, #[\SensitiveParameter] string $accessToken, bool $play = false): void
-    {
+    public function transferPlayback(
+        string $deviceId,
+        #[\SensitiveParameter] string $accessToken,
+        bool $play = false,
+    ): void {
         $response = $this->put('me/player', $accessToken, [
             'device_ids' => [$deviceId],
             'play' => $play,

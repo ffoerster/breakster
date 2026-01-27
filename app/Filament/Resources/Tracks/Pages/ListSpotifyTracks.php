@@ -16,6 +16,7 @@ class ListSpotifyTracks extends ListRecords
 
     protected function getTableQuery(): ?Builder
     {
-        return parent::getTableQuery()->whereHas('provider', static fn(Builder $query) => $query->where('key', 'spotify'));
+        return parent::getTableQuery()
+            ->whereHas('provider', static fn(Builder $query) => $query->where('key', 'spotify'));
     }
 }

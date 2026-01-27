@@ -82,9 +82,11 @@ class PlacementValidator
 
         // Find the first item that has a release date greater than the new track
         foreach ($timeline as $index => $item) {
-            if (!($item->track->release_date->gt($releaseDate))) { continue; }
+            if (!$item->track->release_date->gt($releaseDate)) {
+                continue;
+            }
 
-return $index;
+            return $index;
         }
 
         // If we get here, the track goes at the end

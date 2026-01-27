@@ -13,6 +13,19 @@ use App\Http\Controllers\Room\SpotifyDeviceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/manifest.webmanifest', function () {
+    $path = public_path('build/manifest.webmanifest');
+
+    if (!is_file($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/manifest+json; charset=utf-8',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+    ]);
+})->name('pwa.manifest');
+
 Route::get('/', function () {
     return view('welcome');
 })->name('home');

@@ -16,7 +16,8 @@ class SpotifyClientCredentialsTokenService
 
     public function __construct(
         private readonly string $clientId,
-        #[\SensitiveParameter] private readonly string $clientSecret,
+        #[\SensitiveParameter]
+        private readonly string $clientSecret,
     ) {}
 
     public function getAccessToken(): string

@@ -109,14 +109,16 @@ class TidalClient
 
         // Extract track IDs from relationship data
         foreach ($response['data'] ?? [] as $item) {
-            if (!(isset($item['type']) && $item['type'] === 'track' && isset($item['id']))) { continue; }
+            if (!( isset($item['type']) && $item['type'] === 'track' && isset($item['id']) )) {
+                continue;
+            }
 
-try {
-                    $tracks[] = $this->fetchTrack($item['id']);
-                } catch (\RuntimeException $e) {
-                    // Skip tracks that can't be fetched
-                    continue;
-                }
+            try {
+                $tracks[] = $this->fetchTrack($item['id']);
+            } catch (\RuntimeException $e) {
+                // Skip tracks that can't be fetched
+                continue;
+            }
         }
 
         return $tracks;
@@ -146,14 +148,16 @@ try {
 
             // Extract track IDs from relationship data
             foreach ($response['data'] ?? [] as $item) {
-                if (!(isset($item['type']) && $item['type'] === 'track' && isset($item['id']))) { continue; }
+                if (!( isset($item['type']) && $item['type'] === 'track' && isset($item['id']) )) {
+                    continue;
+                }
 
-try {
-                        $tracks[] = $this->fetchTrack($item['id']);
-                    } catch (\RuntimeException $e) {
-                        // Skip tracks that can't be fetched
-                        continue;
-                    }
+                try {
+                    $tracks[] = $this->fetchTrack($item['id']);
+                } catch (\RuntimeException $e) {
+                    // Skip tracks that can't be fetched
+                    continue;
+                }
             }
 
             if (empty($tracks)) {

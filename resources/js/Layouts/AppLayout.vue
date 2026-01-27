@@ -1,6 +1,7 @@
 <script setup>
 import { useOnline } from '@vueuse/core';
 import BrandLink from '../Components/Ui/BrandLink.vue';
+import PwaInstallPrompt from '../Components/Ui/PwaInstallPrompt.vue';
 import { Toaster } from 'vue-sonner';
 
 const isOnline = useOnline();
@@ -72,5 +73,7 @@ defineProps({
         </main>
 
         <footer v-if="showFooter" class="py-4 text-center text-gray-500 text-sm">A timeline music game</footer>
+
+        <PwaInstallPrompt />
     </div>
 </template>
