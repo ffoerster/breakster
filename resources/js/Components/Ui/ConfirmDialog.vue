@@ -52,6 +52,7 @@ const cancel = () => {
         :open="open"
         :title="title"
         :show-close-button="false"
+        :allow-drag-to-close="false"
         max-width-class="max-w-xl"
         @close="cancel"
     >

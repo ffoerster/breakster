@@ -1,5 +1,6 @@
 <script setup>
 import { useElementBounding, useMediaControls } from '@vueuse/core';
+import { useDrag } from '@vueuse/gesture';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -16,10 +17,13 @@ const props = defineProps({
 const audioRef = ref(null);
 const progressBarEl = ref(null);
 const autoplayBlocked = ref(false);
+const isScrubbing = ref(false);
 
 const { playing: isPlaying, currentTime, duration, ended } = useMediaControls(audioRef);
 
 const isLoaded = computed(() => Number.isFinite(duration.value) && duration.value > 0);
+
+const { left: progressLeft, width: progressWidth } = useElementBounding(progressBarEl);
 
 const progress = computed(() => {
     if (!duration.value) {
@@ -78,6 +82,43 @@ const seek = (event) => {
     const seekTime = ratio * duration.value;
     audioRef.value.currentTime = seekTime;
 };
+
+const seekToClientX = (clientX) => {
+    if (!audioRef.value || !duration.value) {
+        return;
+    }
+
+    const width = progressWidth.value;
+    if (!width) {
+        return;
+    }
+
+    const x = clientX - progressLeft.value;
+    const ratio = Math.min(1, Math.max(0, x / width));
+    audioRef.value.currentTime = ratio * duration.value;
+};
+
+useDrag(
+    ({ xy: [x], first, last, event }) => {
+        event?.preventDefault?.();
+
+        if (first) {
+            isScrubbing.value = true;
+        }
+
+        seekToClientX(x);
+
+        if (last) {
+            isScrubbing.value = false;
+        }
+    },
+    {
+        target: progressBarEl,
+        axis: 'x',
+        filterTaps: true,
+        eventOptions: { passive: false },
+    },
+);
 
 onMounted(() => {
     if (audioRef.value && props.autoplay) {
@@ -160,7 +201,8 @@ onBeforeUnmount(() => {
                     @click="seek"
                 >
                     <div
-                        class="absolute inset-y-0 left-0 bg-accent-500 rounded-full transition-[width] duration-100"
+                        class="absolute inset-y-0 left-0 bg-accent-500 rounded-full"
+                        :class="isScrubbing ? '' : 'transition-[width] duration-100'"
                         :style="{ width: `${progress}%` }"
                     />
                 </div>
@@ -175,4 +217,3 @@ onBeforeUnmount(() => {
         </div>
     </div>
 </template>
-const { left: progressLeft, width: progressWidth } = useElementBounding(progressBarEl);

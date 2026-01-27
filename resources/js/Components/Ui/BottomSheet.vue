@@ -1,6 +1,7 @@
 <script setup>
 import { useEventListener, useScrollLock } from '@vueuse/core';
 import { useFocusTrap } from '@vueuse/integrations/useFocusTrap';
+import { useDrag } from '@vueuse/gesture';
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -20,6 +21,10 @@ const props = defineProps({
         type: String,
         default: 'Close',
     },
+    allowDragToClose: {
+        type: Boolean,
+        default: true,
+    },
     maxWidthClass: {
         type: String,
         default: 'max-w-6xl',
@@ -30,6 +35,8 @@ const emit = defineEmits(['close']);
 
 const closeButtonEl = ref(null);
 const panelEl = ref(null);
+const dragHandleEl = ref(null);
+const sheetDragY = ref(0);
 let restoreFocusEl = null;
 const isScrollLocked = useScrollLock(document.body, false);
 const titleId = `bottom-sheet-title-${Math.random().toString(36).slice(2)}`;
@@ -48,6 +55,7 @@ let previousAriaHidden = null;
 let hadInert = false;
 
 const close = () => {
+    sheetDragY.value = 0;
     emit('close');
 };
 
@@ -99,6 +107,8 @@ watch(
             }
 
             restoreFocusEl = null;
+
+            sheetDragY.value = 0;
             return;
         }
 
@@ -129,6 +139,36 @@ watch(
     { immediate: true },
 );
 
+useDrag(
+    ({ movement: [, my], velocity: [, vy], last, event }) => {
+        if (!props.open || !props.allowDragToClose) {
+            return;
+        }
+
+        event?.preventDefault?.();
+
+        sheetDragY.value = Math.max(0, my);
+
+        if (!last) {
+            return;
+        }
+
+        const shouldClose = sheetDragY.value > 120 || vy > 0.6;
+        if (shouldClose) {
+            close();
+            return;
+        }
+
+        sheetDragY.value = 0;
+    },
+    {
+        target: dragHandleEl,
+        filterTaps: true,
+        axis: 'y',
+        eventOptions: { passive: false },
+    },
+);
+
 onBeforeUnmount(() => {
     stopKeydownListener?.();
     stopKeydownListener = null;
@@ -148,6 +188,8 @@ onBeforeUnmount(() => {
             appRootEl.removeAttribute('inert');
         }
     }
+
+    sheetDragY.value = 0;
 });
 </script>
 
@@ -168,6 +210,7 @@ onBeforeUnmount(() => {
                     <div
                         class="absolute inset-x-0 bottom-0"
                         :class="open ? 'pointer-events-auto' : 'pointer-events-none'"
+                        :style="{ '--sheet-drag-y': `${sheetDragY}px` }"
                     >
                         <div class="mx-auto w-full px-4" :class="maxWidthClass">
                             <div
@@ -178,6 +221,15 @@ onBeforeUnmount(() => {
                                 aria-modal="true"
                                 :aria-labelledby="labelledById"
                             >
+                                <div class="pt-3">
+                                    <div
+                                        ref="dragHandleEl"
+                                        class="mx-auto h-1.5 w-12 rounded-full bg-gray-600/60"
+                                        style="touch-action: pan-x"
+                                        aria-hidden="true"
+                                    />
+                                </div>
+
                                 <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
                                     <div
                                         v-if="title"
