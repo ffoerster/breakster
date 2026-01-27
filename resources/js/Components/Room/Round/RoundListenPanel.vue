@@ -1,8 +1,10 @@
 <script setup>
-import QrcodeVue from 'qrcode.vue';
+import { defineAsyncComponent } from 'vue';
 
 import AudioPlayer from '../../Ui/AudioPlayer.vue';
 import GlassCard from '../../Ui/GlassCard.vue';
+
+const QrcodeVue = defineAsyncComponent(() => import('qrcode.vue'));
 
 const props = defineProps({
     state: {
@@ -20,6 +22,10 @@ const props = defineProps({
     copyPlayUrl: {
         type: Function,
         required: true,
+    },
+    copiedPlayUrl: {
+        type: Boolean,
+        default: false,
     },
     isSpotifyProvider: {
         type: Boolean,
@@ -94,9 +100,11 @@ const outerPaddingClass = () => (props.compact ? 'p-6' : 'p-8');
             <button
                 type="button"
                 class="btn-interactive mt-3 min-h-[44px] px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold"
+                :disabled="!playUrl"
                 @click="copyPlayUrl"
             >
-                Copy link
+                <span v-if="copiedPlayUrl">Copied!</span>
+                <span v-else>Copy link</span>
             </button>
         </div>
 

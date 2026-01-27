@@ -1,3 +1,5 @@
+import { useAxios } from '@vueuse/integrations/useAxios';
+import { useOnline } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 
 export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
@@ -6,6 +8,18 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
     const isLoadingDevices = ref(false);
     const spotifyPlayError = ref('');
     const isPlayingSpotify = ref(false);
+
+    const isOnline = useOnline();
+
+    const spotifyLoadRequest = useAxios(undefined, undefined, window.axios, {
+        immediate: false,
+        abortPrevious: true,
+    });
+
+    const spotifyActionRequest = useAxios(undefined, undefined, window.axios, {
+        immediate: false,
+        abortPrevious: false,
+    });
 
     const hasSpotifyToken = computed(() => Boolean(state.room.host_has_spotify_token));
     const isSpotifyProvider = computed(() => state.room.playback_provider?.key === 'spotify');
@@ -19,27 +33,37 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
         spotifyError.value = '';
         isLoadingDevices.value = true;
 
+        if (!isOnline.value) {
+            spotifyError.value = "You're offline.";
+            isLoadingDevices.value = false;
+            return;
+        }
+
         try {
-            const res = await window.axios.get(`/room/${code.value}/spotify/devices`);
-            spotifyDevices.value = res.data.devices || [];
+            const result = await spotifyLoadRequest.execute(`/room/${code.value}/spotify/devices`);
+
+            if (result.error.value) {
+                const status = result.error.value?.response?.status;
+                const message = result.error.value?.response?.data?.error;
+
+                if (status === 403 && message?.includes('Premium')) {
+                    spotifyError.value = 'Spotify Premium required for host-controlled playback.';
+                } else if (message) {
+                    spotifyError.value = message;
+                } else {
+                    spotifyError.value = 'Failed to load Spotify devices. Please try again.';
+                }
+
+                spotifyDevices.value = [];
+                return;
+            }
+
+            spotifyDevices.value = result.response.value?.data?.devices || [];
 
             if (spotifyDevices.value.length === 0) {
                 spotifyError.value =
                     'No devices found. Open Spotify on your phone or computer and start playing something once, then refresh.';
             }
-        } catch (e) {
-            const status = e?.response?.status;
-            const message = e?.response?.data?.error;
-
-            if (status === 403 && message?.includes('Premium')) {
-                spotifyError.value = 'Spotify Premium required for host-controlled playback.';
-            } else if (message) {
-                spotifyError.value = message;
-            } else {
-                spotifyError.value = 'Failed to load Spotify devices. Please try again.';
-            }
-
-            spotifyDevices.value = [];
         } finally {
             isLoadingDevices.value = false;
         }
@@ -52,14 +76,27 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
 
         spotifyError.value = '';
 
+        if (!isOnline.value) {
+            spotifyError.value = "You're offline.";
+            return;
+        }
+
         try {
-            await window.axios.post(`/room/${code.value}/spotify/device`, {
-                device_id: deviceId,
+            const result = await spotifyActionRequest.execute(`/room/${code.value}/spotify/device`, {
+                method: 'POST',
+                data: {
+                    device_id: deviceId,
+                },
             });
 
+            if (result.error.value) {
+                spotifyError.value = result.error.value?.response?.data?.error || 'Failed to set device. Please try again.';
+                return;
+            }
+
             await refreshState();
-        } catch (e) {
-            spotifyError.value = e?.response?.data?.error || 'Failed to set device. Please try again.';
+        } finally {
+            // noop
         }
     };
 
@@ -76,10 +113,21 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
         spotifyPlayError.value = '';
         isPlayingSpotify.value = true;
 
+        if (!isOnline.value) {
+            spotifyPlayError.value = "You're offline.";
+            isPlayingSpotify.value = false;
+            return;
+        }
+
         try {
-            await window.axios.post(`/room/${code.value}/spotify/play`);
-        } catch (e) {
-            spotifyPlayError.value = e?.response?.data?.error || 'Failed to start playback. Please try again.';
+            const result = await spotifyActionRequest.execute(`/room/${code.value}/spotify/play`, {
+                method: 'POST',
+            });
+
+            if (result.error.value) {
+                spotifyPlayError.value = result.error.value?.response?.data?.error
+                    || 'Failed to start playback. Please try again.';
+            }
         } finally {
             isPlayingSpotify.value = false;
         }

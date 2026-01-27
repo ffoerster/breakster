@@ -1,38 +1,15 @@
-import { ref, onMounted, watch } from 'vue';
+import { usePreferredDark, useStorage } from '@vueuse/core';
+import { computed, watchEffect } from 'vue';
 
 export function useTheme() {
-    const theme = ref('system');
+    const theme = useStorage('theme', 'system');
+    const prefersDark = usePreferredDark();
 
-    onMounted(() => {
-        const saved = localStorage.getItem('theme') || 'system';
-        theme.value = saved;
-        applyTheme(saved);
+    const isDark = computed(() => theme.value === 'dark' || (theme.value === 'system' && prefersDark.value));
 
-        // Listen for system theme changes
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        mediaQuery.addEventListener('change', () => {
-            if (theme.value === 'system') {
-                applyTheme('system');
-            }
-        });
+    watchEffect(() => {
+        document.documentElement.classList.toggle('dark', isDark.value);
     });
-
-    watch(theme, (newTheme) => {
-        localStorage.setItem('theme', newTheme);
-        applyTheme(newTheme);
-    });
-
-    function applyTheme(mode) {
-        const isDark =
-            mode === 'dark' ||
-            (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-        if (isDark) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }
 
     function toggleTheme() {
         theme.value = theme.value === 'dark' ? 'light' : 'dark';

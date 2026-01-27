@@ -1,9 +1,11 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useIntervalFn, usePreferredReducedMotion } from '@vueuse/core';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import GlassCard from '../../Components/Ui/GlassCard.vue';
 import BottomSheet from '../../Components/Ui/BottomSheet.vue';
+import ConfirmDialog from '../../Components/Ui/ConfirmDialog.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import FinishedView from '../../Components/Room/Finished/FinishedView.vue';
 import LobbyView from '../../Components/Room/Lobby/LobbyView.vue';
@@ -54,6 +56,7 @@ const {
     cleanup,
     playUrl,
     copyPlayUrl,
+    copiedPlayUrl,
     selectProvider,
     startGame,
     canStart,
@@ -63,6 +66,11 @@ const {
     revealRound,
     nextRound,
     finishGame,
+    openFinishGameConfirm,
+    isFinishGameConfirmOpen,
+    isFinishingGame,
+    finishGameError,
+    cancelFinishGame,
     leaderboard,
     // AMEN
     claimAmen,
@@ -74,10 +82,20 @@ const {
     submitAmenVote,
     isSubmittingAmenVote,
     amenVoteError,
+    // Ready
+    markReady,
+    isMarkingReady,
+    markReadyError,
 } = useRoomState(props);
 
 const nowMs = ref(Date.now());
-let countdownIntervalId = null;
+const { pause: pauseCountdownTimer, resume: resumeCountdownTimer } = useIntervalFn(
+    () => {
+        nowMs.value = Date.now();
+    },
+    250,
+    { immediate: false },
+);
 
 const isDetailsOpen = ref(false);
 
@@ -115,6 +133,17 @@ const remainingSeconds = computed(() => {
 
 const isPlacementLocked = computed(() => isInRound.value && remainingSeconds.value > 0);
 
+const prefersReducedMotion = usePreferredReducedMotion();
+
+const scrollToTop = async () => {
+    await nextTick();
+
+    window.scrollTo({
+        top: 0,
+        behavior: prefersReducedMotion.value ? 'auto' : 'smooth',
+    });
+};
+
 const playersListMode = computed(() => {
     if (isInLobby.value) {
         return { showHostBadge: true, showScore: false };
@@ -122,25 +151,6 @@ const playersListMode = computed(() => {
 
     return { showHostBadge: false, showScore: true };
 });
-
-const startCountdownTimer = () => {
-    if (countdownIntervalId) {
-        return;
-    }
-
-    countdownIntervalId = setInterval(() => {
-        nowMs.value = Date.now();
-    }, 250);
-};
-
-const stopCountdownTimer = () => {
-    if (!countdownIntervalId) {
-        return;
-    }
-
-    clearInterval(countdownIntervalId);
-    countdownIntervalId = null;
-};
 
 const {
     spotifyDevices,
@@ -180,6 +190,8 @@ onMounted(() => {
     channel.listen('.amen.guess.submitted', scheduleRefresh);
     channel.listen('.amen.vote.submitted', scheduleRefresh);
     channel.listen('.amen.resolved', scheduleRefresh);
+    // Ready events
+    channel.listen('.player.ready', scheduleRefresh);
 
     scheduleRefresh();
 });
@@ -188,18 +200,40 @@ watch(
     () => isPlacementLocked.value,
     (locked) => {
         if (locked) {
-            startCountdownTimer();
+            resumeCountdownTimer();
         } else {
-            stopCountdownTimer();
+            pauseCountdownTimer();
         }
     },
     { immediate: true },
 );
 
+watch(
+    () => state.round?.id,
+    async (id, previousId) => {
+        if (!id || id === previousId) {
+            return;
+        }
+
+        await scrollToTop();
+    },
+);
+
+watch(
+    () => state.room.state,
+    async (roomState, previousRoomState) => {
+        if (roomState !== 'reveal' || roomState === previousRoomState) {
+            return;
+        }
+
+        await scrollToTop();
+    },
+);
+
 onBeforeUnmount(() => {
     cleanup();
 
-    stopCountdownTimer();
+    pauseCountdownTimer();
 
     if (window.Echo) {
         window.Echo.leave(`room.${code.value}`);
@@ -265,6 +299,7 @@ onBeforeUnmount(() => {
                     :is-host="isHost"
                     :play-url="playUrl"
                     :copy-play-url="copyPlayUrl"
+                    :copied-play-url="copiedPlayUrl"
                     :remaining-seconds="remainingSeconds"
                     :is-placement-locked="isPlacementLocked"
                     :is-placing="isPlacing"
@@ -282,6 +317,9 @@ onBeforeUnmount(() => {
                     :submit-amen-guess="submitAmenGuess"
                     :is-submitting-amen-guess="isSubmittingAmenGuess"
                     :amen-guess-error="amenGuessError"
+                    :mark-ready="markReady"
+                    :is-marking-ready="isMarkingReady"
+                    :mark-ready-error="markReadyError"
                 />
 
                 <RevealView
@@ -309,7 +347,7 @@ onBeforeUnmount(() => {
                         <button
                             type="button"
                             class="btn-interactive px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg"
-                            @click="finishGame"
+                            @click="openFinishGameConfirm"
                         >
                             Close Game
                         </button>
@@ -339,13 +377,26 @@ onBeforeUnmount(() => {
                         <button
                             type="button"
                             class="btn-interactive w-full min-h-[44px] px-6 py-3 bg-red-600 text-white font-bold rounded-xl"
-                            @click="finishGame"
+                            @click="openFinishGameConfirm"
                         >
                             Close Game
                         </button>
                     </div>
                 </div>
             </BottomSheet>
+
+            <ConfirmDialog
+                :open="isFinishGameConfirmOpen"
+                title="Finish game?"
+                message="Players will no longer be able to join this room."
+                confirm-label="Finish game"
+                cancel-label="Keep playing"
+                danger
+                :is-confirming="isFinishingGame"
+                :error="finishGameError"
+                @confirm="finishGame"
+                @cancel="cancelFinishGame"
+            />
         </div>
     </AppLayout>
 </template>

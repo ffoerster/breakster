@@ -1,4 +1,5 @@
 <script setup>
+import { useElementBounding, useMediaControls } from '@vueuse/core';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -13,10 +14,12 @@ const props = defineProps({
 });
 
 const audioRef = ref(null);
-const isPlaying = ref(false);
-const currentTime = ref(0);
-const duration = ref(0);
-const isLoaded = ref(false);
+const progressBarEl = ref(null);
+const autoplayBlocked = ref(false);
+
+const { playing: isPlaying, currentTime, duration, ended } = useMediaControls(audioRef);
+
+const isLoaded = computed(() => Number.isFinite(duration.value) && duration.value > 0);
 
 const progress = computed(() => {
     if (!duration.value) {
@@ -34,16 +37,30 @@ const formatTime = (seconds) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const togglePlay = () => {
+const tryPlay = async () => {
+    if (!audioRef.value) {
+        return;
+    }
+
+    try {
+        await audioRef.value.play();
+        autoplayBlocked.value = false;
+    } catch {
+        autoplayBlocked.value = true;
+    }
+};
+
+const togglePlay = async () => {
     if (!audioRef.value) {
         return;
     }
 
     if (isPlaying.value) {
         audioRef.value.pause();
-    } else {
-        audioRef.value.play();
+        return;
     }
+
+    await tryPlay();
 };
 
 const seek = (event) => {
@@ -51,56 +68,42 @@ const seek = (event) => {
         return;
     }
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const width = rect.width;
-    const seekTime = (clickX / width) * duration.value;
+    const width = progressWidth.value;
+    if (!width) {
+        return;
+    }
+
+    const clickX = event.clientX - progressLeft.value;
+    const ratio = Math.min(1, Math.max(0, clickX / width));
+    const seekTime = ratio * duration.value;
     audioRef.value.currentTime = seekTime;
-};
-
-const handleTimeUpdate = () => {
-    if (audioRef.value) {
-        currentTime.value = audioRef.value.currentTime;
-    }
-};
-
-const handleLoadedMetadata = () => {
-    if (audioRef.value) {
-        duration.value = audioRef.value.duration;
-        isLoaded.value = true;
-    }
-};
-
-const handlePlay = () => {
-    isPlaying.value = true;
-};
-
-const handlePause = () => {
-    isPlaying.value = false;
-};
-
-const handleEnded = () => {
-    isPlaying.value = false;
-    currentTime.value = 0;
 };
 
 onMounted(() => {
     if (audioRef.value && props.autoplay) {
-        audioRef.value.play().catch(() => {
-            // Autoplay blocked, user needs to interact
-        });
+        void tryPlay();
     }
 });
 
 watch(
     () => props.src,
     () => {
-        isPlaying.value = false;
-        currentTime.value = 0;
-        duration.value = 0;
-        isLoaded.value = false;
+        autoplayBlocked.value = false;
+
+        if (audioRef.value) {
+            audioRef.value.pause();
+            audioRef.value.currentTime = 0;
+        }
     },
 );
+
+watch(ended, (hasEnded) => {
+    if (!hasEnded || !audioRef.value) {
+        return;
+    }
+
+    audioRef.value.currentTime = 0;
+});
 
 onBeforeUnmount(() => {
     if (audioRef.value) {
@@ -115,11 +118,6 @@ onBeforeUnmount(() => {
             ref="audioRef"
             :src="src"
             preload="metadata"
-            @timeupdate="handleTimeUpdate"
-            @loadedmetadata="handleLoadedMetadata"
-            @play="handlePlay"
-            @pause="handlePause"
-            @ended="handleEnded"
         />
 
         <div class="flex items-center gap-4">
@@ -157,6 +155,7 @@ onBeforeUnmount(() => {
 
             <div class="flex-1 space-y-1">
                 <div
+                    ref="progressBarEl"
                     class="relative h-2 rounded-full bg-gray-700 cursor-pointer overflow-hidden"
                     @click="seek"
                 >
@@ -164,6 +163,9 @@ onBeforeUnmount(() => {
                         class="absolute inset-y-0 left-0 bg-accent-500 rounded-full transition-[width] duration-100"
                         :style="{ width: `${progress}%` }"
                     />
+                </div>
+                <div v-if="autoplayBlocked" class="text-xs text-amber-400">
+                    Tap play to start audio
                 </div>
                 <div class="flex justify-between text-xs text-gray-400 tabular-nums">
                     <span>{{ formatTime(currentTime) }}</span>
@@ -173,3 +175,4 @@ onBeforeUnmount(() => {
         </div>
     </div>
 </template>
+const { left: progressLeft, width: progressWidth } = useElementBounding(progressBarEl);

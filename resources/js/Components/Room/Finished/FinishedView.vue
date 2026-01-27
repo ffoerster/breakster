@@ -1,5 +1,5 @@
 <script setup>
-import confetti from 'canvas-confetti';
+import { useTimeoutFn } from '@vueuse/core';
 import { onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 
@@ -12,10 +12,52 @@ const props = defineProps({
     },
 });
 
-onMounted(() => {
+let confettiLib = null;
+
+const getConfetti = async () => {
+    if (confettiLib) {
+        return confettiLib;
+    }
+
+    const mod = await import('canvas-confetti');
+    confettiLib = mod.default;
+
+    return confettiLib;
+};
+
+const fireSecondConfettiBurst = async () => {
+    const confetti = await getConfetti();
+
+    confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#00d4ff', '#ff6b6b', '#ffd93d'],
+    });
+    confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#00d4ff', '#ff6b6b', '#ffd93d'],
+    });
+};
+
+const { start: startSecondConfettiBurst } = useTimeoutFn(
+    () => {
+        void fireSecondConfettiBurst();
+    },
+    250,
+    { immediate: false },
+);
+
+onMounted(async () => {
     const isWinner = props.leaderboard[0]?.is_me;
 
     if (isWinner) {
+        const confetti = await getConfetti();
+
         confetti({
             particleCount: 100,
             spread: 70,
@@ -23,22 +65,7 @@ onMounted(() => {
             colors: ['#00d4ff', '#ff6b6b', '#ffd93d', '#6bcb77'],
         });
 
-        setTimeout(() => {
-            confetti({
-                particleCount: 50,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                colors: ['#00d4ff', '#ff6b6b', '#ffd93d'],
-            });
-            confetti({
-                particleCount: 50,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                colors: ['#00d4ff', '#ff6b6b', '#ffd93d'],
-            });
-        }, 250);
+        startSecondConfettiBurst();
     }
 });
 </script>

@@ -1,4 +1,7 @@
-import { computed, ref, shallowReactive } from 'vue';
+import { useClipboard, useConfirmDialog, useDebounceFn, useDocumentVisibility, useOnline } from '@vueuse/core';
+import { useAxios } from '@vueuse/integrations/useAxios';
+import { computed, ref, shallowReactive, watch } from 'vue';
+import { toast } from 'vue-sonner';
 
 export function useRoomState(props) {
     const state = shallowReactive({
@@ -34,44 +37,141 @@ export function useRoomState(props) {
         return `${window.location.origin}/play/${state.room.code}/${state.round.id}`;
     });
 
+    const { copy: copyToClipboard, copied: copiedPlayUrl } = useClipboard({ legacy: true, copiedDuring: 1500 });
+
     const copyPlayUrl = async () => {
         if (!playUrl.value) {
             return;
         }
 
         try {
-            await navigator.clipboard.writeText(playUrl.value);
+            await copyToClipboard(playUrl.value);
         } catch {
             // ignore
         }
     };
 
     const isRefreshing = ref(false);
-    let refreshTimeoutId = null;
+
+    const refreshRequest = useAxios(undefined, undefined, window.axios, {
+        immediate: false,
+        abortPrevious: true,
+    });
+
+    const actionRequest = useAxios(undefined, undefined, window.axios, {
+        immediate: false,
+        abortPrevious: false,
+    });
+
+    const executeAction = async (url, config = {}) => {
+        const result = await actionRequest.execute(url, config);
+
+        if (result.error.value) {
+            throw result.error.value;
+        }
+
+        return result;
+    };
+
+    const getRequestErrorMessage = (error, fallback) => {
+        return error?.response?.data?.message
+            ?? error?.response?.data?.error
+            ?? fallback;
+    };
 
     const refreshState = async () => {
         if (isRefreshing.value) {
             return;
         }
 
+        if (!isOnline.value) {
+            pendingRefresh.value = true;
+            return;
+        }
+
         isRefreshing.value = true;
 
         try {
-            const res = await window.axios.get(`/room/${code.value}/state`);
-            applyState(res.data);
+            const result = await refreshRequest.execute(`/room/${code.value}/state`);
+            const data = result.response.value?.data;
+
+            if (data) {
+                applyState(data);
+            }
         } finally {
             isRefreshing.value = false;
         }
     };
 
-    const scheduleRefresh = () => {
-        if (refreshTimeoutId) {
-            clearTimeout(refreshTimeoutId);
+    const documentVisibility = useDocumentVisibility();
+    const isOnline = useOnline();
+    const pendingRefresh = ref(false);
+
+    const scheduleRefresh = useDebounceFn(
+        () => {
+            if (!isOnline.value || documentVisibility.value !== 'visible') {
+                pendingRefresh.value = true;
+                return;
+            }
+
+            void refreshState();
+        },
+        100,
+        { maxWait: 1000 },
+    );
+
+    watch(documentVisibility, (visibility) => {
+        if (visibility !== 'visible' || !pendingRefresh.value) {
+            return;
         }
 
-        refreshTimeoutId = setTimeout(() => {
-            refreshState();
-        }, 100);
+        if (!isOnline.value) {
+            return;
+        }
+
+        pendingRefresh.value = false;
+        void refreshState();
+    });
+
+    watch(isOnline, (online) => {
+        if (!online || !pendingRefresh.value) {
+            return;
+        }
+
+        if (documentVisibility.value !== 'visible') {
+            return;
+        }
+
+        pendingRefresh.value = false;
+        void refreshState();
+    });
+
+    const {
+        isRevealed: isFinishGameConfirmOpen,
+        reveal: revealFinishGameConfirm,
+        confirm: confirmFinishGameConfirm,
+        cancel: cancelFinishGameConfirm,
+    } = useConfirmDialog();
+
+    const isFinishingGame = ref(false);
+    const finishGameError = ref('');
+
+    const openFinishGameConfirm = () => {
+        if (!isHost.value || isFinished.value) {
+            return;
+        }
+
+        if (isFinishGameConfirmOpen.value) {
+            return;
+        }
+
+        finishGameError.value = '';
+
+        if (!isOnline.value) {
+            finishGameError.value = "You're offline.";
+        }
+
+        void revealFinishGameConfirm();
     };
 
     const selectProvider = async (providerId) => {
@@ -79,11 +179,24 @@ export function useRoomState(props) {
             return;
         }
 
-        await window.axios.post(`/room/${code.value}/provider`, {
-            playback_provider_id: providerId,
-        });
+        if (!isOnline.value) {
+            return;
+        }
 
-        await refreshState();
+        try {
+            await executeAction(`/room/${code.value}/provider`, {
+                method: 'POST',
+                data: {
+                    playback_provider_id: providerId,
+                },
+            });
+
+            await refreshState();
+        } catch (e) {
+            toast.error('Could not set provider', {
+                description: getRequestErrorMessage(e, 'Please try again.'),
+            });
+        }
     };
 
     const startError = ref('');
@@ -94,14 +207,28 @@ export function useRoomState(props) {
             return;
         }
 
+        if (!isOnline.value) {
+            startError.value = "You're offline.";
+            return;
+        }
+
         startError.value = '';
         isStarting.value = true;
 
         try {
-            await window.axios.post(`/room/${code.value}/start`);
+            const result = await actionRequest.execute(`/room/${code.value}/start`, {
+                method: 'POST',
+            });
+
+            if (result.error.value) {
+                startError.value = result.error.value?.response?.data?.message
+                    ?? 'Could not start the game. Please try again.';
+                return;
+            }
+
             await refreshState();
-        } catch (e) {
-            startError.value = e?.response?.data?.message ?? 'Could not start the game. Please try again.';
+
+            toast.success('Game started');
         } finally {
             isStarting.value = false;
         }
@@ -121,16 +248,38 @@ export function useRoomState(props) {
             return;
         }
 
+        const wasPlaced = Boolean(state.me?.has_placed);
+
         placeError.value = '';
         isPlacing.value = true;
 
+        if (!isOnline.value) {
+            placeError.value = "You're offline.";
+            isPlacing.value = false;
+            return;
+        }
+
         try {
-            await window.axios.post(`/room/${code.value}/place`, {
-                inserted_after_track_id: insertedAfterTrackId,
+            const result = await actionRequest.execute(`/room/${code.value}/place`, {
+                method: 'POST',
+                data: {
+                    inserted_after_track_id: insertedAfterTrackId,
+                },
             });
+
+            if (result.error.value) {
+                placeError.value = result.error.value?.response?.data?.message
+                    ?? 'Could not submit placement. Please try again.';
+                return;
+            }
+
             await refreshState();
-        } catch (e) {
-            placeError.value = e?.response?.data?.message ?? 'Could not submit placement. Please try again.';
+
+            if (!wasPlaced && state.me?.has_placed) {
+                toast.success('Guess saved', {
+                    description: 'You can change it until reveal.',
+                });
+            }
         } finally {
             isPlacing.value = false;
         }
@@ -141,8 +290,22 @@ export function useRoomState(props) {
             return;
         }
 
-        await window.axios.post(`/room/${code.value}/reveal`);
-        await refreshState();
+        if (!isOnline.value) {
+            return;
+        }
+
+        try {
+            await executeAction(`/room/${code.value}/reveal`, {
+                method: 'POST',
+            });
+            await refreshState();
+
+            toast.success('Revealed');
+        } catch (e) {
+            toast.error('Could not reveal', {
+                description: getRequestErrorMessage(e, 'Please try again.'),
+            });
+        }
     };
 
     const nextRound = async () => {
@@ -150,22 +313,60 @@ export function useRoomState(props) {
             return;
         }
 
-        await window.axios.post(`/room/${code.value}/next`);
-        await refreshState();
+        if (!isOnline.value) {
+            return;
+        }
+
+        try {
+            await executeAction(`/room/${code.value}/next`, {
+                method: 'POST',
+            });
+            await refreshState();
+
+            toast.success('Next round');
+        } catch (e) {
+            toast.error('Could not start next round', {
+                description: getRequestErrorMessage(e, 'Please try again.'),
+            });
+        }
     };
 
     const finishGame = async () => {
-        if (!isHost.value || isFinished.value) {
+        if (!isHost.value || isFinished.value || isFinishingGame.value) {
             return;
         }
 
-        const ok = window.confirm('Finish this game? Players will no longer be able to join.');
-        if (!ok) {
+        if (!isOnline.value) {
+            finishGameError.value = "You're offline.";
             return;
         }
 
-        await window.axios.post(`/room/${code.value}/finish`);
-        await refreshState();
+        isFinishingGame.value = true;
+        finishGameError.value = '';
+
+        try {
+            const result = await actionRequest.execute(`/room/${code.value}/finish`, {
+                method: 'POST',
+            });
+
+            if (result.error.value) {
+                finishGameError.value = result.error.value?.response?.data?.message
+                    ?? 'Could not finish the game. Please try again.';
+                return;
+            }
+
+            confirmFinishGameConfirm();
+            await refreshState();
+
+            toast.success('Game closed');
+        } finally {
+            isFinishingGame.value = false;
+        }
+    };
+
+    const cancelFinishGame = () => {
+        finishGameError.value = '';
+        cancelFinishGameConfirm();
     };
 
     // AMEN feature
@@ -188,11 +389,25 @@ export function useRoomState(props) {
         isClaimingAmen.value = true;
         amenClaimError.value = '';
 
+        if (!isOnline.value) {
+            amenClaimError.value = "You're offline.";
+            isClaimingAmen.value = false;
+            return;
+        }
+
         try {
-            await window.axios.post(`/room/${code.value}/round/${state.round.id}/amen`);
+            const result = await actionRequest.execute(`/room/${code.value}/round/${state.round.id}/amen`, {
+                method: 'POST',
+            });
+
+            if (result.error.value) {
+                amenClaimError.value = result.error.value?.response?.data?.message ?? 'Could not claim AMEN.';
+                return;
+            }
+
             await refreshState();
-        } catch (e) {
-            amenClaimError.value = e?.response?.data?.message ?? 'Could not claim AMEN.';
+
+            toast.success('AMEN claimed');
         } finally {
             isClaimingAmen.value = false;
         }
@@ -206,14 +421,29 @@ export function useRoomState(props) {
         isSubmittingAmenGuess.value = true;
         amenGuessError.value = '';
 
+        if (!isOnline.value) {
+            amenGuessError.value = "You're offline.";
+            isSubmittingAmenGuess.value = false;
+            return;
+        }
+
         try {
-            await window.axios.post(`/room/${code.value}/round/${state.round.id}/amen/guess`, {
-                artist,
-                title,
+            const result = await actionRequest.execute(`/room/${code.value}/round/${state.round.id}/amen/guess`, {
+                method: 'POST',
+                data: {
+                    artist,
+                    title,
+                },
             });
+
+            if (result.error.value) {
+                amenGuessError.value = result.error.value?.response?.data?.message ?? 'Could not submit guess.';
+                return;
+            }
+
             await refreshState();
-        } catch (e) {
-            amenGuessError.value = e?.response?.data?.message ?? 'Could not submit guess.';
+
+            toast.success('AMEN guess saved');
         } finally {
             isSubmittingAmenGuess.value = false;
         }
@@ -227,15 +457,70 @@ export function useRoomState(props) {
         isSubmittingAmenVote.value = true;
         amenVoteError.value = '';
 
+        if (!isOnline.value) {
+            amenVoteError.value = "You're offline.";
+            isSubmittingAmenVote.value = false;
+            return;
+        }
+
         try {
-            await window.axios.post(`/room/${code.value}/round/${state.round.id}/amen/vote`, {
-                vote,
+            const result = await actionRequest.execute(`/room/${code.value}/round/${state.round.id}/amen/vote`, {
+                method: 'POST',
+                data: {
+                    vote,
+                },
             });
+
+            if (result.error.value) {
+                amenVoteError.value = result.error.value?.response?.data?.message ?? 'Could not submit vote.';
+                return;
+            }
+
             await refreshState();
-        } catch (e) {
-            amenVoteError.value = e?.response?.data?.message ?? 'Could not submit vote.';
+
+            toast.success('AMEN vote saved');
         } finally {
             isSubmittingAmenVote.value = false;
+        }
+    };
+
+    // Ready feature
+    const isMarkingReady = ref(false);
+    const markReadyError = ref('');
+
+    const markReady = async () => {
+        if (!isInRound.value || !state.round?.id) {
+            return;
+        }
+
+        if (isMarkingReady.value) {
+            return;
+        }
+
+        isMarkingReady.value = true;
+        markReadyError.value = '';
+
+        if (!isOnline.value) {
+            markReadyError.value = "You're offline.";
+            isMarkingReady.value = false;
+            return;
+        }
+
+        try {
+            const result = await actionRequest.execute(`/room/${code.value}/ready`, {
+                method: 'POST',
+            });
+
+            if (result.error.value) {
+                markReadyError.value = result.error.value?.response?.data?.message ?? 'Could not mark as ready.';
+                return;
+            }
+
+            await refreshState();
+
+            toast.success("You're ready");
+        } finally {
+            isMarkingReady.value = false;
         }
     };
 
@@ -271,9 +556,8 @@ export function useRoomState(props) {
     });
 
     const cleanup = () => {
-        if (refreshTimeoutId) {
-            clearTimeout(refreshTimeoutId);
-        }
+        scheduleRefresh.cancel?.();
+        cancelFinishGame();
     };
 
     return {
@@ -293,6 +577,7 @@ export function useRoomState(props) {
 
         playUrl,
         copyPlayUrl,
+        copiedPlayUrl,
 
         selectProvider,
         startGame,
@@ -306,6 +591,11 @@ export function useRoomState(props) {
         revealRound,
         nextRound,
         finishGame,
+        isFinishGameConfirmOpen,
+        openFinishGameConfirm,
+        isFinishingGame,
+        finishGameError,
+        cancelFinishGame,
 
         // AMEN
         claimAmen,
@@ -317,6 +607,11 @@ export function useRoomState(props) {
         submitAmenVote,
         isSubmittingAmenVote,
         amenVoteError,
+
+        // Ready
+        markReady,
+        isMarkingReady,
+        markReadyError,
 
         leaderboard,
     };

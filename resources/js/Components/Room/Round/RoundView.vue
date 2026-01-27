@@ -1,5 +1,4 @@
 <script setup>
-import Sortable from 'sortablejs';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import BottomActionBar from '../../Ui/BottomActionBar.vue';
@@ -10,7 +9,22 @@ import PlayersList from '../PlayersList.vue';
 import AmenButton from './AmenButton.vue';
 import AmenGuessForm from './AmenGuessForm.vue';
 import AmenResult from './AmenResult.vue';
+import ReadyButton from './ReadyButton.vue';
 import RoundListenPanel from './RoundListenPanel.vue';
+
+let sortableLib = null;
+let sortableInitRunId = 0;
+
+const getSortable = async () => {
+    if (sortableLib) {
+        return sortableLib;
+    }
+
+    const mod = await import('sortablejs');
+    sortableLib = mod.default;
+
+    return sortableLib;
+};
 
 const props = defineProps({
     state: {
@@ -28,6 +42,10 @@ const props = defineProps({
     copyPlayUrl: {
         type: Function,
         required: true,
+    },
+    copiedPlayUrl: {
+        type: Boolean,
+        default: false,
     },
     remainingSeconds: {
         type: Number,
@@ -98,6 +116,19 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    // Ready props
+    markReady: {
+        type: Function,
+        required: true,
+    },
+    isMarkingReady: {
+        type: Boolean,
+        required: true,
+    },
+    markReadyError: {
+        type: String,
+        default: '',
+    },
 });
 
 const isListenOpen = ref(false);
@@ -114,6 +145,10 @@ const mysterySourceEl = ref(null);
 const placementListEl = ref(null);
 let mysterySortable = null;
 let placementSortable = null;
+
+const optimisticPlaced = ref(false);
+
+const hasGuessInTimeline = computed(() => Boolean(props.state.me?.has_placed) || optimisticPlaced.value);
 
 const queuedInsertedAfterTrackId = ref(undefined);
 
@@ -151,6 +186,22 @@ watch(
     () => props.state.round?.id,
     () => {
         queuedInsertedAfterTrackId.value = undefined;
+        optimisticPlaced.value = false;
+    },
+);
+
+watch(
+    () => props.placeError,
+    (error) => {
+        if (!error) {
+            return;
+        }
+
+        if (props.state.me?.has_placed) {
+            return;
+        }
+
+        optimisticPlaced.value = false;
     },
 );
 
@@ -159,7 +210,7 @@ const shouldEnablePlacementDnd = computed(() => {
 });
 
 const shouldEnableMysterySourceDnd = computed(() => {
-    return Boolean(!props.isPlacementLocked && !props.state.me?.has_placed);
+    return Boolean(!props.isPlacementLocked && !hasGuessInTimeline.value);
 });
 
 const placementIndex = computed(() => {
@@ -214,14 +265,21 @@ const destroyPlacementDnD = () => {
     }
 };
 
-const initPlacementDnD = () => {
-    if (!mysterySourceEl.value || !placementListEl.value) {
+const initPlacementDnD = async () => {
+    if (!placementListEl.value) {
         return;
     }
 
+    const runId = ++sortableInitRunId;
+
     destroyPlacementDnD();
 
-    if (shouldEnableMysterySourceDnd.value) {
+    const Sortable = await getSortable();
+    if (runId !== sortableInitRunId) {
+        return;
+    }
+
+    if (shouldEnableMysterySourceDnd.value && mysterySourceEl.value) {
         mysterySortable = Sortable.create(mysterySourceEl.value, {
             group: {
                 name: 'placement',
@@ -264,6 +322,8 @@ const initPlacementDnD = () => {
                 return;
             }
 
+            optimisticPlaced.value = true;
+
             const newIndex = evt.newIndex;
             const timeline = props.state.timeline ?? [];
 
@@ -296,7 +356,7 @@ const initPlacementDnD = () => {
             await requestPlace(insertedAfterTrackId);
         },
     });
-};
+}; 
 
 watch(
     () => shouldEnablePlacementDnd.value,
@@ -304,7 +364,7 @@ watch(
         await nextTick();
 
         if (enabled) {
-            initPlacementDnD();
+            await initPlacementDnD();
         } else {
             destroyPlacementDnD();
         }
@@ -318,7 +378,7 @@ watch(
         await nextTick();
 
         if (shouldEnablePlacementDnd.value) {
-            initPlacementDnD();
+            await initPlacementDnD();
         }
     },
 );
@@ -327,12 +387,13 @@ onMounted(async () => {
     await nextTick();
 
     if (shouldEnablePlacementDnd.value) {
-        initPlacementDnD();
+        await initPlacementDnD();
     }
 });
 
 onBeforeUnmount(() => {
     destroyPlacementDnD();
+    sortableInitRunId += 1;
 });
 
 const placementsProgress = computed(() => {
@@ -356,6 +417,7 @@ const placementsProgress = computed(() => {
                     :is-host="isHost"
                     :play-url="playUrl"
                     :copy-play-url="copyPlayUrl"
+                    :copied-play-url="copiedPlayUrl"
                     :is-spotify-provider="isSpotifyProvider"
                     :spotify-play-error="spotifyPlayError"
                     :is-playing-spotify="isPlayingSpotify"
@@ -366,59 +428,97 @@ const placementsProgress = computed(() => {
             <div class="lg:col-span-5 space-y-6">
                 <GlassCard class="p-6">
                     <h3 class="text-lg font-bold mb-4 text-center">Current Track</h3>
-                    <div
-                        ref="mysterySourceEl"
-                        class="select-none"
-                        :class="isPlacementLocked ? 'opacity-50' : ''"
-                    >
-                        <div
-                            class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-accent-600/30 to-pink-600/30 border-2 border-accent-500/50 rounded-lg"
-                            :class="
-                                isPlacementLocked
-                                    ? 'cursor-not-allowed'
-                                    : state.me.has_placed
-                                        ? 'cursor-default'
-                                        : 'cursor-grab active:cursor-grabbing'
-                            "
-                        >
-                            <div class="w-16 h-16 rounded bg-accent-900/60 flex items-center justify-center shrink-0">
-                                <svg class="w-8 h-8 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
-                                    <path
-                                        d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
-                                    />
-                                </svg>
-                            </div>
-                            <div class="flex-1 min-w-0 text-center">
-                                <div class="text-2xl font-black text-accent-300">???</div>
-                                <div class="text-sm text-gray-300 font-medium">Mystery Track</div>
-                                <div class="text-xs text-gray-400 mt-1">
-                                    <span v-if="isPlacementLocked">Locked</span>
-                                    <span v-else-if="state.me.has_placed">Move it in your timeline</span>
-                                    <span v-else>Drag into your timeline</span>
-                                </div>
-                            </div>
 
-                            <div class="w-10 h-10 shrink-0 flex items-center justify-center">
-                                <div
-                                    v-if="isPlacing"
-                                    class="w-6 h-6 rounded-full border-2 border-gray-300/30 border-t-gray-200 animate-spin"
-                                />
-                                <div
-                                    v-else-if="state.me.has_placed"
-                                    class="w-8 h-8 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center"
-                                    title="Placement saved"
-                                >
-                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <Transition name="feedback-slide" mode="out-in">
+                        <div
+                            v-if="!hasGuessInTimeline"
+                            key="mystery-source"
+                            ref="mysterySourceEl"
+                            class="select-none"
+                            :class="isPlacementLocked ? 'opacity-50' : ''"
+                        >
+                            <div
+                                class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-accent-600/30 to-pink-600/30 border-2 border-accent-500/50 rounded-lg"
+                                :class="isPlacementLocked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'"
+                            >
+                                <div class="w-16 h-16 rounded bg-accent-900/60 flex items-center justify-center shrink-0">
+                                    <svg class="w-8 h-8 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
                                         <path
-                                            fill-rule="evenodd"
-                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                            clip-rule="evenodd"
+                                            d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
                                         />
                                     </svg>
                                 </div>
+                                <div class="flex-1 min-w-0 text-center">
+                                    <div class="text-2xl font-black text-accent-300">???</div>
+                                    <div class="text-sm text-gray-300 font-medium">Mystery Track</div>
+                                    <div class="text-xs text-gray-400 mt-1">
+                                        <span v-if="isPlacementLocked">Locked</span>
+                                        <span v-else>Drag into your timeline</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+
+                        <div
+                            v-else
+                            key="mystery-status"
+                            class="select-none"
+                            :class="isPlacementLocked ? 'opacity-60' : ''"
+                        >
+                            <div class="flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-white/10 bg-gray-900/40">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 rounded bg-accent-900/50 flex items-center justify-center shrink-0">
+                                        <svg class="w-6 h-6 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-bold text-gray-100 truncate">Guess placed</div>
+                                        <div class="text-xs text-gray-400">
+                                            <span v-if="isPlacementLocked">Locked</span>
+                                            <span v-else>Drag within your timeline to reposition</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="w-10 h-10 shrink-0 flex items-center justify-center">
+                                    <div
+                                        v-if="isPlacing"
+                                        class="w-6 h-6 rounded-full border-2 border-gray-300/30 border-t-gray-200 animate-spin"
+                                    />
+                                    <div
+                                        v-else
+                                        class="w-8 h-8 rounded-full bg-green-500/15 border border-green-500/50 flex items-center justify-center"
+                                        title="Placement saved"
+                                    >
+                                        <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Transition>
+                </GlassCard>
+
+                <!-- Ready Button (for non-hosts) -->
+                <GlassCard v-if="!isHost" class="p-6 hidden lg:block">
+                    <ReadyButton
+                        :is-ready="state.me?.is_ready ?? false"
+                        :is-marking="isMarkingReady"
+                        :is-locked="isPlacementLocked"
+                        :has-placed="state.me?.has_placed ?? false"
+                        :mark-ready="markReady"
+                        :ready-count="state.round?.ready_count ?? 0"
+                        :total-players="state.round?.players_count ?? 0"
+                        :error="markReadyError"
+                    />
                 </GlassCard>
 
                 <!-- AMEN Section -->
@@ -484,24 +584,6 @@ const placementsProgress = computed(() => {
                         >
                             <CountdownRing :remaining="remainingSeconds" :total="3" />
                             <span class="font-medium">Placement unlocks soon...</span>
-                        </div>
-                    </Transition>
-
-                    <Transition name="feedback-slide">
-                        <div
-                            v-if="state.me.has_placed && !isPlacementLocked"
-                            class="p-4 bg-green-500/20 border border-green-500 rounded-lg text-center mb-4"
-                        >
-                            <div class="flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5 text-green-400 animate-scale-pop" fill="currentColor" viewBox="0 0 20 20">
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd"
-                                    />
-                                </svg>
-                                <span>Your guess is saved. You can change it until reveal.</span>
-                            </div>
                         </div>
                     </Transition>
 
@@ -637,6 +719,21 @@ const placementsProgress = computed(() => {
                     Listen
                 </button>
 
+                <!-- Ready Button (mobile, non-hosts only) -->
+                <div v-if="!isHost && !state.me?.has_placed && !state.me?.is_ready" class="col-span-2">
+                    <button
+                        type="button"
+                        class="btn-interactive w-full min-h-[44px] px-4 py-3 rounded-xl font-bold transition-all duration-200"
+                        :class="isPlacementLocked ? 'bg-gray-700 text-gray-500' : 'bg-blue-600 text-white'"
+                        :disabled="isPlacementLocked || isMarkingReady"
+                        @click="markReady"
+                    >
+                        <span v-if="isMarkingReady">Marking...</span>
+                        <span v-else-if="isPlacementLocked">Waiting...</span>
+                        <span v-else>I'm Ready</span>
+                    </button>
+                </div>
+
                 <div v-if="state.round?.amen?.can_claim && !state.round.amen.claimed_by" class="col-span-2">
                     <AmenButton
                         variant="compact"
@@ -671,6 +768,7 @@ const placementsProgress = computed(() => {
                     :is-host="isHost"
                     :play-url="playUrl"
                     :copy-play-url="copyPlayUrl"
+                    :copied-play-url="copiedPlayUrl"
                     :is-spotify-provider="isSpotifyProvider"
                     :spotify-play-error="spotifyPlayError"
                     :is-playing-spotify="isPlayingSpotify"
