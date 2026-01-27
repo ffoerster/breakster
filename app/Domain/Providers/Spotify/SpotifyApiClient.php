@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Spotify;
 
@@ -29,7 +29,7 @@ class SpotifyApiClient
      *     external_url: string
      * }
      */
-    public function getTrack(string $id, string $accessToken): array
+    public function getTrack(string $id, #[\SensitiveParameter] string $accessToken): array
     {
         $response = $this->get("tracks/{$id}", $accessToken, [
             'market' => $this->market,
@@ -60,7 +60,7 @@ class SpotifyApiClient
      *     external_url: string
      * }>
      */
-    public function getPlaylistTracks(string $playlistId, string $accessToken): array
+    public function getPlaylistTracks(string $playlistId, #[\SensitiveParameter] string $accessToken): array
     {
         $tracks = [];
         $offset = 0;
@@ -114,7 +114,7 @@ class SpotifyApiClient
      *
      * @return array<string, mixed>|null
      */
-    public function getAlbum(string $albumId, string $accessToken): ?array
+    public function getAlbum(string $albumId, #[\SensitiveParameter] string $accessToken): ?array
     {
         $response = $this->get("albums/{$albumId}", $accessToken, [
             'market' => $this->market,
@@ -139,14 +139,14 @@ class SpotifyApiClient
      *     external_url: string
      * }
      */
-    private function normalizeTrack(array $track, string $accessToken): array
+    private function normalizeTrack(array $track, #[\SensitiveParameter] string $accessToken): array
     {
         $id = (string) $track['id'];
-        $title = (string) ($track['name'] ?? 'Unknown Title');
+        $title = (string) ( $track['name'] ?? 'Unknown Title' );
 
         // Extract artists
         $artists = $track['artists'] ?? [];
-        $artistNames = array_map(fn($a) => $a['name'] ?? '', $artists);
+        $artistNames = array_map(static fn($a) => $a['name'] ?? '', $artists);
         $artist = implode(', ', array_filter($artistNames)) ?: 'Unknown Artist';
 
         // Extract album info
@@ -200,10 +200,10 @@ class SpotifyApiClient
     private function normalizeTrackFromPlaylist(array $track): array
     {
         $id = (string) $track['id'];
-        $title = (string) ($track['name'] ?? 'Unknown Title');
+        $title = (string) ( $track['name'] ?? 'Unknown Title' );
 
         $artists = $track['artists'] ?? [];
-        $artistNames = array_map(fn($a) => $a['name'] ?? '', $artists);
+        $artistNames = array_map(static fn($a) => $a['name'] ?? '', $artists);
         $artist = implode(', ', array_filter($artistNames)) ?: 'Unknown Artist';
 
         $album = $track['album'] ?? [];
@@ -255,9 +255,9 @@ class SpotifyApiClient
 
         // Prefer largest image (first in array from Spotify)
         foreach ($images as $image) {
-            if (isset($image['url']) && is_string($image['url'])) {
-                return $image['url'];
-            }
+            if (!(isset($image['url']) && is_string($image['url']))) { continue; }
+
+return $image['url'];
         }
 
         return null;
@@ -268,7 +268,7 @@ class SpotifyApiClient
      *
      * @return array{devices: array<int, array{id: string, name: string, type: string, is_active: bool}>}
      */
-    public function getDevices(string $accessToken): array
+    public function getDevices(#[\SensitiveParameter] string $accessToken): array
     {
         $response = $this->get('me/player/devices', $accessToken);
 
@@ -283,7 +283,7 @@ class SpotifyApiClient
         $data = $response->json();
 
         return [
-            'devices' => array_map(fn($device) => [
+            'devices' => array_map(static fn($device) => [
                 'id' => (string) $device['id'],
                 'name' => (string) $device['name'],
                 'type' => (string) $device['type'],
@@ -295,7 +295,7 @@ class SpotifyApiClient
     /**
      * Transfer playback to a specific device.
      */
-    public function transferPlayback(string $deviceId, string $accessToken, bool $play = false): void
+    public function transferPlayback(string $deviceId, #[\SensitiveParameter] string $accessToken, bool $play = false): void
     {
         $response = $this->put('me/player', $accessToken, [
             'device_ids' => [$deviceId],
@@ -320,7 +320,7 @@ class SpotifyApiClient
     /**
      * Start playback of a specific track on a device.
      */
-    public function startPlayback(string $deviceId, string $trackUri, string $accessToken): void
+    public function startPlayback(string $deviceId, string $trackUri, #[\SensitiveParameter] string $accessToken): void
     {
         $response = $this->put("me/player/play?device_id={$deviceId}", $accessToken, [
             'uris' => [$trackUri],
@@ -340,7 +340,7 @@ class SpotifyApiClient
                 );
             }
 
-            throw new RuntimeException('Spotify playback failed: ' . $reason);
+            throw new RuntimeException('Spotify playback failed: '.$reason);
         }
 
         if (!$response->successful() && $response->status() !== 204) {
@@ -351,7 +351,7 @@ class SpotifyApiClient
     /**
      * Pause playback on a device.
      */
-    public function pausePlayback(string $deviceId, string $accessToken): void
+    public function pausePlayback(string $deviceId, #[\SensitiveParameter] string $accessToken): void
     {
         $response = $this->putWithoutBody("me/player/pause?device_id={$deviceId}", $accessToken);
 
@@ -372,17 +372,17 @@ class SpotifyApiClient
     /**
      * @param  array<string, mixed>  $query
      */
-    private function get(string $endpoint, string $accessToken, array $query = []): Response
+    private function get(string $endpoint, #[\SensitiveParameter] string $accessToken, array $query = []): Response
     {
         /** @var Response $response */
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
             'Accept' => 'application/json',
-        ])->get(self::BASE_URL . '/' . ltrim($endpoint, '/'), $query);
+        ])->get(self::BASE_URL.'/'.ltrim($endpoint, '/'), $query);
 
         // Handle rate limiting with Retry-After header
         if ($response->status() === 429) {
-            $retryAfter = (int) ($response->header('Retry-After') ?? 1);
+            $retryAfter = (int) ( $response->header('Retry-After') ?? 1 );
             Log::warning('Spotify API rate limited', [
                 'endpoint' => $endpoint,
                 'retry_after' => $retryAfter,
@@ -398,17 +398,17 @@ class SpotifyApiClient
     /**
      * @param  array<string, mixed>  $body
      */
-    private function put(string $endpoint, string $accessToken, array $body = []): Response
+    private function put(string $endpoint, #[\SensitiveParameter] string $accessToken, array $body = []): Response
     {
         /** @var Response $response */
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
             'Content-Type' => 'application/json',
-        ])->withBody(json_encode($body), 'application/json')->put(self::BASE_URL . '/' . ltrim($endpoint, '/'));
+        ])->withBody(json_encode($body), 'application/json')->put(self::BASE_URL.'/'.ltrim($endpoint, '/'));
 
         // Handle rate limiting with Retry-After header
         if ($response->status() === 429) {
-            $retryAfter = (int) ($response->header('Retry-After') ?? 1);
+            $retryAfter = (int) ( $response->header('Retry-After') ?? 1 );
             Log::warning('Spotify API rate limited', [
                 'endpoint' => $endpoint,
                 'retry_after' => $retryAfter,
@@ -421,16 +421,16 @@ class SpotifyApiClient
         return $response;
     }
 
-    private function putWithoutBody(string $endpoint, string $accessToken): Response
+    private function putWithoutBody(string $endpoint, #[\SensitiveParameter] string $accessToken): Response
     {
         /** @var Response $response */
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
             'Content-Type' => 'application/json',
-        ])->put(self::BASE_URL . '/' . ltrim($endpoint, '/'));
+        ])->put(self::BASE_URL.'/'.ltrim($endpoint, '/'));
 
         if ($response->status() === 429) {
-            $retryAfter = (int) ($response->header('Retry-After') ?? 1);
+            $retryAfter = (int) ( $response->header('Retry-After') ?? 1 );
             Log::warning('Spotify API rate limited', [
                 'endpoint' => $endpoint,
                 'retry_after' => $retryAfter,

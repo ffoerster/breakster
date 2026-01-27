@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Filament\Resources\Packs\RelationManagers;
 
@@ -17,23 +17,16 @@ class TracksRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                TextColumn::make('title')
-                    ->searchable(),
-                TextColumn::make('artist')
-                    ->searchable(),
-                TextColumn::make('release_date')
-                    ->date('Y')
-                    ->sortable(),
-                IconColumn::make('is_active')
-                    ->boolean(),
-            ])
-            ->recordActions([
-                Action::make('open')
-                    ->label('Edit')
-                    ->url(fn ($record): string => TrackResource::getUrl('edit', ['record' => $record]))
-                    ->openUrlInNewTab(),
-            ]);
+        return $table->columns([
+            TextColumn::make('title')->searchable(),
+            TextColumn::make('artist')->searchable(),
+            TextColumn::make('release_date')->date('Y')->sortable(),
+            IconColumn::make('is_active')->boolean(),
+        ])->recordActions([
+            Action::make('open')
+                ->label('Edit')
+                ->url(static fn($record): string => TrackResource::getUrl('edit', ['record' => $record]))
+                ->openUrlInNewTab(),
+        ]);
     }
 }

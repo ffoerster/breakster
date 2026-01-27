@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Tidal;
 
@@ -16,7 +16,7 @@ class TidalClientCredentialsTokenService
 
     public function __construct(
         private readonly string $clientId,
-        private readonly string $clientSecret,
+        #[\SensitiveParameter] private readonly string $clientSecret,
     ) {}
 
     public function getAccessToken(): string
@@ -47,13 +47,13 @@ class TidalClientCredentialsTokenService
                 'grant_type' => 'client_credentials',
             ]);
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             throw new RuntimeException('Failed to obtain TIDAL access token: '.$response->body());
         }
 
         $data = $response->json();
 
-        if (! isset($data['access_token'], $data['expires_in'])) {
+        if (!isset($data['access_token'], $data['expires_in'])) {
             throw new RuntimeException('Invalid token response from TIDAL: '.$response->body());
         }
 

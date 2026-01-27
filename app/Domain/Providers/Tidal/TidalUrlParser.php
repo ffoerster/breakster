@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Tidal;
 
@@ -24,10 +24,8 @@ class TidalUrlParser
             $type = strtolower($matches['type']);
             $id = (string) $matches['id'];
 
-            if ($type === 'track' && ! ctype_digit($id)) {
-                throw new InvalidArgumentException(
-                    "Invalid TIDAL input: {$input}. Track IDs must be numeric.",
-                );
+            if ($type === 'track' && !ctype_digit($id)) {
+                throw new InvalidArgumentException("Invalid TIDAL input: {$input}. Track IDs must be numeric.");
             }
 
             return [
@@ -55,22 +53,25 @@ class TidalUrlParser
         $url = preg_split('/[?#]/', $url, 2)[0] ?? $url;
 
         $parsed = parse_url($url);
-        $path = is_array($parsed) ? ($parsed['path'] ?? null) : null;
+        $path = is_array($parsed) ? $parsed['path'] ?? null : null;
 
-        if (! is_string($path) || $path === '') {
+        if (!is_string($path) || $path === '') {
             throw new InvalidArgumentException(
                 "Could not parse TIDAL URL: {$url}. Expected format: tidal.com/(browse/){type}/{id}",
             );
         }
 
-        $segments = array_values(array_filter(explode('/', $path), static fn (string $segment): bool => $segment !== ''));
+        $segments = array_values(array_filter(
+            explode('/', $path),
+            static fn(string $segment): bool => $segment !== '',
+        ));
 
-        if (($segments[0] ?? null) === 'browse') {
+        if (( $segments[0] ?? null ) === 'browse') {
             array_shift($segments);
         }
 
-        $type = strtolower((string) ($segments[0] ?? ''));
-        $id = (string) ($segments[1] ?? '');
+        $type = strtolower((string) ( $segments[0] ?? '' ));
+        $id = (string) ( $segments[1] ?? '' );
 
         if ($type === '' || $id === '') {
             throw new InvalidArgumentException(
@@ -78,16 +79,14 @@ class TidalUrlParser
             );
         }
 
-        if (! in_array($type, self::RESOURCE_TYPES, true)) {
+        if (!in_array($type, self::RESOURCE_TYPES, true)) {
             throw new InvalidArgumentException(
                 "Could not parse TIDAL URL: {$url}. Expected format: tidal.com/(browse/){type}/{id}",
             );
         }
 
-        if ($type === 'track' && ! ctype_digit($id)) {
-            throw new InvalidArgumentException(
-                "Could not parse TIDAL URL: {$url}. Track IDs must be numeric.",
-            );
+        if ($type === 'track' && !ctype_digit($id)) {
+            throw new InvalidArgumentException("Could not parse TIDAL URL: {$url}. Track IDs must be numeric.");
         }
 
         return [

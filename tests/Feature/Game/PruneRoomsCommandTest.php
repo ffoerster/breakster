@@ -17,10 +17,12 @@ use Illuminate\Support\Facades\Artisan;
 it('does not delete anything in dry-run mode', function () {
     Carbon::setTestNow(Carbon::parse('2026-01-01 12:00:00'));
 
-    $finished = Room::factory()->finished()->create([
-        'created_at' => now()->subHours(25),
-        'updated_at' => now()->subHours(25),
-    ]);
+    $finished = Room::factory()
+        ->finished()
+        ->create([
+            'created_at' => now()->subHours(25),
+            'updated_at' => now()->subHours(25),
+        ]);
 
     $empty = Room::factory()->create([
         'created_at' => now()->subHours(2),
@@ -48,15 +50,19 @@ it('does not delete anything in dry-run mode', function () {
 it('deletes finished rooms older than 24 hours', function () {
     Carbon::setTestNow(Carbon::parse('2026-01-01 12:00:00'));
 
-    $oldFinished = Room::factory()->finished()->create([
-        'created_at' => now()->subHours(25),
-        'updated_at' => now()->subHours(25),
-    ]);
+    $oldFinished = Room::factory()
+        ->finished()
+        ->create([
+            'created_at' => now()->subHours(25),
+            'updated_at' => now()->subHours(25),
+        ]);
 
-    $recentFinished = Room::factory()->finished()->create([
-        'created_at' => now()->subHours(23),
-        'updated_at' => now()->subHours(23),
-    ]);
+    $recentFinished = Room::factory()
+        ->finished()
+        ->create([
+            'created_at' => now()->subHours(23),
+            'updated_at' => now()->subHours(23),
+        ]);
 
     $exitCode = Artisan::call('game:prune-rooms');
     expect($exitCode)->toBe(0);
@@ -123,10 +129,12 @@ it('deletes stalled in-progress rooms older than 2 hours', function () {
 it('cascades deletions for game-related data when pruning rooms', function () {
     Carbon::setTestNow(Carbon::parse('2026-01-01 12:00:00'));
 
-    $room = Room::factory()->finished()->create([
-        'created_at' => now()->subHours(25),
-        'updated_at' => now()->subHours(25),
-    ]);
+    $room = Room::factory()
+        ->finished()
+        ->create([
+            'created_at' => now()->subHours(25),
+            'updated_at' => now()->subHours(25),
+        ]);
 
     $track = Track::factory()->create();
 

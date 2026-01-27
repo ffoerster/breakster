@@ -12,14 +12,8 @@ class ProviderSeeder extends Seeder
      */
     public function run(): void
     {
-        Provider::updateOrCreate(
-            ['key' => 'tidal'],
-            ['name' => 'TIDAL', 'is_active' => true],
-        );
+        Provider::updateOrCreate(['key' => 'tidal'], ['name' => 'TIDAL', 'is_active' => true]);
 
-        Provider::updateOrCreate(
-            ['key' => 'spotify'],
-            ['name' => 'Spotify', 'is_active' => true],
-        );
+        Provider::updateOrCreate(['key' => 'spotify'], ['name' => 'Spotify', 'is_active' => true]);
     }
 }

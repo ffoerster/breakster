@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers;
 
@@ -21,7 +21,7 @@ class PackImageController extends Controller
 
         // Initials (first letters of words)
         $initials = collect(preg_split('/\s+/', trim($name)) ?: ['P'])
-            ->map(fn(string $word) => mb_strtoupper(mb_substr($word, 0, 1)))
+            ->map(static fn(string $word) => mb_strtoupper(mb_substr($word, 0, 1)))
             ->slice(0, 3)
             ->implode('');
 

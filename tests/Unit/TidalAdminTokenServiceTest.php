@@ -32,10 +32,7 @@ describe('TidalAdminTokenService', function () {
             ], 200),
         ]);
 
-        $service = new TidalAdminTokenService(
-            clientId: 'test-client-id',
-            clientSecret: 'test-client-secret',
-        );
+        $service = new TidalAdminTokenService(clientId: 'test-client-id', clientSecret: 'test-client-secret');
 
         $accessToken = $service->getAccessTokenForAdmin();
 
@@ -47,9 +44,11 @@ describe('TidalAdminTokenService', function () {
         expect($token->expires_at->isAfter(now()))->toBeTrue();
 
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://auth.tidal.com/v1/oauth2/token'
+            return (
+                $request->url() === 'https://auth.tidal.com/v1/oauth2/token'
                 && $request['grant_type'] === 'refresh_token'
-                && $request['refresh_token'] === 'refresh-token-123';
+                && $request['refresh_token'] === 'refresh-token-123'
+            );
         });
     });
 });

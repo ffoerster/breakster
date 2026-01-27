@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game;
 
@@ -23,7 +23,7 @@ class RoomCodeGenerator
         for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; $attempt++) {
             $code = $this->generateCode();
 
-            if (! $this->codeExists($code)) {
+            if (!$this->codeExists($code)) {
                 return $code;
             }
         }

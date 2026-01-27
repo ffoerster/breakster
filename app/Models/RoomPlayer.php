@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Models;
 
@@ -21,6 +21,7 @@ class RoomPlayer extends Model
         'session_id',
         'score',
         'is_host',
+        'is_ready',
         'joined_at',
     ];
 
@@ -29,6 +30,7 @@ class RoomPlayer extends Model
         return [
             'score' => 'integer',
             'is_host' => 'boolean',
+            'is_ready' => 'boolean',
             'joined_at' => 'datetime',
         ];
     }
@@ -70,7 +72,8 @@ class RoomPlayer extends Model
 
     public function timeline(): Collection
     {
-        return $this->timelineItems()
+        return $this
+            ->timelineItems()
             ->with('track')
             ->orderBy('position')
             ->get();
@@ -89,5 +92,11 @@ class RoomPlayer extends Model
     public function hasVotedForAmenInRound(Round $round): bool
     {
         return $this->amenVotes()->where('round_id', $round->id)->exists();
+    }
+
+    public function markReady(): void
+    {
+        $this->is_ready = true;
+        $this->save();
     }
 }

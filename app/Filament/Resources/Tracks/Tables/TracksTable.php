@@ -35,7 +35,7 @@ class TracksTable
                 TextColumn::make('provider_track_id')->label('Provider ID')->searchable(),
                 TextColumn::make('external_url')
                     ->label('External URL')
-                    ->url(fn($record): ?string => $record->external_url)
+                    ->url(static fn($record): ?string => $record->external_url)
                     ->openUrlInNewTab()
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_active')->boolean()->sortable(),
@@ -64,16 +64,16 @@ class TracksTable
                 TernaryFilter::make('spotify')
                     ->label('Spotify')
                     ->queries(
-                        true: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', 'spotify')),
-                        false: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', '!=', 'spotify')),
-                        blank: fn($query) => $query,
+                        true: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', 'spotify')),
+                        false: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', '!=', 'spotify')),
+                        blank: static fn($query) => $query,
                     ),
                 TernaryFilter::make('tidal')
                     ->label('Tidal')
                     ->queries(
-                        true: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', 'tidal')),
-                        false: fn($query) => $query->whereHas('provider', fn($q) => $q->where('key', '!=', 'tidal')),
-                        blank: fn($query) => $query,
+                        true: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', 'tidal')),
+                        false: static fn($query) => $query->whereHas('provider', static fn($q) => $q->where('key', '!=', 'tidal')),
+                        blank: static fn($query) => $query,
                     ),
                 TernaryFilter::make('is_active'),
             ])

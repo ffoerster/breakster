@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Models;
 
@@ -78,7 +78,7 @@ class Track extends Model
             return null;
         }
 
-        if (! $this->provider_track_id) {
+        if (!$this->provider_track_id) {
             return null;
         }
 

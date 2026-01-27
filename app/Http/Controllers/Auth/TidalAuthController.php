@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers\Auth;
 
@@ -27,11 +27,11 @@ class TidalAuthController extends Controller
         $clientId = config('services.tidal.client_id');
         $redirectUri = config('services.tidal.redirect_uri');
 
-        if (! is_string($clientId) || $clientId === '') {
+        if (!is_string($clientId) || $clientId === '') {
             throw new RuntimeException('TIDAL_CLIENT_ID is not configured.');
         }
 
-        if (! is_string($redirectUri) || $redirectUri === '') {
+        if (!is_string($redirectUri) || $redirectUri === '') {
             throw new RuntimeException('TIDAL_REDIRECT_URI is not configured.');
         }
 
@@ -78,15 +78,15 @@ class TidalAuthController extends Controller
         $clientSecret = config('services.tidal.client_secret');
         $redirectUri = config('services.tidal.redirect_uri');
 
-        if (! is_string($clientId) || $clientId === '') {
+        if (!is_string($clientId) || $clientId === '') {
             throw new RuntimeException('TIDAL_CLIENT_ID is not configured.');
         }
 
-        if (! is_string($clientSecret) || $clientSecret === '') {
+        if (!is_string($clientSecret) || $clientSecret === '') {
             throw new RuntimeException('TIDAL_CLIENT_SECRET is not configured.');
         }
 
-        if (! is_string($redirectUri) || $redirectUri === '') {
+        if (!is_string($redirectUri) || $redirectUri === '') {
             throw new RuntimeException('TIDAL_REDIRECT_URI is not configured.');
         }
 
@@ -105,13 +105,13 @@ class TidalAuthController extends Controller
                 'code_verifier' => $codeVerifier,
             ]);
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             throw new RuntimeException('Failed to obtain TIDAL token: '.$response->body());
         }
 
         $data = $response->json();
 
-        if (! isset($data['access_token'], $data['expires_in'])) {
+        if (!isset($data['access_token'], $data['expires_in'])) {
             throw new RuntimeException('Invalid token response from TIDAL: '.$response->body());
         }
 
@@ -136,9 +136,7 @@ class TidalAuthController extends Controller
         $user = $request->user();
         abort_unless($user?->is_admin === true, 403);
 
-        $user->providerTokens()
-            ->where('provider_key', 'tidal')
-            ->delete();
+        $user->providerTokens()->where('provider_key', 'tidal')->delete();
 
         $request->session()->flash('tidal.disconnected', true);
 
@@ -170,7 +168,7 @@ class TidalAuthController extends Controller
      */
     private function normalizeScopes(?string $scopes): array
     {
-        if (! is_string($scopes) || $scopes === '') {
+        if (!is_string($scopes) || $scopes === '') {
             return [];
         }
 

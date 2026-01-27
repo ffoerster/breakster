@@ -35,28 +35,28 @@ class RoomFactory extends Factory
 
     public function withHost(?User $user = null): static
     {
-        return $this->state(fn (array $attributes) => [
-            'host_user_id' => $user?->id ?? User::factory(),
+        return $this->state(static fn(array $attributes) => [
+            'host_user_id' => $user->id ?? User::factory(),
         ]);
     }
 
     public function inRound(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'state' => RoomState::InRound,
         ]);
     }
 
     public function inReveal(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'state' => RoomState::Reveal,
         ]);
     }
 
     public function finished(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'state' => RoomState::Finished,
         ]);
     }

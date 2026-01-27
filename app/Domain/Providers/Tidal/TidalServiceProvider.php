@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Tidal;
 
@@ -11,7 +11,7 @@ class TidalServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(TidalClientCredentialsTokenService::class, function (Application $app) {
+        $this->app->singleton(TidalClientCredentialsTokenService::class, static function (Application $app) {
             $clientId = config('services.tidal.client_id');
             $clientSecret = config('services.tidal.client_secret');
 
@@ -26,7 +26,7 @@ class TidalServiceProvider extends ServiceProvider
             return new TidalClientCredentialsTokenService(clientId: $clientId, clientSecret: $clientSecret);
         });
 
-        $this->app->singleton(TidalAdminTokenService::class, function (Application $app) {
+        $this->app->singleton(TidalAdminTokenService::class, static function (Application $app) {
             $clientId = config('services.tidal.client_id');
             $clientSecret = config('services.tidal.client_secret');
 
@@ -41,7 +41,7 @@ class TidalServiceProvider extends ServiceProvider
             return new TidalAdminTokenService(clientId: $clientId, clientSecret: $clientSecret);
         });
 
-        $this->app->singleton(TidalApiClient::class, function (): TidalApiClient {
+        $this->app->singleton(TidalApiClient::class, static function (): TidalApiClient {
             $countryCode = config('services.tidal.country_code', 'DE');
 
             return new TidalApiClient(

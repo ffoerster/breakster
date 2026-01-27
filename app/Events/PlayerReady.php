@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types = 1);
+
+namespace App\Events;
+
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class PlayerReady implements ShouldBroadcast
+{
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
+
+    public function __construct(
+        public string $roomCode,
+        public int $playerId,
+        public int $readyCount,
+        public int $totalPlayers,
+    ) {}
+
+    /**
+     * @return array<int, \Illuminate\Broadcasting\Channel>
+     */
+    public function broadcastOn(): array
+    {
+        return [
+            new Channel("room.{$this->roomCode}"),
+        ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'player.ready';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'roomCode' => $this->roomCode,
+            'playerId' => $this->playerId,
+            'readyCount' => $this->readyCount,
+            'totalPlayers' => $this->totalPlayers,
+            'timestamp' => now()->toIso8601String(),
+        ];
+    }
+}

@@ -109,13 +109,15 @@ class EditPack extends EditRecord
             ActionGroup::make([
                 Action::make('connectTidal')
                     ->label('Connect account')
-                    ->visible(! $isTidalConnected)
+                    ->visible(!$isTidalConnected)
                     ->url(route('tidal.connect', ['redirect' => request()->fullUrl()])),
 
                 Action::make('importTidal')
                     ->label('Import playlist or track')
                     ->modalHeading('Import from TIDAL')
-                    ->modalDescription('Paste a TIDAL track or playlist URL (or type track:<id> / playlist:<id>). This will enqueue an import job for this pack.')
+                    ->modalDescription(
+                        'Paste a TIDAL track or playlist URL (or type track:<id> / playlist:<id>). This will enqueue an import job for this pack.',
+                    )
                     ->form([
                         TextInput::make('source')
                             ->label('Track/playlist URL or ID')
@@ -135,7 +137,7 @@ class EditPack extends EditRecord
                             return;
                         }
 
-                        if ($parsed['type'] === 'playlist' && ! app(TidalAdminTokenService::class)->hasValidToken()) {
+                        if ($parsed['type'] === 'playlist' && !app(TidalAdminTokenService::class)->hasValidToken()) {
                             Notification::make()
                                 ->title('Connect TIDAL to import playlists')
                                 ->body('Playlists require an admin connection. Use the "Connect account" action first.')
@@ -161,7 +163,9 @@ class EditPack extends EditRecord
                     ->mountUsing(function (): void {
                         $this->tidalTrackPreview = null;
                     })
-                    ->modalSubmitActionLabel(fn (): string => $this->tidalTrackPreview === null ? 'Fetch metadata' : 'Import')
+                    ->modalSubmitActionLabel(fn(): string => $this->tidalTrackPreview === null
+                        ? 'Fetch metadata'
+                        : 'Import')
                     ->form([
                         TextInput::make('source_url')
                             ->label('Track URL')
@@ -170,28 +174,28 @@ class EditPack extends EditRecord
 
                         Placeholder::make('preview_title')
                             ->label('Title')
-                            ->content(fn (): string => (string) ($this->tidalTrackPreview['title'] ?? ''))
-                            ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->tidalTrackPreview['title'] ?? '' ))
+                            ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                         Placeholder::make('preview_artist')
                             ->label('Artist')
-                            ->content(fn (): string => (string) ($this->tidalTrackPreview['artist'] ?? ''))
-                            ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->tidalTrackPreview['artist'] ?? '' ))
+                            ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                         Placeholder::make('preview_label')
                             ->label('Label')
-                            ->content(fn (): string => (string) ($this->tidalTrackPreview['label'] ?? ''))
-                            ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->tidalTrackPreview['label'] ?? '' ))
+                            ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                         Placeholder::make('preview_release_date')
                             ->label('Release date')
-                            ->content(fn (): string => (string) ($this->tidalTrackPreview['release_date'] ?? ''))
-                            ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->tidalTrackPreview['release_date'] ?? '' ))
+                            ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                         Placeholder::make('preview_artwork_url')
                             ->label('Artwork URL')
-                            ->content(fn (): string => (string) ($this->tidalTrackPreview['artwork_url'] ?? ''))
-                            ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->tidalTrackPreview['artwork_url'] ?? '' ))
+                            ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                         Placeholder::make('preview_external_url')
                             ->label('External URL')
-                            ->content(fn (): string => (string) ($this->tidalTrackPreview['external_url'] ?? ''))
-                            ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->tidalTrackPreview['external_url'] ?? '' ))
+                            ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                     ])
                     ->action(function (array $data, Action $action): void {
                         try {
@@ -242,12 +246,12 @@ class EditPack extends EditRecord
                             return;
                         }
 
-                        $provider = Provider::query()->firstOrCreate(
-                            ['key' => 'tidal'],
-                            ['name' => 'TIDAL', 'is_active' => true],
-                        );
+                        $provider = Provider::query()->firstOrCreate(['key' => 'tidal'], [
+                            'name' => 'TIDAL',
+                            'is_active' => true,
+                        ]);
 
-                        $providerTrackId = (string) ($this->tidalTrackPreview['provider_track_id'] ?? '');
+                        $providerTrackId = (string) ( $this->tidalTrackPreview['provider_track_id'] ?? '' );
                         if ($providerTrackId === '') {
                             Notification::make()
                                 ->title('Unable to import')
@@ -258,23 +262,20 @@ class EditPack extends EditRecord
                             return;
                         }
 
-                        Track::query()->updateOrCreate(
-                            [
-                                'pack_id' => $this->record->id,
-                                'provider_id' => $provider->id,
-                                'provider_track_id' => $providerTrackId,
-                            ],
-                            [
-                                'title' => (string) $this->tidalTrackPreview['title'],
-                                'artist' => (string) $this->tidalTrackPreview['artist'],
-                                'label' => $this->tidalTrackPreview['label'],
-                                'release_date' => (string) $this->tidalTrackPreview['release_date'],
-                                'artwork_url' => $this->tidalTrackPreview['artwork_url'],
-                                'preview_url' => $this->tidalTrackPreview['preview_url'],
-                                'external_url' => (string) $this->tidalTrackPreview['external_url'],
-                                'is_active' => true,
-                            ],
-                        );
+                        Track::query()->updateOrCreate([
+                            'pack_id' => $this->record->id,
+                            'provider_id' => $provider->id,
+                            'provider_track_id' => $providerTrackId,
+                        ], [
+                            'title' => (string) $this->tidalTrackPreview['title'],
+                            'artist' => (string) $this->tidalTrackPreview['artist'],
+                            'label' => $this->tidalTrackPreview['label'],
+                            'release_date' => (string) $this->tidalTrackPreview['release_date'],
+                            'artwork_url' => $this->tidalTrackPreview['artwork_url'],
+                            'preview_url' => $this->tidalTrackPreview['preview_url'],
+                            'external_url' => (string) $this->tidalTrackPreview['external_url'],
+                            'is_active' => true,
+                        ]);
 
                         $this->tidalTrackPreview = null;
 
@@ -292,13 +293,15 @@ class EditPack extends EditRecord
             ActionGroup::make([
                 Action::make('connectSpotify')
                     ->label('Connect account')
-                    ->visible(! $isSpotifyConnected)
+                    ->visible(!$isSpotifyConnected)
                     ->url(route('spotify.connect', ['redirect' => request()->fullUrl()])),
 
                 Action::make('importSpotify')
                     ->label('Import playlist or track')
                     ->modalHeading('Import from Spotify')
-                    ->modalDescription('Paste a Spotify track or playlist URL (or spotify:track:<id> / spotify:playlist:<id>). This will enqueue an import job for this pack.')
+                    ->modalDescription(
+                        'Paste a Spotify track or playlist URL (or spotify:track:<id> / spotify:playlist:<id>). This will enqueue an import job for this pack.',
+                    )
                     ->form([
                         TextInput::make('source')
                             ->label('Track/playlist URL or URI')
@@ -318,10 +321,12 @@ class EditPack extends EditRecord
                             return;
                         }
 
-                        if ($parsed['type'] === 'playlist' && ! app(SpotifyAdminTokenService::class)->hasValidToken()) {
+                        if ($parsed['type'] === 'playlist' && !app(SpotifyAdminTokenService::class)->hasValidToken()) {
                             Notification::make()
                                 ->title('Connect Spotify to import private playlists')
-                                ->body('Private playlists require an admin connection. Use the "Connect account" action first.')
+                                ->body(
+                                    'Private playlists require an admin connection. Use the "Connect account" action first.',
+                                )
                                 ->warning()
                                 ->send();
 
@@ -344,7 +349,9 @@ class EditPack extends EditRecord
                     ->mountUsing(function (): void {
                         $this->spotifyTrackPreview = null;
                     })
-                    ->modalSubmitActionLabel(fn (): string => $this->spotifyTrackPreview === null ? 'Fetch metadata' : 'Import')
+                    ->modalSubmitActionLabel(fn(): string => $this->spotifyTrackPreview === null
+                        ? 'Fetch metadata'
+                        : 'Import')
                     ->form([
                         TextInput::make('source_url')
                             ->label('Track URL')
@@ -353,28 +360,28 @@ class EditPack extends EditRecord
 
                         Placeholder::make('spotify_preview_title')
                             ->label('Title')
-                            ->content(fn (): string => (string) ($this->spotifyTrackPreview['title'] ?? ''))
-                            ->visible(fn (): bool => $this->spotifyTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->spotifyTrackPreview['title'] ?? '' ))
+                            ->visible(fn(): bool => $this->spotifyTrackPreview !== null),
                         Placeholder::make('spotify_preview_artist')
                             ->label('Artist')
-                            ->content(fn (): string => (string) ($this->spotifyTrackPreview['artist'] ?? ''))
-                            ->visible(fn (): bool => $this->spotifyTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->spotifyTrackPreview['artist'] ?? '' ))
+                            ->visible(fn(): bool => $this->spotifyTrackPreview !== null),
                         Placeholder::make('spotify_preview_label')
                             ->label('Label')
-                            ->content(fn (): string => (string) ($this->spotifyTrackPreview['label'] ?? ''))
-                            ->visible(fn (): bool => $this->spotifyTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->spotifyTrackPreview['label'] ?? '' ))
+                            ->visible(fn(): bool => $this->spotifyTrackPreview !== null),
                         Placeholder::make('spotify_preview_release_date')
                             ->label('Release date')
-                            ->content(fn (): string => (string) ($this->spotifyTrackPreview['release_date'] ?? ''))
-                            ->visible(fn (): bool => $this->spotifyTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->spotifyTrackPreview['release_date'] ?? '' ))
+                            ->visible(fn(): bool => $this->spotifyTrackPreview !== null),
                         Placeholder::make('spotify_preview_artwork_url')
                             ->label('Artwork URL')
-                            ->content(fn (): string => (string) ($this->spotifyTrackPreview['artwork_url'] ?? ''))
-                            ->visible(fn (): bool => $this->spotifyTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->spotifyTrackPreview['artwork_url'] ?? '' ))
+                            ->visible(fn(): bool => $this->spotifyTrackPreview !== null),
                         Placeholder::make('spotify_preview_external_url')
                             ->label('External URL')
-                            ->content(fn (): string => (string) ($this->spotifyTrackPreview['external_url'] ?? ''))
-                            ->visible(fn (): bool => $this->spotifyTrackPreview !== null),
+                            ->content(fn(): string => (string) ( $this->spotifyTrackPreview['external_url'] ?? '' ))
+                            ->visible(fn(): bool => $this->spotifyTrackPreview !== null),
                     ])
                     ->action(function (array $data, Action $action): void {
                         try {
@@ -425,12 +432,12 @@ class EditPack extends EditRecord
                             return;
                         }
 
-                        $provider = Provider::query()->firstOrCreate(
-                            ['key' => 'spotify'],
-                            ['name' => 'Spotify', 'is_active' => true],
-                        );
+                        $provider = Provider::query()->firstOrCreate(['key' => 'spotify'], [
+                            'name' => 'Spotify',
+                            'is_active' => true,
+                        ]);
 
-                        $providerTrackId = (string) ($this->spotifyTrackPreview['provider_track_id'] ?? '');
+                        $providerTrackId = (string) ( $this->spotifyTrackPreview['provider_track_id'] ?? '' );
                         if ($providerTrackId === '') {
                             Notification::make()
                                 ->title('Unable to import')
@@ -441,23 +448,20 @@ class EditPack extends EditRecord
                             return;
                         }
 
-                        Track::query()->updateOrCreate(
-                            [
-                                'pack_id' => $this->record->id,
-                                'provider_id' => $provider->id,
-                                'provider_track_id' => $providerTrackId,
-                            ],
-                            [
-                                'title' => (string) $this->spotifyTrackPreview['title'],
-                                'artist' => (string) $this->spotifyTrackPreview['artist'],
-                                'label' => $this->spotifyTrackPreview['label'],
-                                'release_date' => (string) $this->spotifyTrackPreview['release_date'],
-                                'artwork_url' => $this->spotifyTrackPreview['artwork_url'],
-                                'preview_url' => $this->spotifyTrackPreview['preview_url'],
-                                'external_url' => (string) $this->spotifyTrackPreview['external_url'],
-                                'is_active' => true,
-                            ],
-                        );
+                        Track::query()->updateOrCreate([
+                            'pack_id' => $this->record->id,
+                            'provider_id' => $provider->id,
+                            'provider_track_id' => $providerTrackId,
+                        ], [
+                            'title' => (string) $this->spotifyTrackPreview['title'],
+                            'artist' => (string) $this->spotifyTrackPreview['artist'],
+                            'label' => $this->spotifyTrackPreview['label'],
+                            'release_date' => (string) $this->spotifyTrackPreview['release_date'],
+                            'artwork_url' => $this->spotifyTrackPreview['artwork_url'],
+                            'preview_url' => $this->spotifyTrackPreview['preview_url'],
+                            'external_url' => (string) $this->spotifyTrackPreview['external_url'],
+                            'is_active' => true,
+                        ]);
 
                         $this->spotifyTrackPreview = null;
 
@@ -481,11 +485,9 @@ class EditPack extends EditRecord
                         $json = $service->toJson($this->record);
                         $filename = $service->getFilename($this->record);
 
-                        return response()->streamDownload(
-                            fn () => print ($json),
-                            $filename,
-                            ['Content-Type' => 'application/json']
-                        );
+                        return response()->streamDownload(static fn() => print $json, $filename, [
+                            'Content-Type' => 'application/json',
+                        ]);
                     }),
 
                 Action::make('importTracksFromJson')
@@ -523,7 +525,7 @@ class EditPack extends EditRecord
                                     '%d new tracks, %d updated, %d skipped.',
                                     $result['imported'],
                                     $result['updated'],
-                                    $result['skipped']
+                                    $result['skipped'],
                                 ))
                                 ->success()
                                 ->send();

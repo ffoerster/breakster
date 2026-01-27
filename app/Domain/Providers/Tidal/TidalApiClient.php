@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Tidal;
 
@@ -29,14 +29,14 @@ class TidalApiClient
      *     external_url: string
      * }
      */
-    public function getTrack(string $id, string $accessToken): array
+    public function getTrack(string $id, #[\SensitiveParameter] string $accessToken): array
     {
         $response = $this->get("tracks/{$id}", $accessToken, [
             'countryCode' => $this->countryCode,
             'include' => 'albums,artists',
         ]);
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             $this->debugLogUnsuccessfulResponse($response, "tracks/{$id}");
             throw new RuntimeException("TIDAL API request failed [{$response->status()}]: {$response->body()}");
         }
@@ -44,7 +44,7 @@ class TidalApiClient
         $json = $response->json();
         $resource = $json['data'] ?? null;
 
-        if (! is_array($resource)) {
+        if (!is_array($resource)) {
             throw new RuntimeException('Unexpected TIDAL response shape.');
         }
 
@@ -65,7 +65,7 @@ class TidalApiClient
      *     external_url: string
      * }>
      */
-    public function getPlaylistTracks(string $playlistId, string $accessToken): array
+    public function getPlaylistTracks(string $playlistId, #[\SensitiveParameter] string $accessToken): array
     {
         $response = $this->get("playlists/{$playlistId}/relationships/items", $accessToken, [
             'countryCode' => $this->countryCode,
@@ -77,7 +77,7 @@ class TidalApiClient
             throw new TidalPlaylistRequiresAdminTokenException('TIDAL playlist access requires a user token.');
         }
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             $this->debugLogUnsuccessfulResponse($response, "playlists/{$playlistId}/relationships/items");
             throw new RuntimeException("TIDAL API request failed [{$response->status()}]: {$response->body()}");
         }
@@ -86,12 +86,12 @@ class TidalApiClient
         $includedIndex = $this->buildIncludedIndex($json['included'] ?? []);
 
         $tracks = [];
-        foreach (($json['data'] ?? []) as $item) {
-            if (! is_array($item)) {
+        foreach ($json['data'] ?? [] as $item) {
+            if (!is_array($item)) {
                 continue;
             }
 
-            if (($item['type'] ?? null) === 'track' && isset($item['id'])) {
+            if (( $item['type'] ?? null ) === 'track' && isset($item['id'])) {
                 $trackResource = $includedIndex["track:{$item['id']}"] ?? null;
 
                 if (is_array($trackResource)) {
@@ -117,7 +117,10 @@ class TidalApiClient
             }
         }
 
-        return array_values(array_filter($tracks, fn (array $track): bool => ($track['provider_track_id'] ?? '') !== ''));
+        return array_values(array_filter(
+            $tracks,
+            static fn(array $track): bool => ( $track['provider_track_id'] ?? '' ) !== '',
+        ));
     }
 
     /**
@@ -136,24 +139,23 @@ class TidalApiClient
      */
     private function normalizeTrackResource(array $resource, array $includedIndex): array
     {
-        $id = (string) ($resource['id'] ?? '');
+        $id = (string) ( $resource['id'] ?? '' );
         $attributes = is_array($resource['attributes'] ?? null) ? $resource['attributes'] : [];
 
-        $title = (string) ($attributes['title'] ?? '');
+        $title = (string) ( $attributes['title'] ?? '' );
         $releaseDate = $this->normalizeDate(
-            $attributes['releaseDate']
-                ?? $attributes['release_date']
-                ?? $attributes['releaseDateTime']
-                ?? null,
+            $attributes['releaseDate'] ?? $attributes['release_date'] ?? $attributes['releaseDateTime'] ?? null,
         );
 
         $artist = $this->resolveArtistName($resource, $includedIndex) ?? 'Unknown Artist';
 
         $albumAttributes = $this->resolveAlbumAttributes($resource, $includedIndex);
-        $label = is_array($albumAttributes) ? ($albumAttributes['label'] ?? null) : null;
+        $label = is_array($albumAttributes) ? $albumAttributes['label'] ?? null : null;
 
         if ($releaseDate === null && is_array($albumAttributes)) {
-            $releaseDate = $this->normalizeDate($albumAttributes['releaseDate'] ?? $albumAttributes['release_date'] ?? null);
+            $releaseDate = $this->normalizeDate(
+                $albumAttributes['releaseDate'] ?? $albumAttributes['release_date'] ?? null,
+            );
         }
 
         $artworkUrl = $this->extractArtworkUrl($attributes);
@@ -215,10 +217,10 @@ class TidalApiClient
     {
         $album = $resource['relationships']['album']['data'] ?? null;
 
-        if (! is_array($album) || ! isset($album['type'], $album['id'])) {
+        if (!is_array($album) || !isset($album['type'], $album['id'])) {
             $albums = $resource['relationships']['albums']['data'] ?? null;
 
-            if (! is_array($albums) || ! isset($albums[0]['type'], $albums[0]['id'])) {
+            if (!is_array($albums) || !isset($albums[0]['type'], $albums[0]['id'])) {
                 return null;
             }
 
@@ -227,7 +229,7 @@ class TidalApiClient
 
         $albumResource = $includedIndex[(string) $album['type'].':'.(string) $album['id']] ?? null;
 
-        if (! is_array($albumResource)) {
+        if (!is_array($albumResource)) {
             return null;
         }
 
@@ -243,11 +245,11 @@ class TidalApiClient
         $index = [];
 
         foreach ($included as $resource) {
-            if (! is_array($resource)) {
+            if (!is_array($resource)) {
                 continue;
             }
 
-            if (! isset($resource['type'], $resource['id'])) {
+            if (!isset($resource['type'], $resource['id'])) {
                 continue;
             }
 
@@ -260,7 +262,7 @@ class TidalApiClient
 
     private function normalizeDate(mixed $value): ?string
     {
-        if (! is_string($value) || $value === '') {
+        if (!is_string($value) || $value === '') {
             return null;
         }
 
@@ -320,21 +322,19 @@ class TidalApiClient
     /**
      * @param  array<string, mixed>  $query
      */
-    private function get(string $endpoint, string $accessToken, array $query = []): Response
+    private function get(string $endpoint, #[\SensitiveParameter] string $accessToken, array $query = []): Response
     {
         /** @var Response $response */
-        $response = Http::withHeaders([
+        return Http::withHeaders([
             'Authorization' => "Bearer {$accessToken}",
             'Accept' => 'application/vnd.api+json',
             'Content-Type' => 'application/vnd.api+json',
         ])->get(self::BASE_URL.'/'.ltrim($endpoint, '/'), $query);
-
-        return $response;
     }
 
     private function debugLogUnsuccessfulResponse(Response $response, string $endpoint): void
     {
-        if (! app()->environment('local')) {
+        if (!app()->environment('local')) {
             return;
         }
 

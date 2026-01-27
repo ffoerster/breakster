@@ -7,15 +7,9 @@ use App\Models\Track;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
-    Provider::query()->firstOrCreate(
-        ['key' => 'spotify'],
-        ['name' => 'Spotify', 'is_active' => true],
-    );
+    Provider::query()->firstOrCreate(['key' => 'spotify'], ['name' => 'Spotify', 'is_active' => true]);
 
-    Provider::query()->firstOrCreate(
-        ['key' => 'tidal'],
-        ['name' => 'TIDAL', 'is_active' => true],
-    );
+    Provider::query()->firstOrCreate(['key' => 'tidal'], ['name' => 'TIDAL', 'is_active' => true]);
 });
 
 it('imports a pack with tracks from valid JSON data', function () {

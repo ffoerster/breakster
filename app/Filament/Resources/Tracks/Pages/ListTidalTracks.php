@@ -16,6 +16,6 @@ class ListTidalTracks extends ListRecords
 
     protected function getTableQuery(): ?Builder
     {
-        return parent::getTableQuery()->whereHas('provider', fn(Builder $query) => $query->where('key', 'tidal'));
+        return parent::getTableQuery()->whereHas('provider', static fn(Builder $query) => $query->where('key', 'tidal'));
     }
 }

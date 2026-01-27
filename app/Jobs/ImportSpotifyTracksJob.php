@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Jobs;
 
@@ -46,18 +46,17 @@ class ImportSpotifyTracksJob implements ShouldQueue
                 clientCredentialsTokenService: $clientCredentialsTokenService,
                 adminTokenService: $adminTokenService,
             ),
-            default => throw new DomainException('Unsupported Spotify source type. Only track and playlist are supported.'),
+            default => throw new DomainException(
+                'Unsupported Spotify source type. Only track and playlist are supported.',
+            ),
         };
 
-        $provider = Provider::query()->firstOrCreate(
-            ['key' => 'spotify'],
-            ['name' => 'Spotify', 'is_active' => true],
-        );
+        $provider = Provider::query()->firstOrCreate(['key' => 'spotify'], ['name' => 'Spotify', 'is_active' => true]);
 
         $providerTrackIds = collect($normalized)
             ->pluck('provider_track_id')
             ->filter()
-            ->map(fn ($id) => (string) $id)
+            ->map(static fn($id) => (string) $id)
             ->values()
             ->all();
 
@@ -91,7 +90,7 @@ class ImportSpotifyTracksJob implements ShouldQueue
             /** @var Track|null $current */
             $current = $existing->get($providerTrackId);
 
-            if (! $current) {
+            if (!$current) {
                 Track::create($attributes);
                 $imported++;
 
@@ -99,14 +98,22 @@ class ImportSpotifyTracksJob implements ShouldQueue
             }
 
             $dirty = false;
-            foreach (['title', 'artist', 'label', 'release_date', 'artwork_url', 'preview_url', 'external_url'] as $field) {
-                if ($current->getAttribute($field) !== $attributes[$field]) {
-                    $dirty = true;
+            foreach ([
+                'title',
+                'artist',
+                'label',
+                'release_date',
+                'artwork_url',
+                'preview_url',
+                'external_url',
+            ] as $field) {
+                if ($current->getAttribute($field) === $attributes[$field]) { continue; }
+
+$dirty = true;
                     break;
-                }
             }
 
-            if (! $dirty) {
+            if (!$dirty) {
                 $skipped++;
 
                 continue;

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Tidal;
 
@@ -17,14 +17,14 @@ class TidalAdminTokenService
 
     public function __construct(
         private readonly string $clientId,
-        private readonly string $clientSecret,
+        #[\SensitiveParameter] private readonly string $clientSecret,
     ) {}
 
     public function hasValidToken(): bool
     {
         $token = $this->getLatestAdminToken();
 
-        if (! $token) {
+        if (!$token) {
             return false;
         }
 
@@ -35,7 +35,7 @@ class TidalAdminTokenService
     {
         $token = $this->getLatestAdminToken();
 
-        if (! $token) {
+        if (!$token) {
             throw new DomainException('Connect TIDAL to import playlists');
         }
 
@@ -47,16 +47,16 @@ class TidalAdminTokenService
 
         $fresh = $token->fresh();
 
-        if (! $fresh) {
+        if (!$fresh) {
             throw new RuntimeException('Failed to reload refreshed TIDAL token.');
         }
 
         return $fresh->access_token;
     }
 
-    public function refreshToken(ProviderToken $token): void
+    public function refreshToken(#[\SensitiveParameter] ProviderToken $token): void
     {
-        if (! is_string($token->refresh_token) || $token->refresh_token === '') {
+        if (!is_string($token->refresh_token) || $token->refresh_token === '') {
             throw new DomainException('TIDAL admin token cannot be refreshed. Please reconnect TIDAL.');
         }
 
@@ -71,13 +71,13 @@ class TidalAdminTokenService
                 'refresh_token' => $token->refresh_token,
             ]);
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             throw new RuntimeException('Failed to refresh TIDAL token: '.$response->body());
         }
 
         $data = $response->json();
 
-        if (! isset($data['access_token'], $data['expires_in'])) {
+        if (!isset($data['access_token'], $data['expires_in'])) {
             throw new RuntimeException('Invalid token response from TIDAL: '.$response->body());
         }
 
@@ -91,27 +91,29 @@ class TidalAdminTokenService
         ])->save();
     }
 
-    public function storeTokenForUser(User $user, string $accessToken, ?string $refreshToken, CarbonImmutable $expiresAt, array $scopes): ProviderToken
-    {
-        return ProviderToken::query()->updateOrCreate(
-            [
-                'provider_key' => 'tidal',
-                'user_id' => $user->id,
-            ],
-            [
-                'access_token' => $accessToken,
-                'refresh_token' => $refreshToken,
-                'expires_at' => $expiresAt,
-                'scopes' => $scopes,
-            ],
-        );
+    public function storeTokenForUser(
+        User $user,
+        #[\SensitiveParameter] string $accessToken,
+        #[\SensitiveParameter] ?string $refreshToken,
+        CarbonImmutable $expiresAt,
+        array $scopes,
+    ): ProviderToken {
+        return ProviderToken::query()->updateOrCreate([
+            'provider_key' => 'tidal',
+            'user_id' => $user->id,
+        ], [
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'expires_at' => $expiresAt,
+            'scopes' => $scopes,
+        ]);
     }
 
     private function getLatestAdminToken(): ?ProviderToken
     {
         return ProviderToken::query()
             ->where('provider_key', 'tidal')
-            ->whereHas('user', function ($query): void {
+            ->whereHas('user', static function ($query): void {
                 $query->where('is_admin', true);
             })
             ->orderByDesc('updated_at')

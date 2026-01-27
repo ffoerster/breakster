@@ -98,7 +98,7 @@ describe('TidalClientCredentialsTokenService', function () {
         $this->service->getAccessToken();
 
         Http::assertSent(function ($request) {
-            $expected = 'Basic ' . base64_encode('test-client-id:test-client-secret');
+            $expected = 'Basic '.base64_encode('test-client-id:test-client-secret');
 
             return $request->header('Authorization')[0] === $expected;
         });

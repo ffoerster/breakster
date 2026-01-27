@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Packs;
 
@@ -31,19 +31,23 @@ class PackExportService
                 'spotify_source' => $pack->spotify_source,
                 'is_active' => $pack->is_active,
             ],
-            'tracks' => $pack->tracks->map(fn ($track) => [
-                'provider_key' => $track->provider->key,
-                'provider_track_id' => $track->provider_track_id,
-                'title' => $track->title,
-                'artist' => $track->artist,
-                'label' => $track->label,
-                'release_date' => $track->release_date->format('Y-m-d'),
-                'artwork_url' => $track->artwork_url,
-                'preview_url' => $track->preview_url,
-                'external_url' => $track->external_url,
-                'is_active' => $track->is_active,
-                'difficulty' => $track->difficulty,
-            ])->values()->all(),
+            'tracks' => $pack
+                ->tracks
+                ->map(static fn($track) => [
+                    'provider_key' => $track->provider->key,
+                    'provider_track_id' => $track->provider_track_id,
+                    'title' => $track->title,
+                    'artist' => $track->artist,
+                    'label' => $track->label,
+                    'release_date' => $track->release_date->format('Y-m-d'),
+                    'artwork_url' => $track->artwork_url,
+                    'preview_url' => $track->preview_url,
+                    'external_url' => $track->external_url,
+                    'is_active' => $track->is_active,
+                    'difficulty' => $track->difficulty,
+                ])
+                ->values()
+                ->all(),
         ];
     }
 

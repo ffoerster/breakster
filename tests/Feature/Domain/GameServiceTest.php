@@ -15,16 +15,22 @@ use Carbon\Carbon;
 beforeEach(function () {
     $this->gameService = app(GameService::class);
     $this->pack = Pack::factory()->create();
-    Track::factory()->count(20)->for($this->pack)->create();
+    Track::factory()
+        ->count(20)
+        ->for($this->pack)
+        ->create();
 });
 
 describe('GameService::createRoom', function () {
     it('creates a room with unique code', function () {
         $room = $this->gameService->createRoom($this->pack);
 
-        expect($room)->toBeInstanceOf(Room::class)
-            ->and($room->code)->toHaveLength(6)
-            ->and($room->state)->toBe(RoomState::Lobby);
+        expect($room)
+            ->toBeInstanceOf(Room::class)
+            ->and($room->code)
+            ->toHaveLength(6)
+            ->and($room->state)
+            ->toBe(RoomState::Lobby);
     });
 
     it('creates host player when creating room', function () {
@@ -52,9 +58,12 @@ describe('GameService::joinRoom', function () {
 
         $player = $this->gameService->joinRoom($room->code, user: $playerUser);
 
-        expect($player->room_id)->toBe($room->id)
-            ->and($player->is_host)->toBeFalse()
-            ->and($room->fresh()->players)->toHaveCount(2);
+        expect($player->room_id)
+            ->toBe($room->id)
+            ->and($player->is_host)
+            ->toBeFalse()
+            ->and($room->fresh()->players)
+            ->toHaveCount(2);
     });
 
     it('returns existing player if already joined', function () {
@@ -74,7 +83,7 @@ describe('GameService::joinRoom', function () {
         $room = $this->gameService->createRoom($this->pack, host: $hostUser);
         $room->update(['state' => RoomState::Finished]);
 
-        expect(fn () => $this->gameService->joinRoom($room->code, user: $playerUser))
+        expect(fn() => $this->gameService->joinRoom($room->code, user: $playerUser))
             ->toThrow(\RuntimeException::class, 'This room has already finished.');
     });
 
@@ -95,11 +104,12 @@ describe('GameService::startRound', function () {
 
         $round = $this->gameService->startRound($room);
 
-        expect($round)->toBeInstanceOf(Round::class)
-            ->and($round->status)->toBe(RoundStatus::Active)
-            ->and($round->started_at)->not->toBeNull()
-            ->and($room->fresh()->state)->toBe(RoomState::InRound)
-            ->and($room->fresh()->current_round_id)->toBe($round->id);
+        expect($round)
+            ->toBeInstanceOf(Round::class)
+            ->and($round->status)
+            ->toBe(RoundStatus::Active)
+            ->and($round->started_at)
+            ->not->toBeNull()->and($room->fresh()->state)->toBe(RoomState::InRound)->and($room->fresh()->current_round_id)->toBe($round->id);
     });
 
     it('never repeats a track within a room', function () {
@@ -125,14 +135,17 @@ describe('GameService::startRound', function () {
         $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
         $room->update(['state' => RoomState::InRound]);
 
-        expect(fn () => $this->gameService->startRound($room))
+        expect(fn() => $this->gameService->startRound($room))
             ->toThrow(\RuntimeException::class, 'Cannot start a round in the current state.');
     });
 
     it('finishes game when no tracks remain', function () {
         // Create pack with 2 tracks: 1 seed + 1 playable
         $smallPack = Pack::factory()->create();
-        Track::factory()->count(2)->for($smallPack)->create();
+        Track::factory()
+            ->count(2)
+            ->for($smallPack)
+            ->create();
 
         $room = $this->gameService->createRoom($smallPack, guestDisplayName: 'Host');
 
@@ -142,7 +155,7 @@ describe('GameService::startRound', function () {
         $room->update(['state' => RoomState::Reveal]);
 
         // Try to start another round (no tracks remain)
-        expect(fn () => $this->gameService->startRound($room->fresh()))
+        expect(fn() => $this->gameService->startRound($room->fresh()))
             ->toThrow(\RuntimeException::class, 'No more tracks available.');
 
         expect($room->fresh()->state)->toBe(RoomState::Finished);
@@ -221,9 +234,12 @@ describe('GameService::submitPlacement', function () {
 
         $placement = $this->gameService->submitPlacement($player, $round, null);
 
-        expect($placement)->toBeInstanceOf(Placement::class)
-            ->and($placement->room_player_id)->toBe($player->id)
-            ->and($placement->round_id)->toBe($round->id);
+        expect($placement)
+            ->toBeInstanceOf(Placement::class)
+            ->and($placement->room_player_id)
+            ->toBe($player->id)
+            ->and($placement->round_id)
+            ->toBe($round->id);
     });
 
     it('updates a placement when submitted again', function () {
@@ -241,8 +257,15 @@ describe('GameService::submitPlacement', function () {
         $this->gameService->submitPlacement($player, $round, null);
         $updated = $this->gameService->submitPlacement($player, $round, $existingTrack->id);
 
-        expect($updated->inserted_after_track_id)->toBe($existingTrack->id)
-            ->and(Placement::query()->where('round_id', $round->id)->where('room_player_id', $player->id)->count())->toBe(1);
+        expect($updated->inserted_after_track_id)
+            ->toBe($existingTrack->id)
+            ->and(
+                Placement::query()
+                    ->where('round_id', $round->id)
+                    ->where('room_player_id', $player->id)
+                    ->count(),
+            )
+            ->toBe(1);
     });
 
     it('throws exception for inactive round', function () {
@@ -251,7 +274,7 @@ describe('GameService::submitPlacement', function () {
         $round = $this->gameService->startRound($room);
         $round->update(['status' => RoundStatus::Revealed]);
 
-        expect(fn () => $this->gameService->submitPlacement($player, $round, null))
+        expect(fn() => $this->gameService->submitPlacement($player, $round, null))
             ->toThrow(\RuntimeException::class, 'This round is not active.');
     });
 });
@@ -267,10 +290,12 @@ describe('GameService::revealRound', function () {
         ]);
 
         // Create round with this specific track
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['state' => RoomState::InRound, 'current_round_id' => $round->id]);
 
         // Submit placement at beginning (empty timeline = always correct)
@@ -278,12 +303,10 @@ describe('GameService::revealRound', function () {
 
         $summary = $this->gameService->revealRound($round);
 
-        expect($summary->correctCount)->toBe(1)
-            ->and($summary->incorrectCount)->toBe(0);
+        expect($summary->correctCount)->toBe(1)->and($summary->incorrectCount)->toBe(0);
 
         $result = $summary->getResultForPlayer($player->id);
-        expect($result->isCorrect)->toBeTrue()
-            ->and($result->pointsEarned)->toBeGreaterThan(0);
+        expect($result->isCorrect)->toBeTrue()->and($result->pointsEarned)->toBeGreaterThan(0);
 
         // Check timeline was updated
         expect($player->fresh()->timelineItems)->toHaveCount(1);
@@ -308,10 +331,12 @@ describe('GameService::revealRound', function () {
             'release_date' => Carbon::parse('2000-01-01'),
         ]);
 
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $newTrack->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $newTrack->id,
+            ]);
         $room->update(['state' => RoomState::InRound, 'current_round_id' => $round->id]);
 
         // Submit placement at beginning (incorrect - 2000 should not come before 1990)
@@ -319,8 +344,7 @@ describe('GameService::revealRound', function () {
 
         $summary = $this->gameService->revealRound($round);
 
-        expect($summary->correctCount)->toBe(0)
-            ->and($summary->incorrectCount)->toBe(1);
+        expect($summary->correctCount)->toBe(0)->and($summary->incorrectCount)->toBe(1);
 
         // Timeline should still only have 1 item
         expect($player->fresh()->timelineItems)->toHaveCount(1);
@@ -338,10 +362,12 @@ describe('GameService::revealRound', function () {
             'release_date' => Carbon::parse('2000-01-01'),
         ]);
 
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['state' => RoomState::InRound, 'current_round_id' => $round->id]);
 
         // Submit correct placement (empty timeline)
@@ -361,15 +387,19 @@ describe('GameService::nextRound', function () {
 
         $round2 = $this->gameService->nextRound($room);
 
-        expect($round2)->toBeInstanceOf(Round::class)
-            ->and($round2->id)->not->toBe($round1->id)
-            ->and($round1->fresh()->status)->toBe(RoundStatus::Done);
+        expect($round2)
+            ->toBeInstanceOf(Round::class)
+            ->and($round2->id)
+            ->not->toBe($round1->id)->and($round1->fresh()->status)->toBe(RoundStatus::Done);
     });
 
     it('returns null and finishes game when no tracks remain', function () {
         // Create pack with 2 tracks: 1 seed + 1 playable
         $smallPack = Pack::factory()->create();
-        Track::factory()->count(2)->for($smallPack)->create();
+        Track::factory()
+            ->count(2)
+            ->for($smallPack)
+            ->create();
 
         $room = $this->gameService->createRoom($smallPack, guestDisplayName: 'Host');
         $round = $this->gameService->startRound($room);
@@ -378,8 +408,7 @@ describe('GameService::nextRound', function () {
 
         $result = $this->gameService->nextRound($room);
 
-        expect($result)->toBeNull()
-            ->and($room->fresh()->state)->toBe(RoomState::Finished);
+        expect($result)->toBeNull()->and($room->fresh()->state)->toBe(RoomState::Finished);
     });
 });
 
@@ -401,13 +430,20 @@ describe('GameService::getLeaderboard', function () {
 
         $leaderboard = $this->gameService->getLeaderboard($room->fresh());
 
-        expect($leaderboard)->toHaveCount(3)
-            ->and($leaderboard[0]['player']->id)->toBe($player2->id)
-            ->and($leaderboard[0]['rank'])->toBe(1)
-            ->and($leaderboard[1]['player']->id)->toBe($player3->id)
-            ->and($leaderboard[1]['rank'])->toBe(2)
-            ->and($leaderboard[2]['player']->id)->toBe($player1->id)
-            ->and($leaderboard[2]['rank'])->toBe(3);
+        expect($leaderboard)
+            ->toHaveCount(3)
+            ->and($leaderboard[0]['player']->id)
+            ->toBe($player2->id)
+            ->and($leaderboard[0]['rank'])
+            ->toBe(1)
+            ->and($leaderboard[1]['player']->id)
+            ->toBe($player3->id)
+            ->and($leaderboard[1]['rank'])
+            ->toBe(2)
+            ->and($leaderboard[2]['player']->id)
+            ->toBe($player1->id)
+            ->and($leaderboard[2]['rank'])
+            ->toBe(3);
     });
 
     it('handles tied scores with same rank', function () {
@@ -423,8 +459,7 @@ describe('GameService::getLeaderboard', function () {
 
         $leaderboard = $this->gameService->getLeaderboard($room->fresh());
 
-        expect($leaderboard[0]['rank'])->toBe(1)
-            ->and($leaderboard[1]['rank'])->toBe(1);
+        expect($leaderboard[0]['rank'])->toBe(1)->and($leaderboard[1]['rank'])->toBe(1);
     });
 });
 

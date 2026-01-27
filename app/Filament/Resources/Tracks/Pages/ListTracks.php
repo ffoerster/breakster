@@ -55,7 +55,9 @@ class ListTracks extends ListRecords
                     'pack_id' => null,
                     'source_url' => null,
                 ])
-                ->modalSubmitActionLabel(fn (): string => $this->tidalTrackPreview === null ? 'Fetch metadata' : 'Import')
+                ->modalSubmitActionLabel(fn(): string => $this->tidalTrackPreview === null
+                    ? 'Fetch metadata'
+                    : 'Import')
                 ->form([
                     Select::make('pack_id')
                         ->label('Pack')
@@ -63,7 +65,12 @@ class ListTracks extends ListRecords
                         ->live()
                         ->preload()
                         ->searchable()
-                        ->options(fn (): array => Pack::query()->orderBy('name')->pluck('name', 'id')->all()),
+                        ->options(
+                            static fn(): array => Pack::query()
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->all(),
+                        ),
                     TextInput::make('source_url')
                         ->label('Track URL')
                         ->required()
@@ -71,28 +78,28 @@ class ListTracks extends ListRecords
 
                     Placeholder::make('preview_title')
                         ->label('Title')
-                        ->content(fn (): string => (string) ($this->tidalTrackPreview['title'] ?? ''))
-                        ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                        ->content(fn(): string => (string) ( $this->tidalTrackPreview['title'] ?? '' ))
+                        ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                     Placeholder::make('preview_artist')
                         ->label('Artist')
-                        ->content(fn (): string => (string) ($this->tidalTrackPreview['artist'] ?? ''))
-                        ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                        ->content(fn(): string => (string) ( $this->tidalTrackPreview['artist'] ?? '' ))
+                        ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                     Placeholder::make('preview_label')
                         ->label('Label')
-                        ->content(fn (): string => (string) ($this->tidalTrackPreview['label'] ?? ''))
-                        ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                        ->content(fn(): string => (string) ( $this->tidalTrackPreview['label'] ?? '' ))
+                        ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                     Placeholder::make('preview_release_date')
                         ->label('Release date')
-                        ->content(fn (): string => (string) ($this->tidalTrackPreview['release_date'] ?? ''))
-                        ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                        ->content(fn(): string => (string) ( $this->tidalTrackPreview['release_date'] ?? '' ))
+                        ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                     Placeholder::make('preview_artwork_url')
                         ->label('Artwork URL')
-                        ->content(fn (): string => (string) ($this->tidalTrackPreview['artwork_url'] ?? ''))
-                        ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                        ->content(fn(): string => (string) ( $this->tidalTrackPreview['artwork_url'] ?? '' ))
+                        ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                     Placeholder::make('preview_external_url')
                         ->label('External URL')
-                        ->content(fn (): string => (string) ($this->tidalTrackPreview['external_url'] ?? ''))
-                        ->visible(fn (): bool => $this->tidalTrackPreview !== null),
+                        ->content(fn(): string => (string) ( $this->tidalTrackPreview['external_url'] ?? '' ))
+                        ->visible(fn(): bool => $this->tidalTrackPreview !== null),
                 ])
                 ->action(function (array $data, Action $action): void {
                     if ($this->tidalTrackPreview === null) {
@@ -146,12 +153,12 @@ class ListTracks extends ListRecords
 
                     $packId = $this->tidalTrackPackId ?? (int) $data['pack_id'];
 
-                    $provider = Provider::query()->firstOrCreate(
-                        ['key' => 'tidal'],
-                        ['name' => 'TIDAL', 'is_active' => true],
-                    );
+                    $provider = Provider::query()->firstOrCreate(['key' => 'tidal'], [
+                        'name' => 'TIDAL',
+                        'is_active' => true,
+                    ]);
 
-                    $providerTrackId = (string) ($this->tidalTrackPreview['provider_track_id'] ?? '');
+                    $providerTrackId = (string) ( $this->tidalTrackPreview['provider_track_id'] ?? '' );
                     if ($providerTrackId === '') {
                         Notification::make()
                             ->title('Unable to import')
@@ -162,23 +169,20 @@ class ListTracks extends ListRecords
                         return;
                     }
 
-                    Track::query()->updateOrCreate(
-                        [
-                            'pack_id' => $packId,
-                            'provider_id' => $provider->id,
-                            'provider_track_id' => $providerTrackId,
-                        ],
-                        [
-                            'title' => (string) $this->tidalTrackPreview['title'],
-                            'artist' => (string) $this->tidalTrackPreview['artist'],
-                            'label' => $this->tidalTrackPreview['label'],
-                            'release_date' => (string) $this->tidalTrackPreview['release_date'],
-                            'artwork_url' => $this->tidalTrackPreview['artwork_url'],
-                            'preview_url' => $this->tidalTrackPreview['preview_url'],
-                            'external_url' => (string) $this->tidalTrackPreview['external_url'],
-                            'is_active' => true,
-                        ],
-                    );
+                    Track::query()->updateOrCreate([
+                        'pack_id' => $packId,
+                        'provider_id' => $provider->id,
+                        'provider_track_id' => $providerTrackId,
+                    ], [
+                        'title' => (string) $this->tidalTrackPreview['title'],
+                        'artist' => (string) $this->tidalTrackPreview['artist'],
+                        'label' => $this->tidalTrackPreview['label'],
+                        'release_date' => (string) $this->tidalTrackPreview['release_date'],
+                        'artwork_url' => $this->tidalTrackPreview['artwork_url'],
+                        'preview_url' => $this->tidalTrackPreview['preview_url'],
+                        'external_url' => (string) $this->tidalTrackPreview['external_url'],
+                        'is_active' => true,
+                    ]);
 
                     $this->tidalTrackPreview = null;
                     $this->tidalTrackPackId = null;

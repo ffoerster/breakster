@@ -25,7 +25,7 @@ class TimelineItemFactory extends Factory
 
     public function atPosition(int $position): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'position' => $position,
         ]);
     }

@@ -30,7 +30,7 @@ class PacksTable
                 ImageColumn::make('image_url')
                     ->label('Cover')
                     ->circular()
-                    ->defaultImageUrl(fn (Pack $record): string => $record->image_url)
+                    ->defaultImageUrl(static fn(Pack $record): string => $record->image_url)
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('tracks_count')
@@ -62,16 +62,14 @@ class PacksTable
                 Action::make('exportPack')
                     ->label('Export')
                     ->icon(Heroicon::ArrowUpTray)
-                    ->action(function (Pack $record): \Symfony\Component\HttpFoundation\StreamedResponse {
+                    ->action(static function (Pack $record): \Symfony\Component\HttpFoundation\StreamedResponse {
                         $service = app(PackExportService::class);
                         $json = $service->toJson($record);
                         $filename = $service->getFilename($record);
 
-                        return response()->streamDownload(
-                            fn () => print ($json),
-                            $filename,
-                            ['Content-Type' => 'application/json']
-                        );
+                        return response()->streamDownload(static fn() => print $json, $filename, [
+                            'Content-Type' => 'application/json',
+                        ]);
                     }),
                 Action::make('importFromTidal')
                     ->label('Import from TIDAL')
@@ -86,7 +84,7 @@ class PacksTable
                             ->required()
                             ->maxLength(255),
                     ])
-                    ->action(function (array $data, Pack $record): void {
+                    ->action(static function (array $data, Pack $record): void {
                         try {
                             $parsed = app(TidalUrlParser::class)->parse($data['source']);
                         } catch (InvalidArgumentException $e) {
@@ -99,7 +97,7 @@ class PacksTable
                             return;
                         }
 
-                        if ($parsed['type'] === 'playlist' && ! app(TidalAdminTokenService::class)->hasValidToken()) {
+                        if ($parsed['type'] === 'playlist' && !app(TidalAdminTokenService::class)->hasValidToken()) {
                             Notification::make()
                                 ->title('Connect TIDAL to import playlists')
                                 ->body(

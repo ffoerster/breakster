@@ -29,8 +29,9 @@ it('redirects to the spotify track when provider matches', function () {
         'track_id' => $track->id,
     ]);
 
-    $this->get("/play/{$room->code}/{$round->id}")
-        ->assertRedirect('https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp');
+    $this->get("/play/{$room->code}/{$round->id}")->assertRedirect(
+        'https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp',
+    );
 });
 
 it('redirects to the tidal track when provider matches', function () {
@@ -52,8 +53,7 @@ it('redirects to the tidal track when provider matches', function () {
         'track_id' => $track->id,
     ]);
 
-    $this->get("/play/{$room->code}/{$round->id}")
-        ->assertRedirect('https://tidal.com/browse/track/123456');
+    $this->get("/play/{$room->code}/{$round->id}")->assertRedirect('https://tidal.com/browse/track/123456');
 });
 
 it('redirects to provider search when track provider mismatches', function () {
@@ -83,8 +83,7 @@ it('redirects to provider search when track provider mismatches', function () {
 
     $query = urlencode('Some Artist Some Title');
 
-    $this->get("/play/{$room->code}/{$round->id}")
-        ->assertRedirect("https://open.spotify.com/search/{$query}");
+    $this->get("/play/{$room->code}/{$round->id}")->assertRedirect("https://open.spotify.com/search/{$query}");
 });
 
 it('returns not found when the round does not belong to the room', function () {
@@ -113,6 +112,5 @@ it('returns not found when the round does not belong to the room', function () {
         'track_id' => $track->id,
     ]);
 
-    $this->get("/play/{$roomB->code}/{$round->id}")
-        ->assertNotFound();
+    $this->get("/play/{$roomB->code}/{$round->id}")->assertNotFound();
 });

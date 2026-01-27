@@ -17,9 +17,21 @@ class RoomPlayerFactory extends Factory
     public function definition(): array
     {
         $nicknames = [
-            'CoolCat', 'MusicMaster', 'BeatDrop', 'VinylVibes', 'TrackStar',
-            'MelodyMaker', 'RhythmKing', 'SongSleuth', 'TuneHunter', 'GroovyGuru',
-            'NoteNinja', 'ChordChaser', 'TempoTitan', 'HarmonyHero', 'SoundSeeker',
+            'CoolCat',
+            'MusicMaster',
+            'BeatDrop',
+            'VinylVibes',
+            'TrackStar',
+            'MelodyMaker',
+            'RhythmKing',
+            'SongSleuth',
+            'TuneHunter',
+            'GroovyGuru',
+            'NoteNinja',
+            'ChordChaser',
+            'TempoTitan',
+            'HarmonyHero',
+            'SoundSeeker',
         ];
 
         return [
@@ -35,8 +47,8 @@ class RoomPlayerFactory extends Factory
 
     public function withUser(?User $user = null): static
     {
-        return $this->state(function (array $attributes) use ($user) {
-            $user = $user ?? User::factory()->create();
+        return $this->state(static function (array $attributes) use ($user) {
+            $user ??= User::factory()->create();
 
             return [
                 'user_id' => $user->id,
@@ -48,14 +60,14 @@ class RoomPlayerFactory extends Factory
 
     public function asHost(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'is_host' => true,
         ]);
     }
 
     public function withScore(int $score): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'score' => $score,
         ]);
     }

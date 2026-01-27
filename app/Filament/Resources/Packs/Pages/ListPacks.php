@@ -26,7 +26,9 @@ class ListPacks extends ListRecords
                 ->label('Import Pack')
                 ->icon(Heroicon::ArrowDownTray)
                 ->modalHeading('Import Pack from JSON')
-                ->modalDescription('Upload a previously exported pack JSON file to create a new pack with all its tracks.')
+                ->modalDescription(
+                    'Upload a previously exported pack JSON file to create a new pack with all its tracks.',
+                )
                 ->form([
                     FileUpload::make('json_file')
                         ->label('JSON File')
@@ -58,7 +60,7 @@ class ListPacks extends ListRecords
                                 $result['pack']->name,
                                 $result['imported'],
                                 $result['updated'],
-                                $result['skipped']
+                                $result['skipped'],
                             ))
                             ->success()
                             ->send();

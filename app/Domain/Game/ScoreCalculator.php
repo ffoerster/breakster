@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game;
 
@@ -40,7 +40,7 @@ class ScoreCalculator
      */
     public function calculatePoints(bool $isCorrect, int $secondsToSubmit = 0): int
     {
-        if (! $isCorrect) {
+        if (!$isCorrect) {
             return 0;
         }
 
@@ -66,7 +66,7 @@ class ScoreCalculator
         }
 
         // Linear interpolation: bonus decreases as time increases
-        $ratio = 1 - ($secondsToSubmit / self::SPEED_BONUS_WINDOW_SECONDS);
+        $ratio = 1 - ( $secondsToSubmit / self::SPEED_BONUS_WINDOW_SECONDS );
 
         return (int) round(self::SPEED_BONUS_MAX * $ratio);
     }

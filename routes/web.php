@@ -48,6 +48,7 @@ Route::prefix('/room/{code}')
         Route::post('/reveal', [RoomActionController::class, 'reveal'])->name('room.reveal');
         Route::post('/next', [RoomActionController::class, 'next'])->name('room.next');
         Route::post('/finish', [RoomActionController::class, 'finish'])->name('room.finish');
+        Route::post('/ready', [RoomActionController::class, 'markReady'])->name('room.ready');
 
         // AMEN routes
         Route::post('/round/{roundId}/amen', [RoomActionController::class, 'claimAmen'])

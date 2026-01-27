@@ -58,7 +58,7 @@ class TrackForm
                             ->columnSpan(1),
                         TextInput::make('provider_track_id')
                             ->required()
-                            ->disabled(fn(string $operation): bool => $operation === 'edit')
+                            ->disabled(static fn(string $operation): bool => $operation === 'edit')
                             ->columnSpan(1),
                     ]),
                 ])
@@ -77,13 +77,13 @@ class TrackForm
                             ->columnSpan(1),
                         Placeholder::make('artwork_preview')
                             ->label('Preview')
-                            ->content(fn($record) => $record?->artwork_url
+                            ->content(static fn($record) => $record?->artwork_url
                                 ? new HtmlString('
                                             <div class="flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                                                 <img
                                                     src="'
-                                . e($record->artwork_url)
-                                . '"
+                                .e($record->artwork_url)
+                                .'"
                                                     alt="Artwork"
                                                     class="w-48 h-48 object-cover rounded-lg shadow-lg border-2 border-gray-200 dark:border-gray-700"
                                                 />

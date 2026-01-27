@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers\Room;
 
@@ -20,23 +20,23 @@ class RoomCreateController extends Controller
 
         $packs = Pack::query()
             ->where('is_active', true)
-            ->whereHas('tracks', function ($query): void {
+            ->whereHas('tracks', static function ($query): void {
                 $query->where('is_active', true);
             })
             ->withCount([
-                'tracks as tracks_count' => function ($query): void {
+                'tracks as tracks_count' => static function ($query): void {
                     $query->where('is_active', true);
                 },
-                'spotifyTracks as spotify_tracks_count' => function ($query): void {
+                'spotifyTracks as spotify_tracks_count' => static function ($query): void {
                     $query->where('is_active', true);
                 },
-                'tidalTracks as tidal_tracks_count' => function ($query): void {
+                'tidalTracks as tidal_tracks_count' => static function ($query): void {
                     $query->where('is_active', true);
                 },
             ])
             ->orderBy('name')
             ->get()
-            ->map(fn(Pack $pack): array => [
+            ->map(static fn(Pack $pack): array => [
                 'id' => $pack->id,
                 'name' => $pack->name,
                 'description' => $pack->description,

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers\Play;
 
@@ -19,7 +19,7 @@ class PlayRedirectController extends Controller
             ->firstOrFail();
 
         $provider = $room->playbackProvider;
-        if (! $provider) {
+        if (!$provider) {
             abort(404);
         }
 
@@ -30,7 +30,7 @@ class PlayRedirectController extends Controller
             ->firstOrFail();
 
         $track = $round->track;
-        if (! $track) {
+        if (!$track) {
             abort(404);
         }
 

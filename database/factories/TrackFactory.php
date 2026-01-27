@@ -17,12 +17,36 @@ class TrackFactory extends Factory
     public function definition(): array
     {
         $artists = [
-            'The Beatles', 'Queen', 'Michael Jackson', 'Madonna', 'Prince',
-            'David Bowie', 'Elton John', 'Whitney Houston', 'Stevie Wonder', 'ABBA',
-            'Fleetwood Mac', 'The Rolling Stones', 'Led Zeppelin', 'Pink Floyd', 'U2',
-            'Nirvana', 'Oasis', 'Radiohead', 'Coldplay', 'Arctic Monkeys',
-            'Beyoncé', 'Adele', 'Ed Sheeran', 'Taylor Swift', 'Bruno Mars',
-            'Daft Punk', 'The Weeknd', 'Kendrick Lamar', 'Drake', 'Rihanna',
+            'The Beatles',
+            'Queen',
+            'Michael Jackson',
+            'Madonna',
+            'Prince',
+            'David Bowie',
+            'Elton John',
+            'Whitney Houston',
+            'Stevie Wonder',
+            'ABBA',
+            'Fleetwood Mac',
+            'The Rolling Stones',
+            'Led Zeppelin',
+            'Pink Floyd',
+            'U2',
+            'Nirvana',
+            'Oasis',
+            'Radiohead',
+            'Coldplay',
+            'Arctic Monkeys',
+            'Beyoncé',
+            'Adele',
+            'Ed Sheeran',
+            'Taylor Swift',
+            'Bruno Mars',
+            'Daft Punk',
+            'The Weeknd',
+            'Kendrick Lamar',
+            'Drake',
+            'Rihanna',
         ];
 
         $songPrefixes = ['Love', 'Dance', 'Dream', 'Night', 'Summer', 'Fire', 'Heart', 'Soul', 'Wild', 'Free'];
@@ -30,10 +54,10 @@ class TrackFactory extends Factory
 
         return [
             'pack_id' => Pack::factory(),
-            'provider_id' => Provider::query()->firstOrCreate(
-                ['key' => 'tidal'],
-                ['name' => 'TIDAL', 'is_active' => true],
-            )->id,
+            'provider_id' => Provider::query()->firstOrCreate(['key' => 'tidal'], [
+                'name' => 'TIDAL',
+                'is_active' => true,
+            ])->id,
             'provider_track_id' => (string) fake()->unique()->numberBetween(100000, 999999999),
             'title' => fake()->randomElement($songPrefixes).' '.fake()->randomElement($songSuffixes),
             'artist' => fake()->randomElement($artists),
@@ -49,21 +73,21 @@ class TrackFactory extends Factory
 
     public function withPreview(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'preview_url' => 'https://preview.tidal.com/track/'.$attributes['provider_track_id'].'.mp3',
         ]);
     }
 
     public function inactive(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'is_active' => false,
         ]);
     }
 
     public function fromYear(int $year): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'release_date' => fake()->dateTimeBetween("$year-01-01", "$year-12-31"),
         ]);
     }

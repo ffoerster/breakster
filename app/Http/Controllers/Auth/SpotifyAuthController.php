@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers\Auth;
 
@@ -56,7 +56,7 @@ class SpotifyAuthController extends Controller
             'state' => $state,
         ]);
 
-        return redirect()->away(self::AUTHORIZE_ENDPOINT . '?' . $query);
+        return redirect()->away(self::AUTHORIZE_ENDPOINT.'?'.$query);
     }
 
     public function callback(Request $request, SpotifyAdminTokenService $adminTokenService): RedirectResponse
@@ -66,7 +66,7 @@ class SpotifyAuthController extends Controller
 
         $expectedState = $request->session()->pull('spotify.oauth.state');
         $codeVerifier = $request->session()->pull('spotify.oauth.code_verifier');
-        $redirectTo = $request->session()->pull('spotify.oauth.redirect') ?: ($isGuest ? '/' : '/admin');
+        $redirectTo = $request->session()->pull('spotify.oauth.redirect') ?: ( $isGuest ? '/' : '/admin' );
 
         $state = $request->string('state')->toString();
         $code = $request->string('code')->toString();
@@ -106,13 +106,13 @@ class SpotifyAuthController extends Controller
             ]);
 
         if (!$response->successful()) {
-            throw new RuntimeException('Failed to obtain Spotify token: ' . $response->body());
+            throw new RuntimeException('Failed to obtain Spotify token: '.$response->body());
         }
 
         $data = $response->json();
 
         if (!isset($data['access_token'], $data['expires_in'])) {
-            throw new RuntimeException('Invalid token response from Spotify: ' . $response->body());
+            throw new RuntimeException('Invalid token response from Spotify: '.$response->body());
         }
 
         $expiresAt = CarbonImmutable::now()->addSeconds((int) $data['expires_in']);

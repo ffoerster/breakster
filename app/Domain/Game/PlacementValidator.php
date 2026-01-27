@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game;
 
@@ -23,11 +23,8 @@ class PlacementValidator
      *   AND (no next track OR new track's release_date <= next track's release_date)
      * - Equal dates are allowed.
      */
-    public function isCorrect(
-        RoomPlayer $player,
-        Track $newTrack,
-        ?int $insertAfterTrackId
-    ): bool {
+    public function isCorrect(RoomPlayer $player, Track $newTrack, ?int $insertAfterTrackId): bool
+    {
         $timeline = $this->getPlayerTimeline($player);
 
         // Empty timeline: always correct
@@ -45,7 +42,7 @@ class PlacementValidator
         }
 
         // Find the "after" item and its next sibling
-        $afterIndex = $timeline->search(fn (TimelineItem $item) => $item->track_id === $insertAfterTrackId);
+        $afterIndex = $timeline->search(static fn(TimelineItem $item) => $item->track_id === $insertAfterTrackId);
 
         if ($afterIndex === false) {
             // The track they're trying to insert after isn't in their timeline
@@ -85,9 +82,9 @@ class PlacementValidator
 
         // Find the first item that has a release date greater than the new track
         foreach ($timeline as $index => $item) {
-            if ($item->track->release_date->gt($releaseDate)) {
-                return $index;
-            }
+            if (!($item->track->release_date->gt($releaseDate))) { continue; }
+
+return $index;
         }
 
         // If we get here, the track goes at the end
@@ -118,9 +115,6 @@ class PlacementValidator
      */
     public function getPlayerTimeline(RoomPlayer $player): Collection
     {
-        return $player->timelineItems()
-            ->with('track')
-            ->orderBy('position')
-            ->get();
+        return $player->timelineItems()->with('track')->orderBy('position')->get();
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game\DTOs;
 
@@ -23,7 +23,7 @@ readonly class RoundSummary
 
     public static function fromRound(Round $round, Collection $results): self
     {
-        $correctCount = $results->filter(fn (PlacementResult $r) => $r->isCorrect)->count();
+        $correctCount = $results->filter(static fn(PlacementResult $r) => $r->isCorrect)->count();
 
         return new self(
             round: $round,

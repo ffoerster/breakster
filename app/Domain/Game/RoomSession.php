@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game;
 
@@ -22,10 +22,7 @@ class RoomSession
         }
 
         if (auth()->guard()->check()) {
-            return $room
-                ->players()
-                ->where('user_id', auth()->guard()->id())
-                ->first();
+            return $room->players()->where('user_id', auth()->guard()->id())->first();
         }
 
         return null;
@@ -35,7 +32,7 @@ class RoomSession
     {
         $player = $this->currentPlayer($room);
 
-        if (! $player) {
+        if (!$player) {
             abort(403, 'You are not in this room.');
         }
 
@@ -46,7 +43,7 @@ class RoomSession
     {
         $player = $this->requirePlayer($room);
 
-        if (! $player->is_host) {
+        if (!$player->is_host) {
             abort(403, 'Only the host can do that.');
         }
 

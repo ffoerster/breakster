@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game;
 
@@ -14,6 +14,7 @@ use App\Events\AmenGuessSubmitted;
 use App\Events\AmenResolved;
 use App\Events\AmenVoteSubmitted;
 use App\Events\PlacementSubmitted;
+use App\Events\PlayerReady;
 use App\Events\RoomPlayersUpdated;
 use App\Events\RoomStateChanged;
 use App\Events\RoundRevealed;
@@ -57,7 +58,7 @@ class GameService
             ]);
 
             // Create host player
-            $displayName = $host?->name ?? $guestDisplayName ?? 'Host';
+            $displayName = $host->name ?? $guestDisplayName ?? 'Host';
 
             RoomPlayer::create([
                 'room_id' => $room->id,
@@ -95,7 +96,7 @@ class GameService
         }
 
         // Generate unique display name
-        $displayName = $this->ensureUniqueDisplayName($room, $guestDisplayName ?? $user?->name ?? 'Player');
+        $displayName = $this->ensureUniqueDisplayName($room, $guestDisplayName ?? $user->name ?? 'Player');
 
         $player = RoomPlayer::create([
             'room_id' => $room->id,
@@ -114,7 +115,7 @@ class GameService
 
     public function finishRoom(Room $room): void
     {
-        DB::transaction(function () use ($room): void {
+        DB::transaction(static function () use ($room): void {
             $room->loadMissing('currentRound');
 
             if ($room->currentRound) {
@@ -128,7 +129,7 @@ class GameService
                 'current_round_id' => null,
             ]);
 
-            DB::afterCommit(function () use ($room): void {
+            DB::afterCommit(static function () use ($room): void {
                 event(new RoomStateChanged($room->code, RoomState::Finished, null));
             });
         });
@@ -167,12 +168,12 @@ class GameService
     public function startRound(Room $room): Round
     {
         // Validate state
-        if (! $room->state->canStartRound()) {
+        if (!$room->state->canStartRound()) {
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
         // Require playback provider to be selected
-        if (! $room->playback_provider_id) {
+        if (!$room->playback_provider_id) {
             throw new \DomainException('Playback provider not selected.');
         }
 
@@ -188,7 +189,7 @@ class GameService
             ->inRandomOrder()
             ->first();
 
-        if (! $track) {
+        if (!$track) {
             // No more tracks available
             $room->update(['state' => RoomState::Finished]);
 
@@ -196,6 +197,9 @@ class GameService
         }
 
         return DB::transaction(function () use ($room, $track) {
+            // Reset ready status for all players
+            $this->resetReadyStatus($room);
+
             // Calculate round number
             $roundNumber = $room->rounds()->count() + 1;
 
@@ -241,16 +245,16 @@ class GameService
     private function triggerSpotifyPlayback(Room $room, Track $track): void
     {
         // Only trigger if Spotify is the provider and device is configured
-        if (! $room->playbackProvider || $room->playbackProvider->key !== 'spotify') {
+        if (!$room->playbackProvider || $room->playbackProvider->key !== 'spotify') {
             return;
         }
 
-        if (! $room->spotify_device_id || ! $room->host_user_id) {
+        if (!$room->spotify_device_id || !$room->host_user_id) {
             return;
         }
 
         // Require Spotify playback service
-        if (! $this->spotifyPlayback) {
+        if (!$this->spotifyPlayback) {
             Log::warning('SpotifyPlaybackService not available for room', [
                 'room_code' => $room->code,
             ]);
@@ -260,7 +264,7 @@ class GameService
 
         // Get Spotify track URI
         $spotifyTrackId = $track->provider_track_id;
-        if (! $spotifyTrackId) {
+        if (!$spotifyTrackId) {
             Log::info('Track has no Spotify provider_track_id, skipping auto-play', [
                 'room_code' => $room->code,
                 'track_id' => $track->id,
@@ -302,7 +306,7 @@ class GameService
             return;
         }
 
-        DB::transaction(function () use ($room): void {
+        DB::transaction(static function () use ($room): void {
             $room->refresh();
 
             $players = $room->players()->orderBy('joined_at')->get();
@@ -325,7 +329,7 @@ class GameService
 
             foreach ($players as $index => $player) {
                 $track = $tracks->get($index);
-                if (! $track) {
+                if (!$track) {
                     continue;
                 }
 
@@ -345,24 +349,24 @@ class GameService
 
     public function setPlaybackProvider(Room $room, Provider $provider): void
     {
-        if (! $room->isInLobby()) {
+        if (!$room->isInLobby()) {
             throw new \RuntimeException('Playback provider can only be changed in the lobby.');
         }
 
-        if (! $provider->is_active) {
+        if (!$provider->is_active) {
             throw new \RuntimeException('Playback provider is not active.');
         }
 
-        if (! in_array($provider->key, ['spotify', 'tidal'], true)) {
+        if (!in_array($provider->key, ['spotify', 'tidal'], true)) {
             throw new \RuntimeException('Playback provider is not supported.');
         }
 
-        DB::transaction(function () use ($room, $provider): void {
+        DB::transaction(static function () use ($room, $provider): void {
             $room->update([
                 'playback_provider_id' => $provider->id,
             ]);
 
-            DB::afterCommit(function () use ($room): void {
+            DB::afterCommit(static function () use ($room): void {
                 event(new RoomStateChanged($room->code, $room->state, $room->current_round_id));
             });
         });
@@ -374,7 +378,7 @@ class GameService
     public function submitPlacement(RoomPlayer $player, Round $round, ?int $insertAfterTrackId = null): Placement
     {
         // Validate round is active
-        if (! $round->isActive()) {
+        if (!$round->isActive()) {
             throw new \RuntimeException('This round is not active.');
         }
 
@@ -382,7 +386,7 @@ class GameService
         if ($insertAfterTrackId !== null) {
             $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
 
-            if (! $hasTrack) {
+            if (!$hasTrack) {
                 throw new \RuntimeException('Invalid track reference for placement.');
             }
         }
@@ -464,7 +468,7 @@ class GameService
             $room->update(['state' => RoomState::Reveal]);
 
             // Broadcast events after transaction commits
-            DB::afterCommit(function () use ($room, $round) {
+            DB::afterCommit(static function () use ($room, $round) {
                 event(new RoundRevealed($room->code, $round->id));
                 event(new RoomStateChanged($room->code, RoomState::Reveal, $round->id));
             });
@@ -507,7 +511,7 @@ class GameService
         $lastScore = null;
         $sameRankCount = 0;
 
-        return $players->map(function (RoomPlayer $player) use (&$rank, &$lastScore, &$sameRankCount) {
+        return $players->map(static function (RoomPlayer $player) use (&$rank, &$lastScore, &$sameRankCount) {
             if ($lastScore !== $player->score) {
                 $rank += 1 + $sameRankCount;
                 $sameRankCount = 0;
@@ -530,12 +534,12 @@ class GameService
     public function reorderTimeline(RoomPlayer $player, array $orderedTrackIds): void
     {
         $orderedTrackIds = collect($orderedTrackIds)
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id): bool => $id > 0)
+            ->map(static fn($id) => (int) $id)
+            ->filter(static fn(int $id): bool => $id > 0)
             ->values()
             ->all();
 
-        DB::transaction(function () use ($player, $orderedTrackIds): void {
+        DB::transaction(static function () use ($player, $orderedTrackIds): void {
             $items = $player->timelineItems()->get()->keyBy('track_id');
 
             if (count($orderedTrackIds) !== $items->count()) {
@@ -546,7 +550,7 @@ class GameService
                 /** @var TimelineItem|null $item */
                 $item = $items->get($trackId);
 
-                if (! $item) {
+                if (!$item) {
                     throw new \RuntimeException('Invalid timeline reorder request.');
                 }
 
@@ -562,7 +566,7 @@ class GameService
     {
         $usedTrackIds = $room->usedTrackIds();
 
-        return ! $room
+        return !$room
             ->pack
             ->activeTracks()
             ->where('provider_id', $room->playback_provider_id)
@@ -576,11 +580,11 @@ class GameService
      */
     public function claimAmen(Round $round, RoomPlayer $player): Round
     {
-        return DB::transaction(function () use ($round, $player): Round {
+        return DB::transaction(static function () use ($round, $player): Round {
             // Lock the round row to prevent race conditions
             $round = Round::query()->lockForUpdate()->find($round->id);
 
-            if (! $round->isActive()) {
+            if (!$round->isActive()) {
                 throw new \RuntimeException('This round is not active.');
             }
 
@@ -602,7 +606,7 @@ class GameService
             $roomCode = $round->room->code;
             $displayName = $player->display_name;
 
-            DB::afterCommit(function () use ($roomCode, $round, $player, $displayName): void {
+            DB::afterCommit(static function () use ($roomCode, $round, $player, $displayName): void {
                 event(new AmenClaimed($roomCode, $round->id, $player->id, $displayName));
             });
 
@@ -644,15 +648,15 @@ class GameService
      */
     public function submitAmenVote(Round $round, RoomPlayer $voter, bool $vote): AmenVote
     {
-        if (! $round->isRevealed()) {
+        if (!$round->isRevealed()) {
             throw new \RuntimeException('Amen voting is only allowed after reveal.');
         }
 
-        if (! $round->hasAmenClaim()) {
+        if (!$round->hasAmenClaim()) {
             throw new \RuntimeException('No AMEN claim exists for this round.');
         }
 
-        if (! $round->amenGuess()->exists()) {
+        if (!$round->amenGuess()->exists()) {
             throw new \RuntimeException('The AMEN claimant has not submitted a guess yet.');
         }
 
@@ -689,7 +693,7 @@ class GameService
      */
     public function resolveAmen(Round $round): Round
     {
-        if (! $round->hasAmenClaim()) {
+        if (!$round->hasAmenClaim()) {
             throw new \RuntimeException('No AMEN claim exists for this round.');
         }
 
@@ -697,7 +701,7 @@ class GameService
             return $round;
         }
 
-        return DB::transaction(function () use ($round): Round {
+        return DB::transaction(static function () use ($round): Round {
             $round = Round::query()->lockForUpdate()->find($round->id);
 
             // Double-check not already resolved
@@ -739,19 +743,47 @@ class GameService
             $guess = $round->amenGuess;
             $track = $round->track;
 
-            DB::afterCommit(function () use ($roomCode, $round, $wasCorrect, $points, $guess, $track): void {
-                event(new AmenResolved(
-                    $roomCode,
-                    $round->id,
-                    $wasCorrect,
-                    $points,
-                    $guess ? ['artist' => $guess->artist_guess, 'title' => $guess->title_guess] : null,
-                    $track ? ['artist' => $track->artist, 'title' => $track->title] : null,
-                ));
+            DB::afterCommit(static function () use ($roomCode, $round, $wasCorrect, $points, $guess, $track): void {
+                event(
+                    new AmenResolved(
+                        $roomCode,
+                        $round->id,
+                        $wasCorrect,
+                        $points,
+                        $guess ? ['artist' => $guess->artist_guess, 'title' => $guess->title_guess] : null,
+                        $track ? ['artist' => $track->artist, 'title' => $track->title] : null,
+                    ),
+                );
             });
 
             return $round->fresh();
         });
+    }
+
+    /**
+     * Mark a player as ready in the lobby.
+     */
+    public function markReady(Room $room, RoomPlayer $player): void
+    {
+        if (!$room->isInLobby()) {
+            throw new \RuntimeException('Ready can only be marked in the lobby.');
+        }
+
+        $player->markReady();
+
+        $readyCount = $room->players()->where('is_ready', true)->count();
+        $totalPlayers = $room->players()->count();
+        $roomCode = $room->code;
+
+        event(new PlayerReady($roomCode, $player->id, $readyCount, $totalPlayers));
+    }
+
+    /**
+     * Reset ready status for all players in a room.
+     */
+    public function resetReadyStatus(Room $room): void
+    {
+        $room->players()->update(['is_ready' => false]);
     }
 
     /**

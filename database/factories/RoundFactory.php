@@ -29,7 +29,7 @@ class RoundFactory extends Factory
 
     public function active(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'status' => RoundStatus::Active,
             'started_at' => now(),
         ]);
@@ -37,7 +37,7 @@ class RoundFactory extends Factory
 
     public function revealed(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'status' => RoundStatus::Revealed,
             'started_at' => now()->subMinutes(2),
             'revealed_at' => now(),
@@ -46,7 +46,7 @@ class RoundFactory extends Factory
 
     public function done(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'status' => RoundStatus::Done,
             'started_at' => now()->subMinutes(5),
             'revealed_at' => now()->subMinutes(2),
@@ -55,7 +55,7 @@ class RoundFactory extends Factory
 
     public function roundNumber(int $number): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'round_number' => $number,
         ]);
     }

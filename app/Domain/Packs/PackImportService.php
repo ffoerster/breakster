@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Packs;
 
@@ -52,7 +52,7 @@ class PackImportService
     {
         $this->validate($data);
 
-        return DB::transaction(fn (): array => $this->importTracks($pack, $data['tracks'], $updateExisting));
+        return DB::transaction(fn(): array => $this->importTracks($pack, $data['tracks'], $updateExisting));
     }
 
     /**
@@ -70,11 +70,11 @@ class PackImportService
         foreach ($tracks as $trackData) {
             $providerKey = $trackData['provider_key'];
 
-            if (! $providers->has($providerKey)) {
-                $provider = Provider::query()->firstOrCreate(
-                    ['key' => $providerKey],
-                    ['name' => ucfirst($providerKey), 'is_active' => true],
-                );
+            if (!$providers->has($providerKey)) {
+                $provider = Provider::query()->firstOrCreate(['key' => $providerKey], [
+                    'name' => ucfirst($providerKey),
+                    'is_active' => true,
+                ]);
                 $providers[$providerKey] = $provider->id;
             }
 

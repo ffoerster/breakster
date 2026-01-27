@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PlacementValidator::class);
         $this->app->singleton(ScoreCalculator::class);
 
-        $this->app->singleton(GameService::class, function ($app) {
+        $this->app->singleton(GameService::class, static function ($app) {
             return new GameService(
                 $app->make(RoomCodeGenerator::class),
                 $app->make(PlacementValidator::class),

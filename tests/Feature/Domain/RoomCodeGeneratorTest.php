@@ -26,10 +26,7 @@ describe('RoomCodeGenerator', function () {
         for ($i = 0; $i < 100; $i++) {
             $code = $generator->generate();
 
-            expect($code)->not->toContain('O')
-                ->not->toContain('0')
-                ->not->toContain('I')
-                ->not->toContain('1');
+            expect($code)->not->toContain('O')->not->toContain('0')->not->toContain('I')->not->toContain('1');
         }
     });
 

@@ -16,12 +16,12 @@ use Illuminate\Support\Facades\Event;
 
 beforeEach(function () {
     $this->gameService = app(GameService::class);
-    $this->provider = Provider::query()->firstOrCreate(
-        ['key' => 'tidal'],
-        ['name' => 'TIDAL', 'is_active' => true],
-    );
+    $this->provider = Provider::query()->firstOrCreate(['key' => 'tidal'], ['name' => 'TIDAL', 'is_active' => true]);
     $this->pack = Pack::factory()->create();
-    Track::factory()->count(20)->for($this->pack)->create();
+    Track::factory()
+        ->count(20)
+        ->for($this->pack)
+        ->create();
 });
 
 /**
@@ -47,8 +47,10 @@ describe('GameService::claimAmen', function () {
 
         $result = $this->gameService->claimAmen($round, $player);
 
-        expect($result->amen_claimed_by_room_player_id)->toBe($player->id)
-            ->and($result->amen_claimed_at)->not->toBeNull();
+        expect($result->amen_claimed_by_room_player_id)
+            ->toBe($player->id)
+            ->and($result->amen_claimed_at)
+            ->not->toBeNull();
 
         Event::assertDispatched(\App\Events\AmenClaimed::class);
     });
@@ -62,7 +64,7 @@ describe('GameService::claimAmen', function () {
 
         $this->gameService->claimAmen($round, $player1);
 
-        expect(fn () => $this->gameService->claimAmen($round->fresh(), $player2))
+        expect(fn() => $this->gameService->claimAmen($round->fresh(), $player2))
             ->toThrow(\RuntimeException::class, 'AMEN has already been claimed for this round.');
     });
 
@@ -74,7 +76,7 @@ describe('GameService::claimAmen', function () {
         $round->update(['status' => RoundStatus::Revealed]);
         $player = $room->players()->where('is_host', true)->first();
 
-        expect(fn () => $this->gameService->claimAmen($round->fresh(), $player))
+        expect(fn() => $this->gameService->claimAmen($round->fresh(), $player))
             ->toThrow(\RuntimeException::class, 'This round is not active.');
     });
 
@@ -83,7 +85,7 @@ describe('GameService::claimAmen', function () {
         $round = $this->gameService->startRound($room);
         $player = $room->players()->where('is_host', true)->first();
 
-        expect(fn () => $this->gameService->claimAmen($round, $player))
+        expect(fn() => $this->gameService->claimAmen($round, $player))
             ->toThrow(\RuntimeException::class, 'AMEN requires at least 2 players.');
     });
 });
@@ -102,10 +104,14 @@ describe('GameService::submitAmenGuess', function () {
 
         $guess = $this->gameService->submitAmenGuess($round->fresh(), $player, 'The Beatles', 'Hey Jude');
 
-        expect($guess)->toBeInstanceOf(AmenGuess::class)
-            ->and($guess->artist_guess)->toBe('The Beatles')
-            ->and($guess->title_guess)->toBe('Hey Jude')
-            ->and($guess->room_player_id)->toBe($player->id);
+        expect($guess)
+            ->toBeInstanceOf(AmenGuess::class)
+            ->and($guess->artist_guess)
+            ->toBe('The Beatles')
+            ->and($guess->title_guess)
+            ->toBe('Hey Jude')
+            ->and($guess->room_player_id)
+            ->toBe($player->id);
 
         Event::assertDispatched(\App\Events\AmenGuessSubmitted::class);
     });
@@ -119,7 +125,7 @@ describe('GameService::submitAmenGuess', function () {
 
         $this->gameService->claimAmen($round, $player1);
 
-        expect(fn () => $this->gameService->submitAmenGuess($round->fresh(), $player2, 'Artist', 'Title'))
+        expect(fn() => $this->gameService->submitAmenGuess($round->fresh(), $player2, 'Artist', 'Title'))
             ->toThrow(\RuntimeException::class, 'Only the AMEN claimant can submit a guess.');
     });
 
@@ -133,7 +139,7 @@ describe('GameService::submitAmenGuess', function () {
         $this->gameService->claimAmen($round, $player);
         $this->gameService->submitAmenGuess($round->fresh(), $player, 'Artist', 'Title');
 
-        expect(fn () => $this->gameService->submitAmenGuess($round->fresh(), $player, 'Other', 'Song'))
+        expect(fn() => $this->gameService->submitAmenGuess($round->fresh(), $player, 'Other', 'Song'))
             ->toThrow(\RuntimeException::class, 'An AMEN guess has already been submitted for this round.');
     });
 });
@@ -149,7 +155,7 @@ describe('GameService::submitAmenVote', function () {
         $this->gameService->claimAmen($round, $player1);
         $this->gameService->submitAmenGuess($round->fresh(), $player1, 'Artist', 'Title');
 
-        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
+        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
             ->toThrow(\RuntimeException::class, 'Amen voting is only allowed after reveal.');
     });
 
@@ -173,9 +179,12 @@ describe('GameService::submitAmenVote', function () {
 
         $vote = $this->gameService->submitAmenVote($round->fresh(), $player2, true);
 
-        expect($vote)->toBeInstanceOf(AmenVote::class)
-            ->and($vote->vote)->toBeTrue()
-            ->and($vote->voter_room_player_id)->toBe($player2->id);
+        expect($vote)
+            ->toBeInstanceOf(AmenVote::class)
+            ->and($vote->vote)
+            ->toBeTrue()
+            ->and($vote->voter_room_player_id)
+            ->toBe($player2->id);
 
         Event::assertDispatched(\App\Events\AmenVoteSubmitted::class);
     });
@@ -195,7 +204,7 @@ describe('GameService::submitAmenVote', function () {
             'revealed_at' => now(),
         ]);
 
-        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player1, true))
+        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player1, true))
             ->toThrow(\RuntimeException::class, 'The AMEN claimant cannot vote.');
     });
 
@@ -217,7 +226,7 @@ describe('GameService::submitAmenVote', function () {
 
         $this->gameService->submitAmenVote($round->fresh(), $player2, true);
 
-        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player2, false))
+        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player2, false))
             ->toThrow(\RuntimeException::class, 'You have already voted for this round.');
     });
 
@@ -232,7 +241,7 @@ describe('GameService::submitAmenVote', function () {
             'revealed_at' => now(),
         ]);
 
-        expect(fn () => $this->gameService->submitAmenVote($round, $player2, true))
+        expect(fn() => $this->gameService->submitAmenVote($round, $player2, true))
             ->toThrow(\RuntimeException::class, 'No AMEN claim exists for this round.');
     });
 
@@ -250,7 +259,7 @@ describe('GameService::submitAmenVote', function () {
             'revealed_at' => now(),
         ]);
 
-        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
+        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
             ->toThrow(\RuntimeException::class, 'The AMEN claimant has not submitted a guess yet.');
     });
 
@@ -302,9 +311,12 @@ describe('GameService::resolveAmen', function () {
         $round = $round->fresh();
         $player1 = $player1->fresh();
 
-        expect($round->isAmenResolved())->toBeTrue()
-            ->and($round->amen_awarded_points)->toBe(ScoreCalculator::AMEN_BONUS_POINTS)
-            ->and($player1->score)->toBe($initialScore + ScoreCalculator::AMEN_BONUS_POINTS);
+        expect($round->isAmenResolved())
+            ->toBeTrue()
+            ->and($round->amen_awarded_points)
+            ->toBe(ScoreCalculator::AMEN_BONUS_POINTS)
+            ->and($player1->score)
+            ->toBe($initialScore + ScoreCalculator::AMEN_BONUS_POINTS);
     });
 
     it('applies penalty points when majority votes no', function () {
@@ -332,9 +344,12 @@ describe('GameService::resolveAmen', function () {
         $round = $round->fresh();
         $player1 = $player1->fresh();
 
-        expect($round->isAmenResolved())->toBeTrue()
-            ->and($round->amen_awarded_points)->toBe(ScoreCalculator::AMEN_PENALTY_POINTS)
-            ->and($player1->score)->toBe($initialScore + ScoreCalculator::AMEN_PENALTY_POINTS);
+        expect($round->isAmenResolved())
+            ->toBeTrue()
+            ->and($round->amen_awarded_points)
+            ->toBe(ScoreCalculator::AMEN_PENALTY_POINTS)
+            ->and($player1->score)
+            ->toBe($initialScore + ScoreCalculator::AMEN_PENALTY_POINTS);
     });
 
     it('awards zero points on tie', function () {
@@ -361,9 +376,12 @@ describe('GameService::resolveAmen', function () {
         $round = $round->fresh();
         $player1 = $player1->fresh();
 
-        expect($round->isAmenResolved())->toBeTrue()
-            ->and($round->amen_awarded_points)->toBe(0)
-            ->and($player1->score)->toBe($initialScore);
+        expect($round->isAmenResolved())
+            ->toBeTrue()
+            ->and($round->amen_awarded_points)
+            ->toBe(0)
+            ->and($player1->score)
+            ->toBe($initialScore);
     });
 
     it('awards zero points when fewer than 2 votes', function () {
@@ -389,9 +407,12 @@ describe('GameService::resolveAmen', function () {
         $player1 = $player1->fresh();
 
         // Only 1 vote, so 0 points even though it's a yes
-        expect($round->isAmenResolved())->toBeTrue()
-            ->and($round->amen_awarded_points)->toBe(0)
-            ->and($player1->score)->toBe($initialScore);
+        expect($round->isAmenResolved())
+            ->toBeTrue()
+            ->and($round->amen_awarded_points)
+            ->toBe(0)
+            ->and($player1->score)
+            ->toBe($initialScore);
     });
 
     it('is idempotent - calling twice does not re-apply points', function () {
@@ -442,8 +463,7 @@ describe('AMEN integration with revealRound', function () {
         $this->gameService->revealRound($round->fresh());
 
         $round = $round->fresh();
-        expect($round->isAmenResolved())->toBeFalse()
-            ->and($round->amen_awarded_points)->toBeNull();
+        expect($round->isAmenResolved())->toBeFalse()->and($round->amen_awarded_points)->toBeNull();
     });
 
     it('does not fail reveal when AMEN has errors', function () {
@@ -467,14 +487,19 @@ describe('AMEN API endpoints', function () {
     it('returns 409 when AMEN already claimed via API', function () {
         /** @var \Tests\TestCase $this */
         $pack = Pack::factory()->create();
-        Track::factory()->count(5)->for($pack)->create();
+        Track::factory()
+            ->count(5)
+            ->for($pack)
+            ->create();
 
         $room = Room::factory()->inRound()->create(['pack_id' => $pack->id]);
         $track = $pack->tracks()->first();
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['current_round_id' => $round->id]);
 
         $host = RoomPlayer::factory()->asHost()->create(['room_id' => $room->id]);
@@ -488,21 +513,25 @@ describe('AMEN API endpoints', function () {
 
         session()->put('room_player_id', $player2->id);
 
-        $this->post("/room/{$room->code}/round/{$round->id}/amen")
-            ->assertStatus(409);
+        $this->post("/room/{$room->code}/round/{$round->id}/amen")->assertStatus(409);
     });
 
     it('rejects AMEN vote via API before reveal', function () {
         /** @var \Tests\TestCase $this */
         $pack = Pack::factory()->create();
-        Track::factory()->count(5)->for($pack)->create();
+        Track::factory()
+            ->count(5)
+            ->for($pack)
+            ->create();
 
         $room = Room::factory()->inRound()->create(['pack_id' => $pack->id]);
         $track = $pack->tracks()->first();
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['current_round_id' => $round->id]);
 
         $host = RoomPlayer::factory()->asHost()->create(['room_id' => $room->id]);
@@ -521,22 +550,27 @@ describe('AMEN API endpoints', function () {
 
         session()->put('room_player_id', $player2->id);
 
-        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", ['vote' => true])
-            ->assertStatus(409)
-            ->assertJsonPath('message', 'Amen voting is only allowed after reveal.');
+        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", [
+            'vote' => true,
+        ])->assertStatus(409)->assertJsonPath('message', 'Amen voting is only allowed after reveal.');
     });
 
     it('returns 409 when claimant tries to vote', function () {
         /** @var \Tests\TestCase $this */
         $pack = Pack::factory()->create();
-        Track::factory()->count(5)->for($pack)->create();
+        Track::factory()
+            ->count(5)
+            ->for($pack)
+            ->create();
 
         $room = Room::factory()->inRound()->create(['pack_id' => $pack->id]);
         $track = $pack->tracks()->first();
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['current_round_id' => $round->id]);
 
         $host = RoomPlayer::factory()->asHost()->create(['room_id' => $room->id]);
@@ -561,22 +595,27 @@ describe('AMEN API endpoints', function () {
 
         session()->put('room_player_id', $host->id);
 
-        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", ['vote' => true])
-            ->assertStatus(409)
-            ->assertJsonPath('message', 'The AMEN claimant cannot vote.');
+        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", [
+            'vote' => true,
+        ])->assertStatus(409)->assertJsonPath('message', 'The AMEN claimant cannot vote.');
     });
 
     it('submits AMEN guess via API', function () {
         /** @var \Tests\TestCase $this */
         $pack = Pack::factory()->create();
-        Track::factory()->count(5)->for($pack)->create();
+        Track::factory()
+            ->count(5)
+            ->for($pack)
+            ->create();
 
         $room = Room::factory()->inRound()->create(['pack_id' => $pack->id]);
         $track = $pack->tracks()->first();
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['current_round_id' => $round->id]);
 
         $host = RoomPlayer::factory()->asHost()->create(['room_id' => $room->id]);
@@ -592,8 +631,7 @@ describe('AMEN API endpoints', function () {
         $this->post("/room/{$room->code}/round/{$round->id}/amen/guess", [
             'artist' => 'The Beatles',
             'title' => 'Hey Jude',
-        ])
-            ->assertSuccessful();
+        ])->assertSuccessful();
 
         $this->assertDatabaseHas('amen_guesses', [
             'round_id' => $round->id,
@@ -606,14 +644,19 @@ describe('AMEN API endpoints', function () {
     it('submits AMEN vote via API', function () {
         /** @var \Tests\TestCase $this */
         $pack = Pack::factory()->create();
-        Track::factory()->count(5)->for($pack)->create();
+        Track::factory()
+            ->count(5)
+            ->for($pack)
+            ->create();
 
         $room = Room::factory()->inRound()->create(['pack_id' => $pack->id]);
         $track = $pack->tracks()->first();
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['current_round_id' => $round->id]);
 
         $host = RoomPlayer::factory()->asHost()->create(['room_id' => $room->id]);
@@ -638,8 +681,7 @@ describe('AMEN API endpoints', function () {
 
         session()->put('room_player_id', $player2->id);
 
-        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", ['vote' => true])
-            ->assertSuccessful();
+        $this->postJson("/room/{$room->code}/round/{$round->id}/amen/vote", ['vote' => true])->assertSuccessful();
 
         $this->assertDatabaseHas('amen_votes', [
             'round_id' => $round->id,
@@ -653,14 +695,19 @@ describe('Room state payload AMEN voting gate', function () {
     it('exposes voting_open only after reveal and reveals guess to voters', function () {
         /** @var \Tests\TestCase $this */
         $pack = Pack::factory()->create();
-        Track::factory()->count(5)->for($pack)->create();
+        Track::factory()
+            ->count(5)
+            ->for($pack)
+            ->create();
 
         $room = Room::factory()->inRound()->create(['pack_id' => $pack->id]);
         $track = $pack->tracks()->first();
-        $round = Round::factory()->active()->create([
-            'room_id' => $room->id,
-            'track_id' => $track->id,
-        ]);
+        $round = Round::factory()
+            ->active()
+            ->create([
+                'room_id' => $room->id,
+                'track_id' => $track->id,
+            ]);
         $room->update(['current_round_id' => $round->id]);
 
         $claimant = RoomPlayer::factory()->asHost()->create(['room_id' => $room->id]);
@@ -697,8 +744,10 @@ describe('Room state payload AMEN voting gate', function () {
         expect($postReveal->json('round.is_revealed'))->toBeTrue();
         expect($postReveal->json('round.amen.voting_open'))->toBeTrue();
         expect($postReveal->json('round.amen.can_vote'))->toBeTrue();
-        expect($postReveal->json('round.amen.guess'))
-            ->toMatchArray(['artist' => 'Test Artist', 'title' => 'Test Title']);
+        expect($postReveal->json('round.amen.guess'))->toMatchArray([
+            'artist' => 'Test Artist',
+            'title' => 'Test Title',
+        ]);
     });
 });
 

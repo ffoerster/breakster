@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers\Room;
 
@@ -17,7 +17,7 @@ class RoomShowController extends Controller
     {
         $room = Room::query()
             ->with([
-                'pack' => fn ($query) => $query->withCount(['spotifyTracks', 'tidalTracks', 'tracks']),
+                'pack' => static fn($query) => $query->withCount(['spotifyTracks', 'tidalTracks', 'tracks']),
                 'playbackProvider',
                 'players',
                 'currentRound.track',

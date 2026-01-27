@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers\Room;
 
@@ -13,11 +13,15 @@ use Illuminate\Http\Request;
 
 class RoomStateController extends Controller
 {
-    public function __invoke(Request $request, string $code, RoomStateData $roomStateData, RoomSession $roomSession): JsonResponse
-    {
+    public function __invoke(
+        Request $request,
+        string $code,
+        RoomStateData $roomStateData,
+        RoomSession $roomSession,
+    ): JsonResponse {
         $room = Room::query()
             ->with([
-                'pack' => fn ($query) => $query->withCount(['spotifyTracks', 'tidalTracks', 'tracks']),
+                'pack' => static fn($query) => $query->withCount(['spotifyTracks', 'tidalTracks', 'tracks']),
                 'playbackProvider',
                 'players',
                 'currentRound.track',

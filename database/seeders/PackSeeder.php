@@ -30,14 +30,9 @@ class PackSeeder extends Seeder
 
         foreach ($decades as $decade) {
             for ($i = 0; $i < $decade['count']; $i++) {
-                Track::factory()
-                    ->for($pack)
-                    ->create([
-                        'release_date' => fake()->dateTimeBetween(
-                            "{$decade['start']}-01-01",
-                            "{$decade['end']}-12-31"
-                        ),
-                    ]);
+                Track::factory()->for($pack)->create([
+                    'release_date' => fake()->dateTimeBetween("{$decade['start']}-01-01", "{$decade['end']}-12-31"),
+                ]);
             }
         }
 
@@ -52,7 +47,7 @@ class PackSeeder extends Seeder
             ->count(50)
             ->for($eightiesPack)
             ->create([
-                'release_date' => fn () => fake()->dateTimeBetween('1980-01-01', '1989-12-31'),
+                'release_date' => static fn() => fake()->dateTimeBetween('1980-01-01', '1989-12-31'),
             ]);
 
         // Create a 2000s pack
@@ -66,7 +61,7 @@ class PackSeeder extends Seeder
             ->count(50)
             ->for($millenniumPack)
             ->create([
-                'release_date' => fn () => fake()->dateTimeBetween('2000-01-01', '2009-12-31'),
+                'release_date' => static fn() => fake()->dateTimeBetween('2000-01-01', '2009-12-31'),
             ]);
 
         $this->command->info('Created 3 packs with a total of 300 tracks.');

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Models;
 
@@ -41,12 +41,12 @@ class Pack extends Model
 
     public function spotifyTracks(): HasMany
     {
-        return $this->tracks()->whereHas('provider', fn ($query) => $query->where('key', 'spotify'));
+        return $this->tracks()->whereHas('provider', static fn($query) => $query->where('key', 'spotify'));
     }
 
     public function tidalTracks(): HasMany
     {
-        return $this->tracks()->whereHas('provider', fn ($query) => $query->where('key', 'tidal'));
+        return $this->tracks()->whereHas('provider', static fn($query) => $query->where('key', 'tidal'));
     }
 
     public function rooms(): HasMany
@@ -56,7 +56,7 @@ class Pack extends Model
 
     public function getImageUrlAttribute(): string
     {
-        if (! empty($this->image_path)) {
+        if (!empty($this->image_path)) {
             return Storage::url($this->image_path);
         }
 

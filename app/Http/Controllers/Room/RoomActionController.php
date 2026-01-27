@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Http\Controllers\Room;
 
@@ -45,11 +45,8 @@ class RoomActionController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function start(
-        string $code,
-        RoomSession $roomSession,
-        GameService $gameService,
-    ): JsonResponse {
+    public function start(string $code, RoomSession $roomSession, GameService $gameService): JsonResponse
+    {
         $room = $this->room($code);
         $roomSession->requireHost($room);
 
@@ -72,7 +69,7 @@ class RoomActionController extends Controller
         $player = $roomSession->requirePlayer($room);
 
         $round = $room->currentRound;
-        if (! $round) {
+        if (!$round) {
             abort(409, 'No active round.');
         }
 
@@ -100,15 +97,12 @@ class RoomActionController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function reveal(
-        string $code,
-        RoomSession $roomSession,
-        GameService $gameService,
-    ): JsonResponse {
+    public function reveal(string $code, RoomSession $roomSession, GameService $gameService): JsonResponse
+    {
         $room = $this->room($code)->loadMissing('currentRound');
         $roomSession->requireHost($room);
 
-        if (! $room->currentRound) {
+        if (!$room->currentRound) {
             abort(409, 'No active round.');
         }
 
@@ -156,15 +150,33 @@ class RoomActionController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function finish(
-        string $code,
-        RoomSession $roomSession,
-        GameService $gameService,
-    ): JsonResponse {
+    public function finish(string $code, RoomSession $roomSession, GameService $gameService): JsonResponse
+    {
         $room = $this->room($code);
         $roomSession->requireHost($room);
 
         $gameService->finishRoom($room);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function markReady(string $code, RoomSession $roomSession, GameService $gameService): JsonResponse
+    {
+        $room = $this->room($code);
+        $player = $roomSession->requirePlayer($room);
+
+        $key = sprintf('ready-confirm:%d', $player->id);
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            abort(429, 'Too many ready attempts. Please slow down.');
+        }
+
+        RateLimiter::hit($key, 60);
+
+        try {
+            $gameService->markReady($room, $player);
+        } catch (\RuntimeException $e) {
+            abort(409, $e->getMessage());
+        }
 
         return response()->json(['ok' => true]);
     }
@@ -245,9 +257,7 @@ class RoomActionController extends Controller
 
     private function room(string $code): Room
     {
-        return Room::query()
-            ->where('code', strtoupper($code))
-            ->firstOrFail();
+        return Room::query()->where('code', strtoupper($code))->firstOrFail();
     }
 
     private function round(int $roundId, Room $room): Round

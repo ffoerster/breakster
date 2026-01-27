@@ -17,9 +17,7 @@ describe('ScoreCalculator', function () {
         // Instant submission gets full bonus
         $points = $calculator->calculatePoints(isCorrect: true, secondsToSubmit: 0);
 
-        expect($points)->toBe(
-            ScoreCalculator::CORRECT_PLACEMENT_POINTS + ScoreCalculator::SPEED_BONUS_MAX
-        );
+        expect($points)->toBe(ScoreCalculator::CORRECT_PLACEMENT_POINTS + ScoreCalculator::SPEED_BONUS_MAX);
     });
 
     it('returns base points without speed bonus after window expires', function () {
@@ -27,7 +25,7 @@ describe('ScoreCalculator', function () {
 
         $points = $calculator->calculatePoints(
             isCorrect: true,
-            secondsToSubmit: ScoreCalculator::SPEED_BONUS_WINDOW_SECONDS
+            secondsToSubmit: ScoreCalculator::SPEED_BONUS_WINDOW_SECONDS,
         );
 
         expect($points)->toBe(ScoreCalculator::CORRECT_PLACEMENT_POINTS);

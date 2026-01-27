@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Spotify;
 
@@ -110,7 +110,7 @@ class SpotifyPlaybackService
     /**
      * Refresh an expired access token.
      */
-    private function refreshToken(ProviderToken $providerToken): void
+    private function refreshToken(#[\SensitiveParameter] ProviderToken $providerToken): void
     {
         if (!$providerToken->refresh_token) {
             throw new RuntimeException('No refresh token available for Spotify.');
@@ -140,13 +140,13 @@ class SpotifyPlaybackService
             ]);
 
         if (!$response->successful()) {
-            throw new RuntimeException('Failed to refresh Spotify token: ' . $response->body());
+            throw new RuntimeException('Failed to refresh Spotify token: '.$response->body());
         }
 
         $data = $response->json();
 
         if (!isset($data['access_token'], $data['expires_in'])) {
-            throw new RuntimeException('Invalid token response from Spotify: ' . $response->body());
+            throw new RuntimeException('Invalid token response from Spotify: '.$response->body());
         }
 
         $expiresAt = CarbonImmutable::now()->addSeconds((int) $data['expires_in']);
@@ -164,7 +164,7 @@ class SpotifyPlaybackService
     /**
      * Refresh a guest's expired access token stored in session.
      */
-    private function refreshGuestToken(string $refreshToken): void
+    private function refreshGuestToken(#[\SensitiveParameter] string $refreshToken): void
     {
         $clientId = config('services.spotify.client_id');
         $clientSecret = config('services.spotify.client_secret');
@@ -190,13 +190,13 @@ class SpotifyPlaybackService
             ]);
 
         if (!$response->successful()) {
-            throw new RuntimeException('Failed to refresh guest Spotify token: ' . $response->body());
+            throw new RuntimeException('Failed to refresh guest Spotify token: '.$response->body());
         }
 
         $data = $response->json();
 
         if (!isset($data['access_token'], $data['expires_in'])) {
-            throw new RuntimeException('Invalid token response from Spotify: ' . $response->body());
+            throw new RuntimeException('Invalid token response from Spotify: '.$response->body());
         }
 
         $expiresAt = CarbonImmutable::now()->addSeconds((int) $data['expires_in']);

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game\DTOs;
 
@@ -17,21 +17,11 @@ readonly class PlacementResult
 
     public static function correct(Placement $placement, int $points): self
     {
-        return new self(
-            placement: $placement,
-            isCorrect: true,
-            pointsEarned: $points,
-            message: 'Correct placement!',
-        );
+        return new self(placement: $placement, isCorrect: true, pointsEarned: $points, message: 'Correct placement!');
     }
 
     public static function incorrect(Placement $placement): self
     {
-        return new self(
-            placement: $placement,
-            isCorrect: false,
-            pointsEarned: 0,
-            message: 'Incorrect placement.',
-        );
+        return new self(placement: $placement, isCorrect: false, pointsEarned: 0, message: 'Incorrect placement.');
     }
 }

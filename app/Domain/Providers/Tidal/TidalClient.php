@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Tidal;
 
@@ -109,14 +109,14 @@ class TidalClient
 
         // Extract track IDs from relationship data
         foreach ($response['data'] ?? [] as $item) {
-            if (isset($item['type']) && $item['type'] === 'track' && isset($item['id'])) {
-                try {
+            if (!(isset($item['type']) && $item['type'] === 'track' && isset($item['id']))) { continue; }
+
+try {
                     $tracks[] = $this->fetchTrack($item['id']);
                 } catch (\RuntimeException $e) {
                     // Skip tracks that can't be fetched
                     continue;
                 }
-            }
         }
 
         return $tracks;
@@ -146,14 +146,14 @@ class TidalClient
 
             // Extract track IDs from relationship data
             foreach ($response['data'] ?? [] as $item) {
-                if (isset($item['type']) && $item['type'] === 'track' && isset($item['id'])) {
-                    try {
+                if (!(isset($item['type']) && $item['type'] === 'track' && isset($item['id']))) { continue; }
+
+try {
                         $tracks[] = $this->fetchTrack($item['id']);
                     } catch (\RuntimeException $e) {
                         // Skip tracks that can't be fetched
                         continue;
                     }
-                }
             }
 
             if (empty($tracks)) {
@@ -167,11 +167,11 @@ class TidalClient
             if (str_contains($e->getMessage(), '404')) {
                 throw new \RuntimeException(
                     "Unable to fetch playlist tracks from TIDAL. This might be because:\n"
-                        . "1. The playlist is private or doesn't exist\n"
-                        . "2. Playlist access requires user authentication (not supported with Client Credentials)\n"
-                        . "3. You don't have permission to access this playlist\n\n"
-                        . 'Original error: '
-                        . $e->getMessage(),
+                        ."1. The playlist is private or doesn't exist\n"
+                        ."2. Playlist access requires user authentication (not supported with Client Credentials)\n"
+                        ."3. You don't have permission to access this playlist\n\n"
+                        .'Original error: '
+                        .$e->getMessage(),
                 );
             }
 
@@ -187,7 +187,7 @@ class TidalClient
     {
         $token = $this->tokenService->getAccessToken();
 
-        $url = self::API_BASE_URL . '/' . self::API_VERSION . '/' . $endpoint;
+        $url = self::API_BASE_URL.'/'.self::API_VERSION.'/'.$endpoint;
 
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$token}",
@@ -297,7 +297,7 @@ class TidalClient
         $count = 25;
 
         for ($i = 1; $i <= $count; $i++) {
-            $trackId = (string) (100000 + mt_rand(0, 899999));
+            $trackId = (string) ( 100000 + mt_rand(0, 899999) );
             $year = mt_rand(1965, 2025);
             $month = mt_rand(1, 12);
             $day = mt_rand(1, 28);

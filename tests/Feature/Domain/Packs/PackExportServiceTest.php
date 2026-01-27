@@ -14,10 +14,7 @@ it('exports a pack with all its tracks', function () {
         'is_active' => true,
     ]);
 
-    $provider = Provider::query()->firstOrCreate(
-        ['key' => 'spotify'],
-        ['name' => 'Spotify', 'is_active' => true],
-    );
+    $provider = Provider::query()->firstOrCreate(['key' => 'spotify'], ['name' => 'Spotify', 'is_active' => true]);
 
     Track::factory()->create([
         'pack_id' => $pack->id,
@@ -77,15 +74,12 @@ it('exports empty tracks array when pack has no tracks', function () {
 it('exports multiple tracks from different providers', function () {
     $pack = Pack::factory()->create();
 
-    $spotifyProvider = Provider::query()->firstOrCreate(
-        ['key' => 'spotify'],
-        ['name' => 'Spotify', 'is_active' => true],
-    );
+    $spotifyProvider = Provider::query()->firstOrCreate(['key' => 'spotify'], [
+        'name' => 'Spotify',
+        'is_active' => true,
+    ]);
 
-    $tidalProvider = Provider::query()->firstOrCreate(
-        ['key' => 'tidal'],
-        ['name' => 'TIDAL', 'is_active' => true],
-    );
+    $tidalProvider = Provider::query()->firstOrCreate(['key' => 'tidal'], ['name' => 'TIDAL', 'is_active' => true]);
 
     Track::factory()->create([
         'pack_id' => $pack->id,

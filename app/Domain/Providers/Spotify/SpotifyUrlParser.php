@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Providers\Spotify;
 
@@ -61,23 +61,26 @@ class SpotifyUrlParser
         $url = preg_split('/[?#]/', $url, 2)[0] ?? $url;
 
         $parsed = parse_url($url);
-        $path = is_array($parsed) ? ($parsed['path'] ?? null) : null;
+        $path = is_array($parsed) ? $parsed['path'] ?? null : null;
 
-        if (! is_string($path) || $path === '') {
+        if (!is_string($path) || $path === '') {
             throw new InvalidArgumentException(
                 "Could not parse Spotify URL: {$url}. Expected format: open.spotify.com/{type}/{id}",
             );
         }
 
-        $segments = array_values(array_filter(explode('/', $path), static fn (string $segment): bool => $segment !== ''));
+        $segments = array_values(array_filter(
+            explode('/', $path),
+            static fn(string $segment): bool => $segment !== '',
+        ));
 
         // Handle intl-xx paths like /intl-de/track/xxx
-        if (str_starts_with((string) ($segments[0] ?? ''), 'intl-')) {
+        if (str_starts_with((string) ( $segments[0] ?? '' ), 'intl-')) {
             array_shift($segments);
         }
 
-        $type = strtolower((string) ($segments[0] ?? ''));
-        $id = (string) ($segments[1] ?? '');
+        $type = strtolower((string) ( $segments[0] ?? '' ));
+        $id = (string) ( $segments[1] ?? '' );
 
         if ($type === '' || $id === '') {
             throw new InvalidArgumentException(
@@ -85,17 +88,15 @@ class SpotifyUrlParser
             );
         }
 
-        if (! in_array($type, self::RESOURCE_TYPES, true)) {
+        if (!in_array($type, self::RESOURCE_TYPES, true)) {
             throw new InvalidArgumentException(
                 "Could not parse Spotify URL: {$url}. Unsupported resource type: {$type}. Supported types: track, playlist.",
             );
         }
 
         // Spotify IDs are 22-character base62 strings
-        if (! preg_match('/^[a-zA-Z0-9]+$/', $id)) {
-            throw new InvalidArgumentException(
-                "Could not parse Spotify URL: {$url}. Invalid Spotify ID format.",
-            );
+        if (!preg_match('/^[a-zA-Z0-9]+$/', $id)) {
+            throw new InvalidArgumentException("Could not parse Spotify URL: {$url}. Invalid Spotify ID format.");
         }
 
         return [

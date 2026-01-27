@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Domain\Game;
 
@@ -45,7 +45,7 @@ class RoomStateData
 
         $me = $this->roomSession->currentPlayer($room);
 
-        if (! $me) {
+        if (!$me) {
             return [
                 'room' => $this->room($room, null),
                 'me' => null,
@@ -90,7 +90,9 @@ class RoomStateData
             'host_user_id' => $room->host_user_id,
             'spotify_device_id' => $room->spotify_device_id,
             'host_has_spotify_token' => $this->hostHasSpotifyToken($room),
-            'is_host' => (bool) ($me?->is_host ?? false),
+            'is_host' => (bool) ( $me->is_host ?? false ),
+            'ready_count' => $room->players()->where('is_ready', true)->count(),
+            'players_count' => $room->players()->count(),
         ];
     }
 
@@ -113,9 +115,7 @@ class RoomStateData
         $placementInsertedAfterTrackId = null;
 
         if ($room->currentRound) {
-            $placementInsertedAfterTrackId = $room->currentRound
-                ->getPlacementForPlayer($me)
-                ?->inserted_after_track_id;
+            $placementInsertedAfterTrackId = $room->currentRound->getPlacementForPlayer($me)?->inserted_after_track_id;
         }
 
         return [
@@ -125,6 +125,7 @@ class RoomStateData
             'is_host' => $me->is_host,
             'has_placed' => $room->currentRound ? $me->hasPlacementForRound($room->currentRound) : false,
             'placement_inserted_after_track_id' => $placementInsertedAfterTrackId,
+            'is_ready' => $me->is_ready,
         ];
     }
 
@@ -137,12 +138,12 @@ class RoomStateData
             ->players
             ->sortBy('joined_at')
             ->values()
-            ->map(fn (RoomPlayer $player): array => [
+            ->map(static fn(RoomPlayer $player): array => [
                 'id' => $player->id,
                 'display_name' => $player->display_name,
                 'score' => $player->score,
                 'is_host' => $player->is_host,
-                'is_me' => (bool) ($me && $player->id === $me->id),
+                'is_me' => (bool) ( $me && $player->id === $me->id ),
             ])
             ->all();
     }
@@ -156,7 +157,7 @@ class RoomStateData
             ->whereIn('key', ['spotify', 'tidal'])
             ->where('is_active', true)
             ->get()
-            ->map(fn (Provider $provider): array => [
+            ->map(static fn(Provider $provider): array => [
                 'id' => $provider->id,
                 'key' => $provider->key,
                 'name' => $provider->name,
@@ -169,7 +170,7 @@ class RoomStateData
      */
     private function round(Room $room, ?RoomPlayer $me): ?array
     {
-        if (! $room->currentRound) {
+        if (!$room->currentRound) {
             return null;
         }
 
@@ -212,7 +213,7 @@ class RoomStateData
 
             $base['placements'] = $round
                 ->placements
-                ->map(fn ($placement): array => [
+                ->map(static fn($placement): array => [
                     'id' => $placement->id,
                     'player' => [
                         'id' => $placement->player->id,
@@ -244,7 +245,7 @@ class RoomStateData
         /** @var Collection<int, TimelineItem> $items */
         $items = $me->timelineItems()->with('track')->orderBy('position')->get();
 
-        return $items->map(fn (TimelineItem $item): array => [
+        return $items->map(static fn(TimelineItem $item): array => [
             'track_id' => $item->track_id,
             'position' => $item->position,
             'year' => $item->track->release_date->format('Y'),
@@ -267,7 +268,7 @@ class RoomStateData
         $guess = $round->amenGuess;
         $isClaimant = $me && $round->amen_claimed_by_room_player_id === $me->id;
 
-        $votingOpen = $round->isRevealed() && $hasClaim && ! $isResolved;
+        $votingOpen = $round->isRevealed() && $hasClaim && !$isResolved;
 
         // Count votes
         $yesVotes = $round->amenVotes->where('vote', true)->count();
@@ -275,8 +276,8 @@ class RoomStateData
 
         // Determine if current player can vote
         $canVote = false;
-        if ($votingOpen && $guess && $me && ! $isClaimant) {
-            $canVote = ! $me->hasVotedForAmenInRound($round);
+        if ($votingOpen && $guess && $me && !$isClaimant) {
+            $canVote = !$me->hasVotedForAmenInRound($round);
         }
 
         // Get current player's vote (if any)
@@ -288,7 +289,7 @@ class RoomStateData
 
         // Build guess data - only show to claimant until resolved
         $guessData = null;
-        if ($guess && ($isClaimant || $isResolved || $votingOpen)) {
+        if ($guess && ( $isClaimant || $isResolved || $votingOpen )) {
             $guessData = [
                 'artist' => $guess->artist_guess,
                 'title' => $guess->title_guess,
@@ -317,7 +318,7 @@ class RoomStateData
             ],
             'my_vote' => $myVote,
             'resolved' => $isResolved,
-            'correct' => $isResolved ? ($round->amen_awarded_points > 0) : null,
+            'correct' => $isResolved ? $round->amen_awarded_points > 0 : null,
             'awarded_points' => $round->amen_awarded_points,
             'can_claim' => $round->canClaimAmen() && $playerCount >= 2,
             'voting_open' => $votingOpen,

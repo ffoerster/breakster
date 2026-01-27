@@ -14,7 +14,18 @@ class PackFactory extends Factory
 
     public function definition(): array
     {
-        $genres = ['Pop Hits', 'Rock Classics', 'Hip Hop Bangers', '80s Essentials', '90s Nostalgia', 'Indie Favorites', 'R&B Smooth', 'Country Roads', 'Electronic Beats', 'Jazz Standards'];
+        $genres = [
+            'Pop Hits',
+            'Rock Classics',
+            'Hip Hop Bangers',
+            '80s Essentials',
+            '90s Nostalgia',
+            'Indie Favorites',
+            'R&B Smooth',
+            'Country Roads',
+            'Electronic Beats',
+            'Jazz Standards',
+        ];
 
         return [
             'name' => fake()->randomElement($genres).' '.fake()->year(),
@@ -25,7 +36,7 @@ class PackFactory extends Factory
 
     public function inactive(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(static fn(array $attributes) => [
             'is_active' => false,
         ]);
     }
