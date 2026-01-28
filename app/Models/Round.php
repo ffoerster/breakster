@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Models;
 
@@ -73,11 +73,6 @@ class Round extends Model
         return $this->hasMany(AmenVote::class);
     }
 
-    public function readyConfirmations(): HasMany
-    {
-        return $this->hasMany(ReadyConfirmation::class);
-    }
-
     public function isActive(): bool
     {
         return $this->status === RoundStatus::Active;
@@ -113,6 +108,6 @@ class Round extends Model
 
     public function canClaimAmen(): bool
     {
-        return $this->isActive() && !$this->hasAmenClaim();
+        return $this->isActive() && ! $this->hasAmenClaim();
     }
 }

@@ -489,7 +489,7 @@ export function useRoomState(props) {
     const markReadyError = ref('');
 
     const markReady = async () => {
-        if (!isInRound.value || !state.round?.id) {
+        if (!isInLobby.value) {
             return;
         }
 

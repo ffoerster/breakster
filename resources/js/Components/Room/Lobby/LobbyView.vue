@@ -4,6 +4,7 @@ import BottomActionBar from '../../Ui/BottomActionBar.vue';
 import PlayersList from '../PlayersList.vue';
 import ProviderPicker from './ProviderPicker.vue';
 import SpotifyHostSetup from './SpotifyHostSetup.vue';
+import ReadyButton from './ReadyButton.vue';
 
 defineProps({
     state: {
@@ -66,6 +67,18 @@ defineProps({
         type: Function,
         required: true,
     },
+    markReady: {
+        type: Function,
+        required: true,
+    },
+    isMarkingReady: {
+        type: Boolean,
+        default: false,
+    },
+    markReadyError: {
+        type: String,
+        default: '',
+    },
 });
 </script>
 
@@ -103,23 +116,31 @@ defineProps({
                     />
                 </div>
 
-                <div class="mt-6 hidden lg:flex gap-4">
-                    <button
-                        v-if="isHost"
-                        type="button"
-                        class="btn-interactive flex-1 py-4 px-6 font-bold rounded-lg"
-                        :class="
-                            canStart
-                                ? 'bg-green-600 hover:bg-green-700 text-white dark:bg-green-600 dark:hover:bg-green-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                        "
-                        :disabled="!canStart"
-                        @click="startGame"
-                    >
-                        Start Game
-                    </button>
-                    <div v-else class="flex-1 py-4 px-6 bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400 font-bold rounded-lg text-center">
-                        Waiting for host to start…
+                <div class="mt-6 hidden lg:block">
+                    <div v-if="isHost" class="flex gap-4">
+                        <button
+                            type="button"
+                            class="btn-interactive flex-1 py-4 px-6 font-bold rounded-lg"
+                            :class="
+                                canStart
+                                    ? 'bg-green-600 hover:bg-green-700 text-white dark:bg-green-600 dark:hover:bg-green-700'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                            "
+                            :disabled="!canStart"
+                            @click="startGame"
+                        >
+                            Start Game
+                        </button>
+                    </div>
+                    <div v-else>
+                        <ReadyButton
+                            :is-ready="state.me?.is_ready ?? false"
+                            :is-marking="isMarkingReady"
+                            :mark-ready="markReady"
+                            :ready-count="state.room.ready_count ?? 0"
+                            :total-players="state.room.players_count ?? 0"
+                            :error="markReadyError"
+                        />
                     </div>
                 </div>
             </GlassCard>
@@ -128,7 +149,7 @@ defineProps({
         <div class="lg:col-span-5">
             <GlassCard class="p-8">
                 <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-50">Players ({{ state.players.length }})</h2>
-                <PlayersList :players="state.players" show-host-badge />
+                <PlayersList :players="state.players" show-host-badge show-ready-status />
             </GlassCard>
         </div>
 
@@ -153,11 +174,25 @@ defineProps({
                     Start
                 </button>
 
+                <button
+                    v-else-if="!state.me?.is_ready"
+                    type="button"
+                    class="btn-interactive min-h-[44px] px-4 py-3 font-bold rounded-xl bg-blue-600 text-white"
+                    :disabled="isMarkingReady"
+                    @click="markReady"
+                >
+                    <span v-if="isMarkingReady">...</span>
+                    <span v-else>Ready</span>
+                </button>
+
                 <div
                     v-else
-                    class="min-h-[44px] px-4 py-3 bg-gray-900/40 text-gray-300 font-bold rounded-xl text-center flex items-center justify-center"
+                    class="min-h-[44px] px-4 py-3 bg-blue-500/20 border border-blue-500 text-blue-300 font-bold rounded-xl text-center flex items-center justify-center gap-2"
                 >
-                    Waiting…
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Ready
                 </div>
             </div>
         </BottomActionBar>

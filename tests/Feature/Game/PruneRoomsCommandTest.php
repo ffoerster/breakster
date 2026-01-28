@@ -4,7 +4,6 @@ use App\Domain\Game\Enums\RoundStatus;
 use App\Models\AmenGuess;
 use App\Models\AmenVote;
 use App\Models\Placement;
-use App\Models\ReadyConfirmation;
 use App\Models\Room;
 use App\Models\RoomPlayer;
 use App\Models\RoomUsedTrack;
@@ -178,12 +177,6 @@ it('cascades deletions for game-related data when pruning rooms', function () {
         'vote' => true,
     ]);
 
-    $readyConfirmation = ReadyConfirmation::create([
-        'round_id' => $round->id,
-        'room_player_id' => $player->id,
-        'confirmed_at' => now(),
-    ]);
-
     $exitCode = Artisan::call('game:prune-rooms');
     expect($exitCode)->toBe(0);
 
@@ -196,7 +189,6 @@ it('cascades deletions for game-related data when pruning rooms', function () {
     expect(RoomUsedTrack::query()->whereKey($usedTrack->id)->exists())->toBeFalse();
     expect(AmenGuess::query()->whereKey($amenGuess->id)->exists())->toBeFalse();
     expect(AmenVote::query()->whereKey($amenVote->id)->exists())->toBeFalse();
-    expect(ReadyConfirmation::query()->whereKey($readyConfirmation->id)->exists())->toBeFalse();
 
     Carbon::setTestNow();
 });

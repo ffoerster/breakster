@@ -9,7 +9,6 @@ import PlayersList from '../PlayersList.vue';
 import AmenButton from './AmenButton.vue';
 import AmenGuessForm from './AmenGuessForm.vue';
 import AmenResult from './AmenResult.vue';
-import ReadyButton from './ReadyButton.vue';
 import RoundListenPanel from './RoundListenPanel.vue';
 
 let sortableLib = null;
@@ -113,19 +112,6 @@ const props = defineProps({
         required: true,
     },
     amenGuessError: {
-        type: String,
-        default: '',
-    },
-    // Ready props
-    markReady: {
-        type: Function,
-        required: true,
-    },
-    isMarkingReady: {
-        type: Boolean,
-        required: true,
-    },
-    markReadyError: {
         type: String,
         default: '',
     },
@@ -507,20 +493,6 @@ const placementsProgress = computed(() => {
                     </Transition>
                 </GlassCard>
 
-                <!-- Ready Button (for non-hosts) -->
-                <GlassCard v-if="!isHost" class="p-6 hidden lg:block">
-                    <ReadyButton
-                        :is-ready="state.me?.is_ready ?? false"
-                        :is-marking="isMarkingReady"
-                        :is-locked="isPlacementLocked"
-                        :has-placed="state.me?.has_placed ?? false"
-                        :mark-ready="markReady"
-                        :ready-count="state.round?.ready_count ?? 0"
-                        :total-players="state.round?.players_count ?? 0"
-                        :error="markReadyError"
-                    />
-                </GlassCard>
-
                 <!-- AMEN Section -->
                 <div v-if="state.round?.amen" class="space-y-4">
                     <!-- AMEN Button (when can claim) -->
@@ -718,21 +690,6 @@ const placementsProgress = computed(() => {
                 >
                     Listen
                 </button>
-
-                <!-- Ready Button (mobile, non-hosts only) -->
-                <div v-if="!isHost && !state.me?.has_placed && !state.me?.is_ready" class="col-span-2">
-                    <button
-                        type="button"
-                        class="btn-interactive w-full min-h-[44px] px-4 py-3 rounded-xl font-bold transition-all duration-200"
-                        :class="isPlacementLocked ? 'bg-gray-700 text-gray-500' : 'bg-blue-600 text-white'"
-                        :disabled="isPlacementLocked || isMarkingReady"
-                        @click="markReady"
-                    >
-                        <span v-if="isMarkingReady">Marking...</span>
-                        <span v-else-if="isPlacementLocked">Waiting...</span>
-                        <span v-else>I'm Ready</span>
-                    </button>
-                </div>
 
                 <div v-if="state.round?.amen?.can_claim && !state.round.amen.claimed_by" class="col-span-2">
                     <AmenButton

@@ -41,13 +41,14 @@ class RoomPlayerFactory extends Factory
             'session_id' => fake()->uuid(),
             'score' => 0,
             'is_host' => false,
+            'is_ready' => false,
             'joined_at' => now(),
         ];
     }
 
     public function withUser(?User $user = null): static
     {
-        return $this->state(static function (array $attributes) use ($user) {
+        return $this->state(function (array $attributes) use ($user) {
             $user ??= User::factory()->create();
 
             return [
@@ -60,14 +61,14 @@ class RoomPlayerFactory extends Factory
 
     public function asHost(): static
     {
-        return $this->state(static fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'is_host' => true,
         ]);
     }
 
     public function withScore(int $score): static
     {
-        return $this->state(static fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'score' => $score,
         ]);
     }

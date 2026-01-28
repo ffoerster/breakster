@@ -290,6 +290,9 @@ onBeforeUnmount(() => {
                     :connect-spotify="connectSpotify"
                     :load-spotify-devices="loadSpotifyDevices"
                     :select-spotify-device="selectSpotifyDevice"
+                    :mark-ready="markReady"
+                    :is-marking-ready="isMarkingReady"
+                    :mark-ready-error="markReadyError"
                 />
 
                 <RoundView
@@ -317,9 +320,6 @@ onBeforeUnmount(() => {
                     :submit-amen-guess="submitAmenGuess"
                     :is-submitting-amen-guess="isSubmittingAmenGuess"
                     :amen-guess-error="amenGuessError"
-                    :mark-ready="markReady"
-                    :is-marking-ready="isMarkingReady"
-                    :mark-ready-error="markReadyError"
                 />
 
                 <RevealView
