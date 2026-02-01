@@ -1,11 +1,12 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import { useIntervalFn, usePreferredReducedMotion } from '@vueuse/core';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 
 import GlassCard from '../../Components/Ui/GlassCard.vue';
 import BottomSheet from '../../Components/Ui/BottomSheet.vue';
 import ConfirmDialog from '../../Components/Ui/ConfirmDialog.vue';
+import SoundToggle from '../../Components/Ui/SoundToggle.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import FinishedView from '../../Components/Room/Finished/FinishedView.vue';
 import LobbyView from '../../Components/Room/Lobby/LobbyView.vue';
@@ -13,6 +14,7 @@ import PlayersList from '../../Components/Room/PlayersList.vue';
 import RevealView from '../../Components/Room/Reveal/RevealView.vue';
 import RoomIntroCard from '../../Components/Room/RoomIntroCard.vue';
 import RoundView from '../../Components/Room/Round/RoundView.vue';
+import { useGameSounds } from '../../composables/useGameSounds';
 import { useRoomState } from '../../composables/useRoomState';
 import { useSpotifyHostPlayback } from '../../composables/useSpotifyHostPlayback';
 
@@ -167,9 +169,31 @@ const {
     playSpotifyTrack,
 } = useSpotifyHostPlayback({ state, isHost, code, refreshState });
 
+// Game sounds
+const { playAmen, playClick, playReveal, playCorrect, playWrong, unlockAudio, isSoundEnabled } = useGameSounds();
+
+// Provide sound functions to child components
+provide('gameSounds', {
+    playAmen,
+    playClick,
+    playReveal,
+    playCorrect,
+    playWrong,
+});
+
 let channel = null;
 
 onMounted(() => {
+    // Unlock audio on first user interaction (required for mobile)
+    const handleFirstInteraction = () => {
+        unlockAudio();
+        document.removeEventListener('click', handleFirstInteraction);
+        document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+
     if (!state.me) {
         return;
     }
@@ -183,7 +207,10 @@ onMounted(() => {
     channel.listen('.players.updated', scheduleRefresh);
     channel.listen('.round.started', scheduleRefresh);
     channel.listen('.placement.submitted', scheduleRefresh);
-    channel.listen('.round.revealed', scheduleRefresh);
+    channel.listen('.round.revealed', () => {
+        playReveal();
+        scheduleRefresh();
+    });
     channel.listen('.room.state.changed', scheduleRefresh);
     // AMEN events
     channel.listen('.amen.claimed', scheduleRefresh);
@@ -227,6 +254,20 @@ watch(
         }
 
         await scrollToTop();
+    },
+);
+
+// Play sound when AMEN is resolved
+watch(
+    () => state.round?.amen?.resolved,
+    (resolved, wasResolved) => {
+        if (resolved && !wasResolved) {
+            if (state.round?.amen?.correct) {
+                playCorrect();
+            } else {
+                playWrong();
+            }
+        }
     },
 );
 
@@ -363,6 +404,10 @@ onBeforeUnmount(() => {
             >
                 <div class="space-y-4">
                     <RoomIntroCard :room="state.room" :me="state.me" />
+
+                    <GlassCard class="p-4">
+                        <SoundToggle />
+                    </GlassCard>
 
                     <GlassCard class="p-6">
                         <h2 class="text-lg font-bold mb-4">Players ({{ state.players.length }})</h2>

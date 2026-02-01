@@ -1,5 +1,7 @@
 <script setup>
-import { ref } from 'vue';
+import { inject } from 'vue';
+
+const gameSounds = inject('gameSounds', null);
 
 const props = defineProps({
     variant: {
@@ -25,8 +27,6 @@ const props = defineProps({
     },
 });
 
-const amenAudio = ref(null);
-
 const buttonClass = () => {
     if (props.variant === 'compact') {
         return 'btn-interactive w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200';
@@ -41,10 +41,7 @@ const handleClick = async () => {
     }
 
     // Play amen sound immediately (optimistic)
-    if (amenAudio.value) {
-        amenAudio.value.currentTime = 0;
-        amenAudio.value.play().catch(() => {});
-    }
+    gameSounds?.playAmen();
 
     await props.claimAmen();
 };
@@ -52,8 +49,6 @@ const handleClick = async () => {
 
 <template>
     <div class="text-center">
-        <audio ref="amenAudio" src="/audio/amen.mp3" preload="auto" />
-
         <button
             type="button"
             :class="buttonClass()"

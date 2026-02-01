@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import BottomActionBar from '../../Ui/BottomActionBar.vue';
 import BottomSheet from '../../Ui/BottomSheet.vue';
@@ -116,6 +116,8 @@ const props = defineProps({
         default: '',
     },
 });
+
+const gameSounds = inject('gameSounds', null);
 
 const isListenOpen = ref(false);
 
@@ -308,6 +310,9 @@ const initPlacementDnD = async () => {
                 return;
             }
 
+            // Play click sound on card placement
+            gameSounds?.playClick();
+
             optimisticPlaced.value = true;
 
             const newIndex = evt.newIndex;
@@ -330,6 +335,9 @@ const initPlacementDnD = async () => {
             if (!evt.item?.classList?.contains('timeline-guess')) {
                 return;
             }
+
+            // Play click sound on card repositioning
+            gameSounds?.playClick();
 
             const newIndex = evt.newIndex;
             const timeline = props.state.timeline ?? [];
