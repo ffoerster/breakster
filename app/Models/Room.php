@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Models;
 
@@ -21,6 +21,7 @@ class Room extends Model
         'playback_provider_id',
         'spotify_device_id',
         'state',
+        'placement_timer_enabled',
         'current_round_id',
     ];
 
@@ -28,6 +29,7 @@ class Room extends Model
     {
         return [
             'state' => RoomState::class,
+            'placement_timer_enabled' => 'boolean',
         ];
     }
 

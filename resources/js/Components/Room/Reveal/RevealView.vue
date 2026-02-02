@@ -168,7 +168,15 @@ const props = defineProps({
                         :class="placement.is_correct ? 'bg-green-500/20 border-green-500' : 'bg-red-500/20 border-red-500'"
                     >
                         <div>
-                            <div class="font-medium">{{ placement.player.display_name }}</div>
+                            <div class="font-medium flex items-center gap-2">
+                                {{ placement.player.display_name }}
+                                <span
+                                    v-if="placement.is_auto_placed"
+                                    class="px-2 py-0.5 text-xs font-medium rounded bg-gray-600 text-gray-300"
+                                >
+                                    Auto-placed
+                                </span>
+                            </div>
                             <div class="text-sm text-gray-400">
                                 <span v-if="placement.inserted_after_track_id === null">Placed at beginning</span>
                                 <span v-else>Placed after {{ placement.inserted_after_year ?? 'unknown' }}</span>

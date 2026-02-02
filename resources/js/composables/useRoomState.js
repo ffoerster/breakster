@@ -484,6 +484,38 @@ export function useRoomState(props) {
         }
     };
 
+    // Placement timer toggle
+    const isTogglingPlacementTimer = ref(false);
+
+    const togglePlacementTimer = async (enabled) => {
+        if (!isHost.value || !isInLobby.value) {
+            return;
+        }
+
+        if (!isOnline.value) {
+            return;
+        }
+
+        isTogglingPlacementTimer.value = true;
+
+        try {
+            await executeAction(`/room/${code.value}/placement-timer`, {
+                method: 'POST',
+                data: {
+                    enabled,
+                },
+            });
+
+            await refreshState();
+        } catch (e) {
+            toast.error('Could not update timer setting', {
+                description: getRequestErrorMessage(e, 'Please try again.'),
+            });
+        } finally {
+            isTogglingPlacementTimer.value = false;
+        }
+    };
+
     // Ready feature
     const isMarkingReady = ref(false);
     const markReadyError = ref('');
@@ -612,6 +644,10 @@ export function useRoomState(props) {
         markReady,
         isMarkingReady,
         markReadyError,
+
+        // Placement timer
+        togglePlacementTimer,
+        isTogglingPlacementTimer,
 
         leaderboard,
     };

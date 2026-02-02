@@ -88,6 +88,9 @@ const {
     markReady,
     isMarkingReady,
     markReadyError,
+    // Placement timer
+    togglePlacementTimer,
+    isTogglingPlacementTimer,
 } = useRoomState(props);
 
 const nowMs = ref(Date.now());
@@ -133,7 +136,37 @@ const remainingSeconds = computed(() => {
     return Math.ceil(remainingMs / 1000);
 });
 
-const isPlacementLocked = computed(() => isInRound.value && remainingSeconds.value > 0);
+const placementEndsAtMs = computed(() => {
+    const iso = state.round?.placement_ends_at;
+    if (!iso) {
+        return null;
+    }
+
+    const ms = new Date(iso).getTime();
+
+    return Number.isFinite(ms) ? ms : null;
+});
+
+const placementTimeRemainingSeconds = computed(() => {
+    if (!placementEndsAtMs.value) {
+        return 0;
+    }
+
+    const remainingMs = placementEndsAtMs.value - nowMs.value;
+    if (remainingMs <= 0) {
+        return 0;
+    }
+
+    return Math.ceil(remainingMs / 1000);
+});
+
+const isPlacementTimeExpired = computed(
+    () => isInRound.value && placementEndsAtMs.value && nowMs.value >= placementEndsAtMs.value,
+);
+
+const isPlacementLocked = computed(
+    () => isInRound.value && (remainingSeconds.value > 0 || isPlacementTimeExpired.value),
+);
 
 const prefersReducedMotion = usePreferredReducedMotion();
 
@@ -219,14 +252,21 @@ onMounted(() => {
     channel.listen('.amen.resolved', scheduleRefresh);
     // Ready events
     channel.listen('.player.ready', scheduleRefresh);
+    // Placement timeout
+    channel.listen('.placement.timeout.resolved', scheduleRefresh);
 
     scheduleRefresh();
 });
 
+// Keep countdown timer running during both unlock and placement phases
+const shouldRunTimer = computed(
+    () => isInRound.value && (remainingSeconds.value > 0 || placementTimeRemainingSeconds.value > 0),
+);
+
 watch(
-    () => isPlacementLocked.value,
-    (locked) => {
-        if (locked) {
+    shouldRunTimer,
+    (shouldRun) => {
+        if (shouldRun) {
             resumeCountdownTimer();
         } else {
             pauseCountdownTimer();
@@ -334,6 +374,8 @@ onBeforeUnmount(() => {
                     :mark-ready="markReady"
                     :is-marking-ready="isMarkingReady"
                     :mark-ready-error="markReadyError"
+                    :toggle-placement-timer="togglePlacementTimer"
+                    :is-toggling-placement-timer="isTogglingPlacementTimer"
                 />
 
                 <RoundView
@@ -346,6 +388,8 @@ onBeforeUnmount(() => {
                     :copied-play-url="copiedPlayUrl"
                     :remaining-seconds="remainingSeconds"
                     :is-placement-locked="isPlacementLocked"
+                    :placement-time-remaining="placementTimeRemainingSeconds"
+                    :is-placement-time-expired="isPlacementTimeExpired"
                     :is-placing="isPlacing"
                     :place-error="placeError"
                     :place="place"

@@ -16,7 +16,7 @@ use Inertia\Inertia;
 Route::get('/manifest.webmanifest', function () {
     $path = public_path('build/manifest.webmanifest');
 
-    if (!is_file($path)) {
+    if (! is_file($path)) {
         abort(404);
     }
 
@@ -56,6 +56,7 @@ Route::prefix('/room/{code}')
         Route::get('/state', RoomStateController::class)->name('room.state');
 
         Route::post('/provider', [RoomActionController::class, 'setPlaybackProvider'])->name('room.provider');
+        Route::post('/placement-timer', [RoomActionController::class, 'setPlacementTimer'])->name('room.placement-timer');
         Route::post('/start', [RoomActionController::class, 'start'])->name('room.start');
         Route::post('/place', [RoomActionController::class, 'place'])->name('room.place');
         Route::post('/reveal', [RoomActionController::class, 'reveal'])->name('room.reveal');

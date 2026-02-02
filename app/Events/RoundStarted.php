@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Events;
 
@@ -21,6 +21,7 @@ class RoundStarted implements ShouldBroadcast
         public int $roundId,
         public int $roundNumber,
         public ?\Illuminate\Support\Carbon $placementUnlocksAt = null,
+        public ?\Illuminate\Support\Carbon $placementEndsAt = null,
     ) {}
 
     /**
@@ -55,6 +56,7 @@ class RoundStarted implements ShouldBroadcast
             'roundId' => $this->roundId,
             'roundNumber' => $this->roundNumber,
             'placementUnlocksAt' => $this->placementUnlocksAt?->toIso8601String(),
+            'placementEndsAt' => $this->placementEndsAt?->toIso8601String(),
             'timestamp' => now()->toIso8601String(),
         ];
     }

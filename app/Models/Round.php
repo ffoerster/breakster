@@ -22,6 +22,7 @@ class Round extends Model
         'status',
         'started_at',
         'placement_unlocks_at',
+        'placement_ends_at',
         'revealed_at',
         'amen_claimed_by_room_player_id',
         'amen_claimed_at',
@@ -36,6 +37,7 @@ class Round extends Model
             'round_number' => 'integer',
             'started_at' => 'datetime',
             'placement_unlocks_at' => 'datetime',
+            'placement_ends_at' => 'datetime',
             'revealed_at' => 'datetime',
             'amen_claimed_at' => 'datetime',
             'amen_awarded_points' => 'integer',
@@ -109,5 +111,10 @@ class Round extends Model
     public function canClaimAmen(): bool
     {
         return $this->isActive() && ! $this->hasAmenClaim();
+    }
+
+    public function isPlacementPeriodExpired(): bool
+    {
+        return $this->placement_ends_at !== null && now()->gte($this->placement_ends_at);
     }
 }

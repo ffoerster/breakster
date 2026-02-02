@@ -93,6 +93,7 @@ class RoomStateData
             'is_host' => (bool) ($me->is_host ?? false),
             'ready_count' => $room->players()->where('is_ready', true)->count(),
             'players_count' => $room->players()->count(),
+            'placement_timer_enabled' => $room->placement_timer_enabled,
         ];
     }
 
@@ -184,6 +185,7 @@ class RoomStateData
             'is_revealed' => $round->isRevealed(),
             'started_at' => $round->started_at?->toIso8601String(),
             'placement_unlocks_at' => $round->placement_unlocks_at?->toIso8601String(),
+            'placement_ends_at' => $round->placement_ends_at?->toIso8601String(),
             'revealed_at' => $round->revealed_at?->toIso8601String(),
             'placements_count' => $round->placements()->count(),
             'players_count' => $room->players()->count(),
@@ -224,6 +226,7 @@ class RoomStateData
                     'points_earned' => $placement->points_earned,
                     'inserted_after_track_id' => $placement->inserted_after_track_id,
                     'inserted_after_year' => $placement->insertedAfterTrack?->release_date?->format('Y'),
+                    'is_auto_placed' => $placement->is_auto_placed,
                 ])
                 ->values()
                 ->all();

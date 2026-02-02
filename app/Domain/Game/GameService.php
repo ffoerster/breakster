@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Domain\Game;
 
@@ -19,6 +19,7 @@ use App\Events\RoomPlayersUpdated;
 use App\Events\RoomStateChanged;
 use App\Events\RoundRevealed;
 use App\Events\RoundStarted;
+use App\Jobs\ResolvePlacementTimeoutJob;
 use App\Models\AmenGuess;
 use App\Models\AmenVote;
 use App\Models\Pack;
@@ -168,12 +169,12 @@ class GameService
     public function startRound(Room $room): Round
     {
         // Validate state
-        if (!$room->state->canStartRound()) {
+        if (! $room->state->canStartRound()) {
             throw new \RuntimeException('Cannot start a round in the current state.');
         }
 
         // Require playback provider to be selected
-        if (!$room->playback_provider_id) {
+        if (! $room->playback_provider_id) {
             throw new \DomainException('Playback provider not selected.');
         }
 
@@ -189,7 +190,7 @@ class GameService
             ->inRandomOrder()
             ->first();
 
-        if (!$track) {
+        if (! $track) {
             // No more tracks available
             $room->update(['state' => RoomState::Finished]);
 
@@ -208,8 +209,16 @@ class GameService
                 'track_id' => $track->id,
             ]);
 
-            $placementDelaySeconds = 3;
+            $placementDelaySeconds = config('game.placement_delay', 3);
             $startedAt = now();
+            $placementUnlocksAt = $startedAt->copy()->addSeconds($placementDelaySeconds);
+
+            // Only set placement end time if timer is enabled
+            $placementEndsAt = null;
+            if ($room->placement_timer_enabled) {
+                $placementDurationSeconds = config('game.placement_duration', 12);
+                $placementEndsAt = $placementUnlocksAt->copy()->addSeconds($placementDurationSeconds);
+            }
 
             $round = Round::create([
                 'room_id' => $room->id,
@@ -217,7 +226,8 @@ class GameService
                 'round_number' => $roundNumber,
                 'status' => RoundStatus::Active,
                 'started_at' => $startedAt,
-                'placement_unlocks_at' => $startedAt->copy()->addSeconds($placementDelaySeconds),
+                'placement_unlocks_at' => $placementUnlocksAt,
+                'placement_ends_at' => $placementEndsAt,
             ]);
 
             $room->update([
@@ -227,8 +237,20 @@ class GameService
 
             // Broadcast events after transaction commits
             DB::afterCommit(function () use ($room, $round, $track) {
-                event(new RoundStarted($room->code, $round->id, $round->round_number, $round->placement_unlocks_at));
+                event(new RoundStarted(
+                    $room->code,
+                    $round->id,
+                    $round->round_number,
+                    $round->placement_unlocks_at,
+                    $round->placement_ends_at
+                ));
                 event(new RoomStateChanged($room->code, RoomState::InRound, $round->id));
+
+                // Dispatch job to auto-place missing players at timeout (only if timer enabled)
+                if ($round->placement_ends_at !== null) {
+                    ResolvePlacementTimeoutJob::dispatch($round->id)
+                        ->delay($round->placement_ends_at);
+                }
 
                 // Trigger Spotify playback if configured
                 $this->triggerSpotifyPlayback($room, $track);
@@ -245,16 +267,16 @@ class GameService
     private function triggerSpotifyPlayback(Room $room, Track $track): void
     {
         // Only trigger if Spotify is the provider and device is configured
-        if (!$room->playbackProvider || $room->playbackProvider->key !== 'spotify') {
+        if (! $room->playbackProvider || $room->playbackProvider->key !== 'spotify') {
             return;
         }
 
-        if (!$room->spotify_device_id || !$room->host_user_id) {
+        if (! $room->spotify_device_id || ! $room->host_user_id) {
             return;
         }
 
         // Require Spotify playback service
-        if (!$this->spotifyPlayback) {
+        if (! $this->spotifyPlayback) {
             Log::warning('SpotifyPlaybackService not available for room', [
                 'room_code' => $room->code,
             ]);
@@ -264,7 +286,7 @@ class GameService
 
         // Get Spotify track URI
         $spotifyTrackId = $track->provider_track_id;
-        if (!$spotifyTrackId) {
+        if (! $spotifyTrackId) {
             Log::info('Track has no Spotify provider_track_id, skipping auto-play', [
                 'room_code' => $room->code,
                 'track_id' => $track->id,
@@ -329,7 +351,7 @@ class GameService
 
             foreach ($players as $index => $player) {
                 $track = $tracks->get($index);
-                if (!$track) {
+                if (! $track) {
                     continue;
                 }
 
@@ -349,15 +371,15 @@ class GameService
 
     public function setPlaybackProvider(Room $room, Provider $provider): void
     {
-        if (!$room->isInLobby()) {
+        if (! $room->isInLobby()) {
             throw new \RuntimeException('Playback provider can only be changed in the lobby.');
         }
 
-        if (!$provider->is_active) {
+        if (! $provider->is_active) {
             throw new \RuntimeException('Playback provider is not active.');
         }
 
-        if (!in_array($provider->key, ['spotify', 'tidal'], true)) {
+        if (! in_array($provider->key, ['spotify', 'tidal'], true)) {
             throw new \RuntimeException('Playback provider is not supported.');
         }
 
@@ -372,21 +394,47 @@ class GameService
         });
     }
 
+    public function setPlacementTimerEnabled(Room $room, bool $enabled): void
+    {
+        if (! $room->isInLobby()) {
+            throw new \RuntimeException('Placement timer can only be changed in the lobby.');
+        }
+
+        DB::transaction(static function () use ($room, $enabled): void {
+            $room->update([
+                'placement_timer_enabled' => $enabled,
+            ]);
+
+            DB::afterCommit(static function () use ($room): void {
+                event(new RoomStateChanged($room->code, $room->state, $room->current_round_id));
+            });
+        });
+    }
+
     /**
      * Submit a placement for the current round.
      */
-    public function submitPlacement(RoomPlayer $player, Round $round, ?int $insertAfterTrackId = null): Placement
-    {
+    public function submitPlacement(
+        RoomPlayer $player,
+        Round $round,
+        ?int $insertAfterTrackId = null,
+        bool $isAutoPlaced = false
+    ): Placement {
         // Validate round is active
-        if (!$round->isActive()) {
+        if (! $round->isActive()) {
             throw new \RuntimeException('This round is not active.');
+        }
+
+        // Validate placement period hasn't expired (unless auto-placement)
+        if (! $isAutoPlaced && $round->isPlacementPeriodExpired()) {
+            throw new \RuntimeException('Placement time has expired.');
         }
 
         // Validate insertAfterTrackId is in player's timeline (if not null)
         if ($insertAfterTrackId !== null) {
             $hasTrack = $player->timelineItems()->where('track_id', $insertAfterTrackId)->exists();
 
-            if (!$hasTrack) {
+            if (! $hasTrack) {
                 throw new \RuntimeException('Invalid track reference for placement.');
             }
         }
@@ -400,6 +448,7 @@ class GameService
             'inserted_after_track_id' => $insertAfterTrackId,
             'is_correct' => null, // Will be set during reveal
             'points_earned' => 0,
+            'is_auto_placed' => $isAutoPlaced,
         ]);
 
         $placement->save();
@@ -416,6 +465,45 @@ class GameService
     public function allPlayersSubmitted(Round $round): bool
     {
         return $round->allPlayersSubmitted();
+    }
+
+    /**
+     * Auto-place all players who haven't submitted a placement for the round.
+     * Places at the end of their timeline (after last track, or null if empty).
+     *
+     * @return int Number of players auto-placed
+     */
+    public function autoPlaceMissingPlayers(Round $round): int
+    {
+        if (! $round->isActive()) {
+            return 0;
+        }
+
+        // Load room fresh from DB to ensure we have all players
+        $room = Room::find($round->room_id);
+        $playersWithPlacements = Placement::query()
+            ->where('round_id', $round->id)
+            ->pluck('room_player_id');
+
+        $missingPlayers = $room->players()
+            ->whereNotIn('id', $playersWithPlacements)
+            ->get();
+
+        $count = 0;
+
+        foreach ($missingPlayers as $player) {
+            // Find the last track in player's timeline
+            $lastTimelineItem = $player->timelineItems()
+                ->orderByDesc('position')
+                ->first();
+
+            $insertAfterTrackId = $lastTimelineItem?->track_id;
+
+            $this->submitPlacement($player, $round, $insertAfterTrackId, isAutoPlaced: true);
+            $count++;
+        }
+
+        return $count;
     }
 
     /**
@@ -534,8 +622,8 @@ class GameService
     public function reorderTimeline(RoomPlayer $player, array $orderedTrackIds): void
     {
         $orderedTrackIds = collect($orderedTrackIds)
-            ->map(static fn($id) => (int) $id)
-            ->filter(static fn(int $id): bool => $id > 0)
+            ->map(static fn ($id) => (int) $id)
+            ->filter(static fn (int $id): bool => $id > 0)
             ->values()
             ->all();
 
@@ -550,7 +638,7 @@ class GameService
                 /** @var TimelineItem|null $item */
                 $item = $items->get($trackId);
 
-                if (!$item) {
+                if (! $item) {
                     throw new \RuntimeException('Invalid timeline reorder request.');
                 }
 
@@ -566,7 +654,7 @@ class GameService
     {
         $usedTrackIds = $room->usedTrackIds();
 
-        return !$room
+        return ! $room
             ->pack
             ->activeTracks()
             ->where('provider_id', $room->playback_provider_id)
@@ -584,7 +672,7 @@ class GameService
             // Lock the round row to prevent race conditions
             $round = Round::query()->lockForUpdate()->find($round->id);
 
-            if (!$round->isActive()) {
+            if (! $round->isActive()) {
                 throw new \RuntimeException('This round is not active.');
             }
 
@@ -648,15 +736,15 @@ class GameService
      */
     public function submitAmenVote(Round $round, RoomPlayer $voter, bool $vote): AmenVote
     {
-        if (!$round->isRevealed()) {
+        if (! $round->isRevealed()) {
             throw new \RuntimeException('Amen voting is only allowed after reveal.');
         }
 
-        if (!$round->hasAmenClaim()) {
+        if (! $round->hasAmenClaim()) {
             throw new \RuntimeException('No AMEN claim exists for this round.');
         }
 
-        if (!$round->amenGuess()->exists()) {
+        if (! $round->amenGuess()->exists()) {
             throw new \RuntimeException('The AMEN claimant has not submitted a guess yet.');
         }
 
@@ -693,7 +781,7 @@ class GameService
      */
     public function resolveAmen(Round $round): Round
     {
-        if (!$round->hasAmenClaim()) {
+        if (! $round->hasAmenClaim()) {
             throw new \RuntimeException('No AMEN claim exists for this round.');
         }
 
@@ -765,7 +853,7 @@ class GameService
      */
     public function markReady(Room $room, RoomPlayer $player): void
     {
-        if (!$room->isInLobby()) {
+        if (! $room->isInLobby()) {
             throw new \RuntimeException('Ready can only be marked in the lobby.');
         }
 

@@ -79,6 +79,14 @@ defineProps({
         type: String,
         default: '',
     },
+    togglePlacementTimer: {
+        type: Function,
+        required: true,
+    },
+    isTogglingPlacementTimer: {
+        type: Boolean,
+        default: false,
+    },
 });
 </script>
 
@@ -114,6 +122,32 @@ defineProps({
                         :load-spotify-devices="loadSpotifyDevices"
                         :select-spotify-device="selectSpotifyDevice"
                     />
+                </div>
+
+                <div v-if="isHost" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Game Settings</h3>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <button
+                            type="button"
+                            role="switch"
+                            :aria-checked="state.room.placement_timer_enabled"
+                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                            :class="state.room.placement_timer_enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'"
+                            :disabled="isTogglingPlacementTimer"
+                            @click="togglePlacementTimer(!state.room.placement_timer_enabled)"
+                        >
+                            <span
+                                :class="state.room.placement_timer_enabled ? 'translate-x-5' : 'translate-x-0'"
+                                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                            />
+                        </button>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                            Round timer ({{ state.room.placement_timer_enabled ? 'enabled' : 'disabled' }})
+                        </span>
+                    </label>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                        When enabled, players have limited time to place their guess each round.
+                    </p>
                 </div>
 
                 <div class="mt-6 hidden lg:block">

@@ -54,6 +54,14 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    placementTimeRemaining: {
+        type: Number,
+        required: true,
+    },
+    isPlacementTimeExpired: {
+        type: Boolean,
+        required: true,
+    },
     isPlacing: {
         type: Boolean,
         required: true,
@@ -557,13 +565,42 @@ const placementsProgress = computed(() => {
                         <div class="h-full bg-accent-500/70" :style="{ width: `${placementsProgress}%` }" />
                     </div>
 
+                    <!-- Phase 1: Unlocking countdown -->
                     <Transition name="feedback-slide">
                         <div
-                            v-if="isPlacementLocked"
+                            v-if="remainingSeconds > 0"
                             class="flex items-center justify-center gap-4 p-4 bg-blue-500/20 border border-blue-500 rounded-lg mb-4"
                         >
                             <CountdownRing :remaining="remainingSeconds" :total="3" />
                             <span class="font-medium">Placement unlocks soon...</span>
+                        </div>
+                    </Transition>
+
+                    <!-- Phase 2: Time remaining countdown -->
+                    <Transition name="feedback-slide">
+                        <div
+                            v-if="remainingSeconds === 0 && placementTimeRemaining > 0 && !isPlacementTimeExpired"
+                            class="flex items-center justify-center gap-4 p-4 bg-amber-500/20 border border-amber-500 rounded-lg mb-4"
+                        >
+                            <CountdownRing :remaining="placementTimeRemaining" :total="12" />
+                            <span class="font-medium text-amber-200">Time left: {{ placementTimeRemaining }}s</span>
+                        </div>
+                    </Transition>
+
+                    <!-- Phase 3: Time expired -->
+                    <Transition name="feedback-slide">
+                        <div
+                            v-if="isPlacementTimeExpired"
+                            class="flex items-center justify-center gap-4 p-4 bg-red-500/20 border border-red-500 rounded-lg mb-4"
+                        >
+                            <svg class="w-8 h-8 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                            <span class="font-medium text-red-200">Time's up! Waiting for reveal...</span>
                         </div>
                     </Transition>
 

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Room;
 
@@ -69,7 +69,7 @@ class RoomActionController extends Controller
         $player = $roomSession->requirePlayer($room);
 
         $round = $room->currentRound;
-        if (!$round) {
+        if (! $round) {
             abort(409, 'No active round.');
         }
 
@@ -83,6 +83,11 @@ class RoomActionController extends Controller
         $placementUnlocksAt = $round->placement_unlocks_at;
         if ($placementUnlocksAt !== null && now()->lt($placementUnlocksAt)) {
             abort(409, 'Placement will unlock in a moment.');
+        }
+
+        $placementEndsAt = $round->placement_ends_at;
+        if ($placementEndsAt !== null && now()->gte($placementEndsAt)) {
+            abort(409, 'Placement time has expired.');
         }
 
         $insertAfter = $request->validated('inserted_after_track_id');
@@ -102,7 +107,7 @@ class RoomActionController extends Controller
         $room = $this->room($code)->loadMissing('currentRound');
         $roomSession->requireHost($room);
 
-        if (!$room->currentRound) {
+        if (! $room->currentRound) {
             abort(409, 'No active round.');
         }
 
@@ -174,6 +179,26 @@ class RoomActionController extends Controller
 
         try {
             $gameService->markReady($room, $player);
+        } catch (\RuntimeException $e) {
+            abort(409, $e->getMessage());
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function setPlacementTimer(
+        \Illuminate\Http\Request $request,
+        string $code,
+        RoomSession $roomSession,
+        GameService $gameService,
+    ): JsonResponse {
+        $room = $this->room($code);
+        $roomSession->requireHost($room);
+
+        $enabled = (bool) $request->input('enabled');
+
+        try {
+            $gameService->setPlacementTimerEnabled($room, $enabled);
         } catch (\RuntimeException $e) {
             abort(409, $e->getMessage());
         }

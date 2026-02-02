@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Models;
 
@@ -18,6 +18,7 @@ class Placement extends Model
         'inserted_after_track_id',
         'is_correct',
         'points_earned',
+        'is_auto_placed',
     ];
 
     protected function casts(): array
@@ -25,6 +26,7 @@ class Placement extends Model
         return [
             'is_correct' => 'boolean',
             'points_earned' => 'integer',
+            'is_auto_placed' => 'boolean',
         ];
     }
 
