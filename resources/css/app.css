@@ -242,6 +242,99 @@
     animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* === Reveal Phase Animations === */
+
+/* 3D Card Flip Utilities */
+.perspective-1000 {
+    perspective: 1000px;
+}
+
+.preserve-3d {
+    transform-style: preserve-3d;
+}
+
+.backface-hidden {
+    backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+    transform: rotateY(180deg);
+}
+
+.flip-card {
+    transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Green pulse glow for correct placements */
+@keyframes pulse-glow-green {
+    0%, 100% {
+        box-shadow: 0 0 0 0 oklch(0.72 0.2 140 / 0.4);
+    }
+    50% {
+        box-shadow: 0 0 24px 10px oklch(0.72 0.2 140 / 0.25);
+    }
+}
+
+.animate-pulse-glow-green {
+    animation: pulse-glow-green 1.5s ease-in-out 2;
+}
+
+/* Gold pulse glow for AMEN success */
+@keyframes pulse-glow-gold {
+    0%, 100% {
+        box-shadow: 0 0 0 0 oklch(0.85 0.18 85 / 0.5);
+    }
+    50% {
+        box-shadow: 0 0 30px 15px oklch(0.85 0.18 85 / 0.3);
+    }
+}
+
+.animate-pulse-glow-gold {
+    animation: pulse-glow-gold 1.5s ease-in-out 2;
+}
+
+/* Screen edge flash for wrong answers */
+@keyframes edge-flash-red {
+    0%, 100% {
+        box-shadow: inset 0 0 0 0 oklch(0.6 0.25 25 / 0);
+    }
+    50% {
+        box-shadow: inset 0 0 60px 20px oklch(0.6 0.25 25 / 0.3);
+    }
+}
+
+.animate-edge-flash-red {
+    animation: edge-flash-red 400ms ease-out;
+}
+
+/* Dramatic shake for big misses (>10 years) */
+@keyframes shake-dramatic {
+    0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+    10% { transform: translateX(-10px) translateY(-2px) rotate(-1deg); }
+    20% { transform: translateX(10px) translateY(2px) rotate(1deg); }
+    30% { transform: translateX(-8px) translateY(-1px) rotate(-0.5deg); }
+    40% { transform: translateX(8px) translateY(1px) rotate(0.5deg); }
+    50% { transform: translateX(-6px) rotate(-0.3deg); }
+    60% { transform: translateX(6px) rotate(0.3deg); }
+    70% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    90% { transform: translateX(-2px); }
+}
+
+.animate-shake-dramatic {
+    animation: shake-dramatic 600ms ease-out;
+}
+
+/* Crown bounce animation */
+@keyframes crown-bounce {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-4px) rotate(3deg); }
+}
+
+.animate-crown-bounce {
+    animation: crown-bounce 1s ease-in-out infinite;
+}
+
 /* Count-up animation helper */
 .tabular-nums {
     font-variant-numeric: tabular-nums;
@@ -306,7 +399,16 @@
 
     .animate-scale-pop,
     .animate-shake,
-    .animate-pulse-glow {
+    .animate-pulse-glow,
+    .animate-pulse-glow-green,
+    .animate-pulse-glow-gold,
+    .animate-edge-flash-red,
+    .animate-shake-dramatic,
+    .animate-crown-bounce {
         animation: none;
+    }
+
+    .flip-card {
+        transition-duration: 100ms;
     }
 }

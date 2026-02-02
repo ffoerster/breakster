@@ -96,6 +96,10 @@ export function useRoomState(props) {
             const data = result.response.value?.data;
 
             if (data) {
+                if (data.room?.state === 'reveal' && state.room.state !== 'reveal') {
+                    capturePreviousLeaderboard();
+                }
+
                 applyState(data);
             }
         } finally {
@@ -295,6 +299,8 @@ export function useRoomState(props) {
         }
 
         try {
+            capturePreviousLeaderboard();
+
             await executeAction(`/room/${code.value}/reveal`, {
                 method: 'POST',
             });
@@ -556,6 +562,8 @@ export function useRoomState(props) {
         }
     };
 
+    const previousLeaderboard = ref([]);
+
     const leaderboard = computed(() => {
         const players = [...state.players];
         players.sort((a, b) => {
@@ -586,6 +594,10 @@ export function useRoomState(props) {
             };
         });
     });
+
+    const capturePreviousLeaderboard = () => {
+        previousLeaderboard.value = [...leaderboard.value];
+    };
 
     const cleanup = () => {
         scheduleRefresh.cancel?.();
@@ -650,5 +662,6 @@ export function useRoomState(props) {
         isTogglingPlacementTimer,
 
         leaderboard,
+        previousLeaderboard,
     };
 }

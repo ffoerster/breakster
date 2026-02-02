@@ -74,6 +74,7 @@ const {
     finishGameError,
     cancelFinishGame,
     leaderboard,
+    previousLeaderboard,
     // AMEN
     claimAmen,
     isClaimingAmen,
@@ -413,6 +414,7 @@ onBeforeUnmount(() => {
                     :state="state"
                     :is-host="isHost"
                     :leaderboard="leaderboard"
+                    :previous-leaderboard="previousLeaderboard"
                     :next-round="nextRound"
                     :open-details="openDetails"
                     :submit-amen-guess="submitAmenGuess"

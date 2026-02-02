@@ -1,9 +1,15 @@
 <script setup>
+import { ref, computed, onMounted } from 'vue';
+import { usePreferredReducedMotion } from '@vueuse/core';
 import GlassCard from '../../Ui/GlassCard.vue';
 import BottomActionBar from '../../Ui/BottomActionBar.vue';
 import AmenGuessForm from '../Round/AmenGuessForm.vue';
-import AmenResult from '../Round/AmenResult.vue';
 import AmenVotePanel from '../Round/AmenVotePanel.vue';
+import RevealTrackCard from './RevealTrackCard.vue';
+import RevealResultItem from './RevealResultItem.vue';
+import RevealLeaderboard from './RevealLeaderboard.vue';
+import AmenRevealCard from './AmenRevealCard.vue';
+import ScreenFlash from './ScreenFlash.vue';
 
 const props = defineProps({
     state: {
@@ -17,6 +23,10 @@ const props = defineProps({
     leaderboard: {
         type: Array,
         required: true,
+    },
+    previousLeaderboard: {
+        type: Array,
+        default: () => [],
     },
     nextRound: {
         type: Function,
@@ -51,54 +61,112 @@ const props = defineProps({
         default: '',
     },
 });
+
+const prefersReducedMotion = usePreferredReducedMotion();
+
+const showResults = ref(false);
+const showAmen = ref(false);
+const showLeaderboard = ref(false);
+const screenFlashActive = ref(false);
+
+let confettiLib = null;
+
+const actualYear = computed(() => {
+    const year = props.state.round?.track?.year;
+    return year ? parseInt(year, 10) : 0;
+});
+
+const hasAmenResolved = computed(() => {
+    return props.state.round?.amen?.claimed_by && props.state.round?.amen?.resolved;
+});
+
+const getConfetti = async () => {
+    if (confettiLib) {
+        return confettiLib;
+    }
+
+    const mod = await import('canvas-confetti');
+    confettiLib = mod.default;
+    return confettiLib;
+};
+
+const triggerConfetti = async () => {
+    if (prefersReducedMotion.value === 'reduce') {
+        return;
+    }
+
+    const confetti = await getConfetti();
+    confetti({
+        particleCount: 40,
+        spread: 60,
+        origin: { x: 0.5, y: 0.6 },
+        colors: ['#00d4ff', '#22c55e', '#ffd93d'],
+    });
+};
+
+const triggerScreenFlash = () => {
+    screenFlashActive.value = true;
+    setTimeout(() => {
+        screenFlashActive.value = false;
+    }, 50);
+};
+
+const onTrackFlipComplete = () => {
+    showResults.value = true;
+};
+
+const onResultAnimationComplete = () => {
+    // Results are animating
+};
+
+onMounted(() => {
+    if (prefersReducedMotion.value === 'reduce') {
+        showResults.value = true;
+        showAmen.value = true;
+        showLeaderboard.value = true;
+        return;
+    }
+
+    setTimeout(() => {
+        showAmen.value = true;
+    }, 1400);
+
+    setTimeout(() => {
+        showLeaderboard.value = true;
+    }, 1800);
+});
 </script>
 
 <template>
     <div class="space-y-6">
         <GlassCard class="p-8 text-center">
-            <div class="text-sm text-gray-400 mb-2">Round {{ state.round.round_number }} - Revealed!</div>
+            <div class="text-sm text-gray-400 mb-4">Round {{ state.round.round_number }} - Revealed!</div>
 
-            <div
-                v-motion
-                :initial="{ scale: 0.9, opacity: 0 }"
-                :enter="{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } }"
-                class="flex flex-col sm:flex-row items-center justify-center gap-6"
-            >
-                <img
-                    v-if="state.round.track?.artwork_url"
-                    :src="state.round.track.artwork_url"
-                    alt=""
-                    class="w-32 h-32 rounded-lg shadow-lg"
-                />
-                <div class="text-left">
-                    <div
-                        v-motion
-                        :initial="{ y: 20, opacity: 0 }"
-                        :enter="{ y: 0, opacity: 1, transition: { delay: 100, type: 'spring', stiffness: 300, damping: 25 } }"
-                        class="text-[clamp(2.75rem,10vw,4rem)] font-black text-accent-400 leading-none mb-3"
-                    >
-                        {{ state.round.track?.year }}
-                    </div>
-                    <h2 class="text-2xl font-bold">{{ state.round.track?.title }}</h2>
-                    <p class="text-lg text-gray-300">{{ state.round.track?.artist }}</p>
-                </div>
-            </div>
+            <RevealTrackCard
+                v-if="state.round.track"
+                :track="state.round.track"
+                :delay="0"
+                @flip-complete="onTrackFlipComplete"
+            />
         </GlassCard>
 
         <div v-if="state.round?.amen?.claimed_by" class="space-y-6">
-            <!-- AMEN Result (resolved) -->
-            <AmenResult
-                v-if="state.round.amen.resolved"
-                :claimant-name="state.round.amen.claimant_name"
-                :guess="state.round.amen.guess"
-                :actual="state.round.amen.actual"
-                :correct="state.round.amen.correct"
-                :awarded-points="state.round.amen.awarded_points"
-                :votes="state.round.amen.votes"
-            />
+            <!-- AMEN Result (resolved) - Enhanced -->
+            <Transition name="view-fade">
+                <AmenRevealCard
+                    v-if="hasAmenResolved && showAmen"
+                    :claimant-name="state.round.amen.claimant_name"
+                    :guess="state.round.amen.guess"
+                    :actual="state.round.amen.actual"
+                    :correct="state.round.amen.correct"
+                    :awarded-points="state.round.amen.awarded_points"
+                    :votes="state.round.amen.votes"
+                    :delay="0"
+                />
+            </Transition>
 
-            <!-- AMEN Voting (only after reveal) -->
-            <template v-else-if="state.round.is_revealed && state.round.amen.voting_open">
+            <!-- AMEN Voting (only after reveal, not resolved yet) -->
+            <template v-if="!state.round.amen.resolved && state.round.is_revealed && state.round.amen.voting_open">
                 <AmenGuessForm
                     v-if="state.round.amen.is_claimant && !state.round.amen.has_guess"
                     :is-submitting="isSubmittingAmenGuess"
@@ -159,63 +227,32 @@ const props = defineProps({
         <div class="grid gap-6 lg:grid-cols-12">
             <GlassCard class="p-8 lg:col-span-7">
                 <h3 class="text-xl font-bold mb-4">Results</h3>
-                <TransitionGroup name="result-list" tag="div" class="space-y-3">
-                    <div
-                        v-for="(placement, index) in (state.round.placements ?? [])"
-                        :key="placement.id"
-                        :style="{ '--stagger-index': index }"
-                        class="flex items-center justify-between p-4 rounded-lg border"
-                        :class="placement.is_correct ? 'bg-green-500/20 border-green-500' : 'bg-red-500/20 border-red-500'"
-                    >
-                        <div>
-                            <div class="font-medium flex items-center gap-2">
-                                {{ placement.player.display_name }}
-                                <span
-                                    v-if="placement.is_auto_placed"
-                                    class="px-2 py-0.5 text-xs font-medium rounded bg-gray-600 text-gray-300"
-                                >
-                                    Auto-placed
-                                </span>
-                            </div>
-                            <div class="text-sm text-gray-400">
-                                <span v-if="placement.inserted_after_track_id === null">Placed at beginning</span>
-                                <span v-else>Placed after {{ placement.inserted_after_year ?? 'unknown' }}</span>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div
-                                v-if="placement.is_correct"
-                                class="text-green-400 font-bold animate-scale-pop"
-                            >
-                                +{{ placement.points_earned }} pts
-                            </div>
-                            <div v-else class="text-red-400">0 pts</div>
-                        </div>
+                <Transition name="view-fade">
+                    <div v-if="showResults" class="space-y-3">
+                        <RevealResultItem
+                            v-for="(placement, index) in (state.round.placements ?? [])"
+                            :key="placement.id"
+                            :placement="placement"
+                            :actual-year="actualYear"
+                            :index="index"
+                            @trigger-confetti="triggerConfetti"
+                            @trigger-screen-flash="triggerScreenFlash"
+                            @animation-complete="onResultAnimationComplete"
+                        />
                     </div>
-                </TransitionGroup>
+                </Transition>
             </GlassCard>
 
             <GlassCard class="p-8 lg:col-span-5">
                 <h3 class="text-xl font-bold mb-4">Leaderboard</h3>
-                <div class="space-y-2">
-                    <div
-                        v-for="(p, index) in leaderboard"
-                        :key="p.id"
-                        v-motion
-                        :initial="{ x: -20, opacity: 0 }"
-                        :enter="{ x: 0, opacity: 1, transition: { delay: 200 + index * 60, type: 'spring', stiffness: 300, damping: 25 } }"
-                        class="flex items-center justify-between p-3 rounded-lg"
-                        :class="p.is_me ? 'bg-accent-500/20' : 'bg-gray-700/30'"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold text-sm">
-                                {{ p.rank }}
-                            </div>
-                            <span>{{ p.display_name }}</span>
-                        </div>
-                        <span class="font-bold text-accent-400 tabular-nums">{{ p.score }} pts</span>
-                    </div>
-                </div>
+                <Transition name="view-fade">
+                    <RevealLeaderboard
+                        v-if="showLeaderboard"
+                        :leaderboard="leaderboard"
+                        :previous-leaderboard="previousLeaderboard"
+                        :delay="0"
+                    />
+                </Transition>
             </GlassCard>
         </div>
 
@@ -259,5 +296,7 @@ const props = defineProps({
                 </div>
             </div>
         </BottomActionBar>
+
+        <ScreenFlash :active="screenFlashActive" />
     </div>
 </template>
