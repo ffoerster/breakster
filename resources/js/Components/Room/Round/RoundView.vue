@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useThrottleFn, usePreferredReducedMotion } from '@vueuse/core';
 
 import BottomActionBar from '../../Ui/BottomActionBar.vue';
 import BottomSheet from '../../Ui/BottomSheet.vue';
@@ -10,6 +11,7 @@ import AmenButton from './AmenButton.vue';
 import AmenGuessForm from './AmenGuessForm.vue';
 import AmenResult from './AmenResult.vue';
 import RoundListenPanel from './RoundListenPanel.vue';
+import { useHaptics } from '../../../composables/useHaptics';
 
 let sortableLib = null;
 let sortableInitRunId = 0;
@@ -126,6 +128,68 @@ const props = defineProps({
 });
 
 const gameSounds = inject('gameSounds', null);
+const haptics = useHaptics();
+const prefersReducedMotion = usePreferredReducedMotion();
+
+// Drop animation state
+const lastDroppedIndex = ref(null);
+const dropAnimationType = ref(null);
+let dropAnimationTimeout = null;
+
+const triggerDropAnimation = (index, type = 'success') => {
+    if (prefersReducedMotion.value === 'reduce') {
+        return;
+    }
+
+    if (dropAnimationTimeout) {
+        clearTimeout(dropAnimationTimeout);
+    }
+
+    lastDroppedIndex.value = index;
+    dropAnimationType.value = type;
+
+    dropAnimationTimeout = setTimeout(() => {
+        dropAnimationType.value = null;
+        lastDroppedIndex.value = null;
+    }, 400);
+};
+
+// Drag direction tracking for rotation effect
+let lastDragX = 0;
+let cleanupMouseMove = null;
+let cleanupTouchMove = null;
+
+const trackDragDirection = useThrottleFn((e) => {
+    const currentX = e.clientX ?? e.touches?.[0]?.clientX ?? lastDragX;
+    const delta = currentX - lastDragX;
+    const rotation = Math.max(-3, Math.min(3, delta * 0.1));
+
+    const dragged = document.querySelector('.sortable-drag');
+    if (dragged) {
+        dragged.style.setProperty('--drag-rotation', `${rotation}deg`);
+    }
+
+    lastDragX = currentX;
+}, 16);
+
+const startDragTracking = (e) => {
+    lastDragX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+
+    const onMove = (evt) => trackDragDirection(evt);
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove);
+
+    cleanupMouseMove = () => document.removeEventListener('mousemove', onMove);
+    cleanupTouchMove = () => document.removeEventListener('touchmove', onMove);
+};
+
+const stopDragTracking = () => {
+    cleanupMouseMove?.();
+    cleanupTouchMove?.();
+    cleanupMouseMove = null;
+    cleanupTouchMove = null;
+};
 
 const isListenOpen = ref(false);
 
@@ -288,10 +352,21 @@ const initPlacementDnD = async () => {
             ghostClass: 'sortable-ghost',
             dragClass: 'sortable-drag',
             chosenClass: 'sortable-chosen',
-            delay: 120,
+            delay: 100,
             delayOnTouchOnly: true,
             touchStartThreshold: 5,
             fallbackOnBody: true,
+            onChoose: (evt) => {
+                evt.item.classList.add('drag-chosen-active');
+                haptics.light();
+            },
+            onStart: (evt) => {
+                startDragTracking(evt.originalEvent);
+            },
+            onUnchoose: (evt) => {
+                evt.item.classList.remove('drag-chosen-active');
+                stopDragTracking();
+            },
         });
     }
 
@@ -311,15 +386,29 @@ const initPlacementDnD = async () => {
         dragClass: 'sortable-drag',
         chosenClass: 'sortable-chosen',
         fallbackOnBody: true,
-        swapThreshold: 0.65,
+        swapThreshold: 0.4,
+        invertSwap: true,
+        invertedSwapThreshold: 0.5,
+        onChoose: (evt) => {
+            evt.item.classList.add('drag-chosen-active');
+            haptics.light();
+        },
+        onStart: (evt) => {
+            startDragTracking(evt.originalEvent);
+        },
+        onUnchoose: (evt) => {
+            evt.item.classList.remove('drag-chosen-active');
+            stopDragTracking();
+        },
         onAdd: async (evt) => {
             if (props.isPlacementLocked) {
                 evt.item.remove();
                 return;
             }
 
-            // Play click sound on card placement
+            // Play sound and haptic feedback
             gameSounds?.playClick();
+            haptics.medium();
 
             optimisticPlaced.value = true;
 
@@ -330,6 +419,9 @@ const initPlacementDnD = async () => {
             if (typeof newIndex === 'number' && newIndex > 0) {
                 insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
             }
+
+            // Trigger drop success animation
+            triggerDropAnimation(newIndex, 'success');
 
             evt.item.remove();
 
@@ -344,8 +436,9 @@ const initPlacementDnD = async () => {
                 return;
             }
 
-            // Play click sound on card repositioning
+            // Play sound and haptic feedback
             gameSounds?.playClick();
+            haptics.medium();
 
             const newIndex = evt.newIndex;
             const timeline = props.state.timeline ?? [];
@@ -354,6 +447,9 @@ const initPlacementDnD = async () => {
             if (typeof newIndex === 'number' && newIndex > 0) {
                 insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
             }
+
+            // Trigger drop success animation
+            triggerDropAnimation(newIndex, 'success');
 
             await requestPlace(insertedAfterTrackId);
         },
@@ -395,7 +491,12 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     destroyPlacementDnD();
+    stopDragTracking();
     sortableInitRunId += 1;
+
+    if (dropAnimationTimeout) {
+        clearTimeout(dropAnimationTimeout);
+    }
 });
 
 const placementsProgress = computed(() => {
@@ -620,21 +721,23 @@ const placementsProgress = computed(() => {
                         class="space-y-2 min-h-[4rem] p-3 rounded-lg border-2 border-dashed lg:max-h-[52vh] lg:overflow-auto"
                         :class="
                             shouldEnablePlacementDnd
-                                ? 'border-accent-500/40 bg-gray-900/20'
+                                ? 'placement-enabled border-accent-500/40 bg-gray-900/20'
                                 : 'border-gray-700/60 bg-gray-900/10'
                         "
                     >
                         <li
-                            v-for="item in timelineRenderItems"
+                            v-for="(item, index) in timelineRenderItems"
                             :key="item.kind === 'track' ? item.track_id : item.id"
                             class="flex items-center gap-3 p-4 rounded-lg"
-                            :class="
+                            :class="[
                                 item.kind === 'mystery'
                                     ? shouldEnablePlacementDnd
                                         ? 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/30 cursor-grab active:cursor-grabbing'
                                         : 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/20 cursor-not-allowed opacity-70'
-                                    : 'timeline-item timeline-track bg-gray-700/30'
-                            "
+                                    : 'timeline-item timeline-track bg-gray-700/30',
+                                dropAnimationType === 'success' && lastDroppedIndex === index ? 'animate-drop-success' : '',
+                                dropAnimationType === 'error' && lastDroppedIndex === index ? 'animate-drop-error' : '',
+                            ]"
                         >
                             <template v-if="item.kind === 'track'">
                                 <img
