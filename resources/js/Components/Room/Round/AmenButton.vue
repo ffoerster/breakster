@@ -1,7 +1,9 @@
 <script setup>
 import { inject } from 'vue';
+import { useHaptics } from '../../../composables/useHaptics';
 
 const gameSounds = inject('gameSounds', null);
+const haptics = useHaptics();
 
 const props = defineProps({
     variant: {
@@ -40,8 +42,9 @@ const handleClick = async () => {
         return;
     }
 
-    // Play amen sound immediately (optimistic)
+    // Play amen sound and haptic immediately (optimistic)
     gameSounds?.playAmen();
+    haptics.heavy();
 
     await props.claimAmen();
 };

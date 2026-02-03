@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { usePreferredReducedMotion } from '@vueuse/core';
+import { useHaptics } from '../../../composables/useHaptics';
+
+const haptics = useHaptics();
 
 const props = defineProps({
     track: {
@@ -29,6 +32,7 @@ onMounted(() => {
 
     setTimeout(() => {
         isFlipped.value = true;
+        haptics.heavy();
         setTimeout(() => emit('flipComplete'), 600);
     }, props.delay);
 });

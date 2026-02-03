@@ -1,12 +1,15 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import { useIntervalFn, usePreferredReducedMotion } from '@vueuse/core';
+import { useDrag } from '@vueuse/gesture';
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
+import { useHaptics } from '../../composables/useHaptics';
 
 import GlassCard from '../../Components/Ui/GlassCard.vue';
 import BottomSheet from '../../Components/Ui/BottomSheet.vue';
 import ConfirmDialog from '../../Components/Ui/ConfirmDialog.vue';
 import SoundToggle from '../../Components/Ui/SoundToggle.vue';
+import HapticToggle from '../../Components/Ui/HapticToggle.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import FinishedView from '../../Components/Room/Finished/FinishedView.vue';
 import LobbyView from '../../Components/Room/Lobby/LobbyView.vue';
@@ -112,6 +115,51 @@ const openDetails = () => {
 const closeDetails = () => {
     isDetailsOpen.value = false;
 };
+
+// Pull-to-refresh
+const haptics = useHaptics();
+const pullContainerEl = ref(null);
+const pullDistance = ref(0);
+const isPulling = ref(false);
+const isRefreshing = ref(false);
+const PULL_THRESHOLD = 80;
+
+useDrag(
+    ({ movement: [, my], first, last }) => {
+        // Only activate at top of page
+        if (window.scrollY > 0) {
+            return;
+        }
+
+        // Don't start new pull during refresh
+        if (isRefreshing.value) {
+            return;
+        }
+
+        if (first) {
+            isPulling.value = true;
+        }
+
+        pullDistance.value = Math.max(0, Math.min(my, 120));
+
+        if (last) {
+            if (pullDistance.value >= PULL_THRESHOLD) {
+                haptics.medium();
+                isRefreshing.value = true;
+                refreshState().finally(() => {
+                    isRefreshing.value = false;
+                });
+            }
+            pullDistance.value = 0;
+            isPulling.value = false;
+        }
+    },
+    {
+        target: pullContainerEl,
+        axis: 'y',
+        filterTaps: true,
+    },
+);
 
 const placementUnlocksAtMs = computed(() => {
     const iso = state.round?.placement_unlocks_at;
@@ -348,7 +396,38 @@ onBeforeUnmount(() => {
             </GlassCard>
         </div>
 
-        <div v-else class="space-y-6">
+        <div v-else ref="pullContainerEl" class="space-y-6">
+            <!-- Pull-to-refresh indicator -->
+            <div
+                v-if="isPulling || isRefreshing"
+                class="fixed top-0 left-0 right-0 flex justify-center pt-4 z-50 pointer-events-none"
+                :style="{ transform: `translateY(${pullDistance - 40}px)` }"
+            >
+                <div
+                    class="w-10 h-10 rounded-full bg-gray-800/90 border border-accent-500/50 flex items-center justify-center shadow-lg"
+                >
+                    <svg
+                        v-if="isRefreshing"
+                        class="w-5 h-5 text-accent-400 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <svg
+                        v-else
+                        class="w-5 h-5 text-accent-400 transition-transform duration-200"
+                        :class="pullDistance >= PULL_THRESHOLD ? 'rotate-180' : ''"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                </div>
+            </div>
+
             <div class="hidden lg:block">
                 <RoomIntroCard :room="state.room" :me="state.me" />
             </div>
@@ -453,6 +532,10 @@ onBeforeUnmount(() => {
 
                     <GlassCard class="p-4">
                         <SoundToggle />
+                    </GlassCard>
+
+                    <GlassCard class="p-4">
+                        <HapticToggle />
                     </GlassCard>
 
                     <GlassCard class="p-6">

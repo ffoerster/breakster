@@ -497,6 +497,10 @@ onBeforeUnmount(() => {
     if (dropAnimationTimeout) {
         clearTimeout(dropAnimationTimeout);
     }
+
+    if (longPressTimeout) {
+        clearTimeout(longPressTimeout);
+    }
 });
 
 const placementsProgress = computed(() => {
@@ -509,6 +513,39 @@ const placementsProgress = computed(() => {
 
     return Math.min(100, Math.max(0, Math.round((placed / total) * 100)));
 });
+
+// Long-press gesture for opening details (350ms threshold, longer than SortableJS 100ms delay)
+let longPressTimeout = null;
+const isLongPressing = ref(false);
+
+const handleTimelinePointerDown = (e) => {
+    // Only handle touch events (desktop uses click)
+    if (e.pointerType === 'mouse') {
+        return;
+    }
+
+    longPressTimeout = setTimeout(() => {
+        isLongPressing.value = true;
+        haptics.medium();
+        props.openDetails();
+    }, 350);
+};
+
+const handleTimelinePointerUp = () => {
+    if (longPressTimeout) {
+        clearTimeout(longPressTimeout);
+        longPressTimeout = null;
+    }
+    isLongPressing.value = false;
+};
+
+const handleTimelinePointerCancel = () => {
+    if (longPressTimeout) {
+        clearTimeout(longPressTimeout);
+        longPressTimeout = null;
+    }
+    isLongPressing.value = false;
+};
 </script>
 
 <template>
@@ -738,6 +775,10 @@ const placementsProgress = computed(() => {
                                 dropAnimationType === 'success' && lastDroppedIndex === index ? 'animate-drop-success' : '',
                                 dropAnimationType === 'error' && lastDroppedIndex === index ? 'animate-drop-error' : '',
                             ]"
+                            @pointerdown="handleTimelinePointerDown"
+                            @pointerup="handleTimelinePointerUp"
+                            @pointercancel="handleTimelinePointerCancel"
+                            @pointermove="handleTimelinePointerUp"
                         >
                             <template v-if="item.kind === 'track'">
                                 <img

@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue';
 import { usePreferredReducedMotion } from '@vueuse/core';
+import { useHaptics } from '../../../composables/useHaptics';
+
+const haptics = useHaptics();
 
 const props = defineProps({
     claimantName: {
@@ -81,8 +84,10 @@ onMounted(() => {
         if (props.correct) {
             fireGoldConfetti();
             gameSounds?.playCorrect();
+            haptics.heavy();
         } else {
             gameSounds?.playWrong();
+            haptics.error();
         }
     }, props.delay);
 });

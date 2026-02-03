@@ -1,6 +1,9 @@
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { usePreferredReducedMotion } from '@vueuse/core';
+import { useHaptics } from '../../../composables/useHaptics';
+
+const haptics = useHaptics();
 
 const props = defineProps({
     placement: {
@@ -89,8 +92,10 @@ const triggerFeedback = () => {
 
     if (props.placement.is_correct) {
         emit('triggerConfetti');
+        haptics.medium();
     } else if (isBigMiss.value) {
         emit('triggerScreenFlash');
+        haptics.error();
     }
 
     emit('animationComplete');
