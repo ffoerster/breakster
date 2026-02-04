@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Domain\Game;
 
@@ -42,7 +42,7 @@ class PlacementValidator
         }
 
         // Find the "after" item and its next sibling
-        $afterIndex = $timeline->search(static fn(TimelineItem $item) => $item->track_id === $insertAfterTrackId);
+        $afterIndex = $timeline->search(static fn (TimelineItem $item) => $item->track_id === $insertAfterTrackId);
 
         if ($afterIndex === false) {
             // The track they're trying to insert after isn't in their timeline
@@ -82,7 +82,7 @@ class PlacementValidator
 
         // Find the first item that has a release date greater than the new track
         foreach ($timeline as $index => $item) {
-            if (!$item->track->release_date->gt($releaseDate)) {
+            if (! $item->track->release_date->gt($releaseDate)) {
                 continue;
             }
 
@@ -108,6 +108,63 @@ class PlacementValidator
         $timeline = $this->getPlayerTimeline($player);
 
         return $timeline->get($position - 1)?->track_id;
+    }
+
+    /**
+     * Calculate how many years off a placement was from being correct.
+     *
+     * Returns 0 for correct placements or empty timelines.
+     * For incorrect placements, returns the absolute year difference
+     * between the actual release year and the boundary year that was violated.
+     */
+    public function calculateYearDelta(RoomPlayer $player, Track $newTrack, ?int $insertAfterTrackId): int
+    {
+        $timeline = $this->getPlayerTimeline($player);
+        $actualYear = (int) $newTrack->release_date->format('Y');
+
+        // Empty timeline: always correct, delta = 0
+        if ($timeline->isEmpty()) {
+            return 0;
+        }
+
+        // Insert at beginning
+        if ($insertAfterTrackId === null) {
+            $firstItem = $timeline->first();
+            $firstYear = (int) $firstItem->track->release_date->format('Y');
+
+            // If track is newer than first track, that's the error
+            return max(0, $actualYear - $firstYear);
+        }
+
+        // Find the "after" item and its next sibling
+        $afterIndex = $timeline->search(static fn (TimelineItem $item) => $item->track_id === $insertAfterTrackId);
+
+        if ($afterIndex === false) {
+            // Invalid reference - should not happen in normal flow
+            return 0;
+        }
+
+        $afterItem = $timeline->get($afterIndex);
+        $nextItem = $timeline->get($afterIndex + 1);
+
+        $afterYear = (int) $afterItem->track->release_date->format('Y');
+
+        // Track is older than the "after" track - error is the difference
+        if ($actualYear < $afterYear) {
+            return $afterYear - $actualYear;
+        }
+
+        // If there's a next track and the actual track is newer than it
+        if ($nextItem !== null) {
+            $nextYear = (int) $nextItem->track->release_date->format('Y');
+
+            if ($actualYear > $nextYear) {
+                return $actualYear - $nextYear;
+            }
+        }
+
+        // Correct placement
+        return 0;
     }
 
     /**

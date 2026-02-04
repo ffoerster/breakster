@@ -27,7 +27,7 @@ class PlacementFactory extends Factory
 
     public function correct(int $points = 10): static
     {
-        return $this->state(static fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'is_correct' => true,
             'points_earned' => $points,
         ]);
@@ -35,7 +35,7 @@ class PlacementFactory extends Factory
 
     public function incorrect(): static
     {
-        return $this->state(static fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'is_correct' => false,
             'points_earned' => 0,
         ]);
@@ -43,7 +43,7 @@ class PlacementFactory extends Factory
 
     public function afterTrack(int $trackId): static
     {
-        return $this->state(static fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'inserted_after_track_id' => $trackId,
         ]);
     }

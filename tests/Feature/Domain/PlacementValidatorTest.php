@@ -288,3 +288,226 @@ describe('PlacementValidator', function () {
         expect($position)->toBe(1);
     });
 });
+
+describe('calculateYearDelta', function () {
+    it('returns zero for empty timeline', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+        $track = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('2000-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $track, null);
+
+        expect($delta)->toBe(0);
+    });
+
+    it('returns zero for correct placement at beginning', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Existing track: 1990
+        $existingTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1990-01-01'),
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $existingTrack->id,
+            'position' => 0,
+        ]);
+
+        // New track from 1985 at beginning is correct
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1985-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, null);
+
+        expect($delta)->toBe(0);
+    });
+
+    it('calculates delta when placed too late at beginning', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Existing track: 1990
+        $existingTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1990-01-01'),
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $existingTrack->id,
+            'position' => 0,
+        ]);
+
+        // New track from 1995 placed at beginning - 5 years too late
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1995-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, null);
+
+        expect($delta)->toBe(5);
+    });
+
+    it('returns zero for correct placement in middle', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Timeline: 1980 -> 2000
+        $track1980 = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1980-01-01'),
+        ]);
+        $track2000 = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('2000-01-01'),
+        ]);
+
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $track1980->id,
+            'position' => 0,
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $track2000->id,
+            'position' => 1,
+        ]);
+
+        // New track from 1990 placed after 1980 is correct
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1990-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, $track1980->id);
+
+        expect($delta)->toBe(0);
+    });
+
+    it('calculates delta when placed too early in middle', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Timeline: 1980 -> 2000
+        $track1980 = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1980-01-01'),
+        ]);
+        $track2000 = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('2000-01-01'),
+        ]);
+
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $track1980->id,
+            'position' => 0,
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $track2000->id,
+            'position' => 1,
+        ]);
+
+        // New track from 1970 placed after 1980 - 10 years too early
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1970-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, $track1980->id);
+
+        expect($delta)->toBe(10);
+    });
+
+    it('calculates delta when placed too late in middle', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Timeline: 1980 -> 2000
+        $track1980 = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1980-01-01'),
+        ]);
+        $track2000 = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('2000-01-01'),
+        ]);
+
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $track1980->id,
+            'position' => 0,
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $track2000->id,
+            'position' => 1,
+        ]);
+
+        // New track from 2010 placed after 1980 - 10 years too late
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('2010-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, $track1980->id);
+
+        expect($delta)->toBe(10);
+    });
+
+    it('returns zero for correct placement at end', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Existing track: 1990
+        $existingTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1990-01-01'),
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $existingTrack->id,
+            'position' => 0,
+        ]);
+
+        // New track from 2000 placed after 1990 is correct
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('2000-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, $existingTrack->id);
+
+        expect($delta)->toBe(0);
+    });
+
+    it('calculates delta when placed too early at end', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Existing track: 1990
+        $existingTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1990-01-01'),
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $existingTrack->id,
+            'position' => 0,
+        ]);
+
+        // New track from 1980 placed after 1990 - 10 years too early
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1980-01-01'),
+        ]);
+
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, $existingTrack->id);
+
+        expect($delta)->toBe(10);
+    });
+
+    it('returns zero for same year tracks', function () {
+        $room = Room::factory()->for($this->pack)->create();
+        $player = RoomPlayer::factory()->for($room)->create();
+
+        // Existing track: 1990
+        $existingTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1990-06-15'),
+        ]);
+        TimelineItem::factory()->for($player)->create([
+            'track_id' => $existingTrack->id,
+            'position' => 0,
+        ]);
+
+        // New track also from 1990 (different month)
+        $newTrack = Track::factory()->for($this->pack)->create([
+            'release_date' => Carbon::parse('1990-03-01'),
+        ]);
+
+        // Placed at beginning should be correct (same year)
+        $delta = $this->validator->calculateYearDelta($player, $newTrack, null);
+
+        expect($delta)->toBe(0);
+    });
+});

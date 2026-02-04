@@ -523,6 +523,9 @@ class GameService
                 // Check correctness
                 $isCorrect = $this->placementValidator->isCorrect($player, $track, $placement->inserted_after_track_id);
 
+                // Calculate year delta (how many years off the placement was)
+                $yearDelta = $this->placementValidator->calculateYearDelta($player, $track, $placement->inserted_after_track_id);
+
                 // Calculate points
                 $secondsToSubmit = $round->started_at ? $placement->created_at->diffInSeconds($round->started_at) : 0;
                 $points = $this->scoreCalculator->calculatePoints($isCorrect, (int) $secondsToSubmit);
@@ -530,6 +533,7 @@ class GameService
                 // Update placement
                 $placement->update([
                     'is_correct' => $isCorrect,
+                    'year_delta' => $yearDelta,
                     'points_earned' => $points,
                 ]);
 

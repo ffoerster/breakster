@@ -564,6 +564,49 @@ export function useRoomState(props) {
 
     const previousLeaderboard = ref([]);
 
+    // Game summary for finished games
+    const summary = ref(null);
+    const isLoadingSummary = ref(false);
+    const summaryError = ref('');
+
+    const fetchSummary = async () => {
+        if (!isFinished.value || summary.value) {
+            return;
+        }
+
+        if (!isOnline.value) {
+            summaryError.value = "You're offline.";
+            return;
+        }
+
+        isLoadingSummary.value = true;
+        summaryError.value = '';
+
+        try {
+            const result = await refreshRequest.execute(`/room/${code.value}/summary`);
+            const data = result.response.value?.data;
+
+            if (data) {
+                summary.value = data;
+            }
+        } catch (e) {
+            summaryError.value = getRequestErrorMessage(e, 'Could not load summary.');
+        } finally {
+            isLoadingSummary.value = false;
+        }
+    };
+
+    // Auto-fetch summary when game finishes
+    watch(
+        isFinished,
+        (finished) => {
+            if (finished && !summary.value) {
+                void fetchSummary();
+            }
+        },
+        { immediate: true },
+    );
+
     const leaderboard = computed(() => {
         const players = [...state.players];
         players.sort((a, b) => {
@@ -663,5 +706,11 @@ export function useRoomState(props) {
 
         leaderboard,
         previousLeaderboard,
+
+        // Summary
+        summary,
+        isLoadingSummary,
+        summaryError,
+        fetchSummary,
     };
 }

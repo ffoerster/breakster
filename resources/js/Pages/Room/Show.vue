@@ -95,6 +95,9 @@ const {
     // Placement timer
     togglePlacementTimer,
     isTogglingPlacementTimer,
+    // Summary
+    summary,
+    isLoadingSummary,
 } = useRoomState(props);
 
 const nowMs = ref(Date.now());
@@ -504,7 +507,13 @@ onBeforeUnmount(() => {
                     :amen-vote-error="amenVoteError"
                 />
 
-                <FinishedView v-else-if="isFinished" key="finished" :leaderboard="leaderboard" />
+                <FinishedView
+                    v-else-if="isFinished"
+                    key="finished"
+                    :leaderboard="leaderboard"
+                    :summary="summary"
+                    :is-loading-summary="isLoadingSummary"
+                />
             </Transition>
 
             <Transition name="view-fade">

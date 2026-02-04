@@ -9,6 +9,7 @@ use App\Http\Controllers\Room\RoomCreateController;
 use App\Http\Controllers\Room\RoomJoinController;
 use App\Http\Controllers\Room\RoomShowController;
 use App\Http\Controllers\Room\RoomStateController;
+use App\Http\Controllers\Room\RoomSummaryController;
 use App\Http\Controllers\Room\SpotifyDeviceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -54,6 +55,7 @@ Route::prefix('/room/{code}')
     ->where(['code' => '[A-Z0-9]{6,8}'])
     ->group(function (): void {
         Route::get('/state', RoomStateController::class)->name('room.state');
+        Route::get('/summary', RoomSummaryController::class)->name('room.summary');
 
         Route::post('/provider', [RoomActionController::class, 'setPlaybackProvider'])->name('room.provider');
         Route::post('/placement-timer', [RoomActionController::class, 'setPlacementTimer'])->name('room.placement-timer');

@@ -1,16 +1,38 @@
 <script setup>
 import { useTimeoutFn } from '@vueuse/core';
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 
 import GlassCard from '../../Ui/GlassCard.vue';
+import AwardCard from './AwardCard.vue';
+import AmenStatsPanel from './AmenStatsPanel.vue';
 
 const props = defineProps({
     leaderboard: {
         type: Array,
         required: true,
     },
+    summary: {
+        type: Object,
+        default: null,
+    },
+    isLoadingSummary: {
+        type: Boolean,
+        default: false,
+    },
 });
+
+const mostAccurate = computed(() => props.summary?.awards?.most_accurate);
+const biggestMiss = computed(() => props.summary?.awards?.biggest_miss);
+const amenStats = computed(() => props.summary?.amen_stats);
+const gameStats = computed(() => props.summary?.game_stats);
+
+const formatYearDelta = (delta) => {
+    if (delta === 0) {
+        return 'Perfect!';
+    }
+    return `${delta} year${delta !== 1 ? 's' : ''} off`;
+};
 
 let confettiLib = null;
 
@@ -129,6 +151,55 @@ onMounted(async () => {
                         </span>
                     </div>
                     <span class="font-bold text-accent-400 tabular-nums">{{ p.score }} pts</span>
+                </div>
+            </div>
+        </GlassCard>
+
+        <!-- Awards Section -->
+        <div v-if="summary && (mostAccurate || biggestMiss)" class="grid gap-4 sm:grid-cols-2">
+            <AwardCard
+                v-if="mostAccurate"
+                title="Most Accurate"
+                :player-name="mostAccurate.display_name"
+                :stat="formatYearDelta(mostAccurate.average_year_delta)"
+                :description="`${mostAccurate.correct_placements}/${mostAccurate.total_placements} correct`"
+            />
+            <AwardCard
+                v-if="biggestMiss"
+                title="Biggest Miss"
+                variant="warning"
+                :player-name="biggestMiss.display_name"
+                :stat="`${biggestMiss.year_delta} years off`"
+                :description="`${biggestMiss.track.title} by ${biggestMiss.track.artist}`"
+            />
+        </div>
+
+        <!-- Loading state for summary -->
+        <div v-else-if="isLoadingSummary" class="text-center py-4 text-gray-400">Loading stats...</div>
+
+        <!-- AMEN Stats -->
+        <AmenStatsPanel v-if="amenStats && amenStats.total_claims > 0" :stats="amenStats" />
+
+        <!-- Game Stats -->
+        <GlassCard
+            v-if="gameStats && gameStats.rounds_played > 0"
+            v-motion
+            :initial="{ y: 20, opacity: 0 }"
+            :enter="{ y: 0, opacity: 1, transition: { delay: 200, type: 'spring', stiffness: 200, damping: 20 } }"
+            class="p-4"
+        >
+            <div class="flex justify-center gap-8 text-center">
+                <div>
+                    <div class="text-2xl font-bold tabular-nums">{{ gameStats.rounds_played }}</div>
+                    <div class="text-sm text-gray-400">Rounds</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold tabular-nums">{{ gameStats.overall_accuracy }}%</div>
+                    <div class="text-sm text-gray-400">Accuracy</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold tabular-nums">{{ gameStats.total_placements }}</div>
+                    <div class="text-sm text-gray-400">Placements</div>
                 </div>
             </div>
         </GlassCard>

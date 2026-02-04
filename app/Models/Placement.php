@@ -17,6 +17,7 @@ class Placement extends Model
         'room_player_id',
         'inserted_after_track_id',
         'is_correct',
+        'year_delta',
         'points_earned',
         'is_auto_placed',
     ];
@@ -25,6 +26,7 @@ class Placement extends Model
     {
         return [
             'is_correct' => 'boolean',
+            'year_delta' => 'integer',
             'points_earned' => 'integer',
             'is_auto_placed' => 'boolean',
         ];
