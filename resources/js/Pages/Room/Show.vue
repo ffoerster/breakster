@@ -1,122 +1,130 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
-import { useIntervalFn, usePreferredReducedMotion } from '@vueuse/core';
-import { useDrag } from '@vueuse/gesture';
-import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
-import { useHaptics } from '../../composables/useHaptics';
-
-import GlassCard from '../../Components/Ui/GlassCard.vue';
-import BottomSheet from '../../Components/Ui/BottomSheet.vue';
-import ConfirmDialog from '../../Components/Ui/ConfirmDialog.vue';
-import SoundToggle from '../../Components/Ui/SoundToggle.vue';
-import HapticToggle from '../../Components/Ui/HapticToggle.vue';
-import AppLayout from '../../Layouts/AppLayout.vue';
-import FinishedView from '../../Components/Room/Finished/FinishedView.vue';
-import LobbyView from '../../Components/Room/Lobby/LobbyView.vue';
-import PlayersList from '../../Components/Room/PlayersList.vue';
-import RevealView from '../../Components/Room/Reveal/RevealView.vue';
-import RoomIntroCard from '../../Components/Room/RoomIntroCard.vue';
-import RoundView from '../../Components/Room/Round/RoundView.vue';
-import { useGameSounds } from '../../composables/useGameSounds';
-import { useRoomState } from '../../composables/useRoomState';
-import { useSpotifyHostPlayback } from '../../composables/useSpotifyHostPlayback';
+import { Link } from "@inertiajs/vue3";
+import { useIntervalFn, usePreferredReducedMotion } from "@vueuse/core";
+import { useDrag } from "@vueuse/gesture";
+import {
+	computed,
+	nextTick,
+	onBeforeUnmount,
+	onMounted,
+	provide,
+	ref,
+	watch,
+} from "vue";
+import FinishedView from "../../Components/Room/Finished/FinishedView.vue";
+import LobbyView from "../../Components/Room/Lobby/LobbyView.vue";
+import PlayersList from "../../Components/Room/PlayersList.vue";
+import RevealView from "../../Components/Room/Reveal/RevealView.vue";
+import RoomIntroCard from "../../Components/Room/RoomIntroCard.vue";
+import RoundView from "../../Components/Room/Round/RoundView.vue";
+import BottomSheet from "../../Components/Ui/BottomSheet.vue";
+import ConfirmDialog from "../../Components/Ui/ConfirmDialog.vue";
+import GlassCard from "../../Components/Ui/GlassCard.vue";
+import HapticToggle from "../../Components/Ui/HapticToggle.vue";
+import SoundToggle from "../../Components/Ui/SoundToggle.vue";
+import { useGameSounds } from "../../Composables/useGameSounds";
+import { useHaptics } from "../../Composables/useHaptics";
+import { useRoomState } from "../../Composables/useRoomState";
+import { useSpotifyHostPlayback } from "../../Composables/useSpotifyHostPlayback";
+import AppLayout from "../../Layouts/AppLayout.vue";
 
 const props = defineProps({
-    room: {
-        type: Object,
-        required: true,
-    },
-    me: {
-        type: Object,
-        default: null,
-    },
-    players: {
-        type: Array,
-        required: true,
-    },
-    providers: {
-        type: Array,
-        required: true,
-    },
-    round: {
-        type: Object,
-        default: null,
-    },
-    timeline: {
-        type: Array,
-        default: null,
-    },
+	room: {
+		type: Object,
+		required: true,
+	},
+	me: {
+		type: Object,
+		default: null,
+	},
+	players: {
+		type: Array,
+		required: true,
+	},
+	providers: {
+		type: Array,
+		required: true,
+	},
+	round: {
+		type: Object,
+		default: null,
+	},
+	timeline: {
+		type: Array,
+		default: null,
+	},
 });
 
 const {
-    state,
-    code,
-    isHost,
-    isInLobby,
-    isInRound,
-    isInReveal,
-    isFinished,
-    refreshState,
-    scheduleRefresh,
-    cleanup,
-    playUrl,
-    copyPlayUrl,
-    copiedPlayUrl,
-    selectProvider,
-    startGame,
-    canStart,
-    place,
-    placeError,
-    isPlacing,
-    revealRound,
-    nextRound,
-    finishGame,
-    openFinishGameConfirm,
-    isFinishGameConfirmOpen,
-    isFinishingGame,
-    finishGameError,
-    cancelFinishGame,
-    leaderboard,
-    previousLeaderboard,
-    // AMEN
-    claimAmen,
-    isClaimingAmen,
-    amenClaimError,
-    submitAmenGuess,
-    isSubmittingAmenGuess,
-    amenGuessError,
-    submitAmenVote,
-    isSubmittingAmenVote,
-    amenVoteError,
-    // Ready
-    markReady,
-    isMarkingReady,
-    markReadyError,
-    // Placement timer
-    togglePlacementTimer,
-    isTogglingPlacementTimer,
-    // Summary
-    summary,
-    isLoadingSummary,
+	state,
+	code,
+	isHost,
+	isInLobby,
+	isInRound,
+	isInReveal,
+	isFinished,
+	refreshState,
+	scheduleRefresh,
+	cleanup,
+	playUrl,
+	copyPlayUrl,
+	copiedPlayUrl,
+	selectProvider,
+	startGame,
+	canStart,
+	place,
+	placeError,
+	isPlacing,
+	revealRound,
+	nextRound,
+	finishGame,
+	openFinishGameConfirm,
+	isFinishGameConfirmOpen,
+	isFinishingGame,
+	finishGameError,
+	cancelFinishGame,
+	leaderboard,
+	previousLeaderboard,
+	// AMEN
+	claimAmen,
+	isClaimingAmen,
+	amenClaimError,
+	submitAmenGuess,
+	isSubmittingAmenGuess,
+	amenGuessError,
+	submitAmenVote,
+	isSubmittingAmenVote,
+	amenVoteError,
+	// Ready
+	markReady,
+	isMarkingReady,
+	markReadyError,
+	// Placement timer
+	togglePlacementTimer,
+	isTogglingPlacementTimer,
+	// Summary
+	summary,
+	isLoadingSummary,
 } = useRoomState(props);
 
 const nowMs = ref(Date.now());
-const { pause: pauseCountdownTimer, resume: resumeCountdownTimer } = useIntervalFn(
-    () => {
-        nowMs.value = Date.now();
-    },
-    250,
-    { immediate: false },
-);
+const { pause: pauseCountdownTimer, resume: resumeCountdownTimer } =
+	useIntervalFn(
+		() => {
+			nowMs.value = Date.now();
+		},
+		250,
+		{ immediate: false },
+	);
 
 const isDetailsOpen = ref(false);
 
 const openDetails = () => {
-    isDetailsOpen.value = true;
+	isDetailsOpen.value = true;
 };
 
 const closeDetails = () => {
-    isDetailsOpen.value = false;
+	isDetailsOpen.value = false;
 };
 
 // Pull-to-refresh
@@ -128,261 +136,278 @@ const isRefreshing = ref(false);
 const PULL_THRESHOLD = 80;
 
 useDrag(
-    ({ movement: [, my], first, last }) => {
-        // Only activate at top of page
-        if (window.scrollY > 0) {
-            return;
-        }
+	({ movement: [, my], first, last }) => {
+		// Only activate at top of page
+		if (window.scrollY > 0) {
+			return;
+		}
 
-        // Don't start new pull during refresh
-        if (isRefreshing.value) {
-            return;
-        }
+		// Don't start new pull during refresh
+		if (isRefreshing.value) {
+			return;
+		}
 
-        if (first) {
-            isPulling.value = true;
-        }
+		if (first) {
+			isPulling.value = true;
+		}
 
-        pullDistance.value = Math.max(0, Math.min(my, 120));
+		pullDistance.value = Math.max(0, Math.min(my, 120));
 
-        if (last) {
-            if (pullDistance.value >= PULL_THRESHOLD) {
-                haptics.medium();
-                isRefreshing.value = true;
-                refreshState().finally(() => {
-                    isRefreshing.value = false;
-                });
-            }
-            pullDistance.value = 0;
-            isPulling.value = false;
-        }
-    },
-    {
-        target: pullContainerEl,
-        axis: 'y',
-        filterTaps: true,
-    },
+		if (last) {
+			if (pullDistance.value >= PULL_THRESHOLD) {
+				haptics.medium();
+				isRefreshing.value = true;
+				refreshState().finally(() => {
+					isRefreshing.value = false;
+				});
+			}
+			pullDistance.value = 0;
+			isPulling.value = false;
+		}
+	},
+	{
+		target: pullContainerEl,
+		axis: "y",
+		filterTaps: true,
+	},
 );
 
 const placementUnlocksAtMs = computed(() => {
-    const iso = state.round?.placement_unlocks_at;
-    if (!iso) {
-        return null;
-    }
+	const iso = state.round?.placement_unlocks_at;
+	if (!iso) {
+		return null;
+	}
 
-    const ms = new Date(iso).getTime();
+	const ms = new Date(iso).getTime();
 
-    return Number.isFinite(ms) ? ms : null;
+	return Number.isFinite(ms) ? ms : null;
 });
 
 const remainingSeconds = computed(() => {
-    if (!placementUnlocksAtMs.value) {
-        return 0;
-    }
+	if (!placementUnlocksAtMs.value) {
+		return 0;
+	}
 
-    const remainingMs = placementUnlocksAtMs.value - nowMs.value;
-    if (remainingMs <= 0) {
-        return 0;
-    }
+	const remainingMs = placementUnlocksAtMs.value - nowMs.value;
+	if (remainingMs <= 0) {
+		return 0;
+	}
 
-    return Math.ceil(remainingMs / 1000);
+	return Math.ceil(remainingMs / 1000);
 });
 
 const placementEndsAtMs = computed(() => {
-    const iso = state.round?.placement_ends_at;
-    if (!iso) {
-        return null;
-    }
+	const iso = state.round?.placement_ends_at;
+	if (!iso) {
+		return null;
+	}
 
-    const ms = new Date(iso).getTime();
+	const ms = new Date(iso).getTime();
 
-    return Number.isFinite(ms) ? ms : null;
+	return Number.isFinite(ms) ? ms : null;
 });
 
 const placementTimeRemainingSeconds = computed(() => {
-    if (!placementEndsAtMs.value) {
-        return 0;
-    }
+	if (!placementEndsAtMs.value) {
+		return 0;
+	}
 
-    const remainingMs = placementEndsAtMs.value - nowMs.value;
-    if (remainingMs <= 0) {
-        return 0;
-    }
+	const remainingMs = placementEndsAtMs.value - nowMs.value;
+	if (remainingMs <= 0) {
+		return 0;
+	}
 
-    return Math.ceil(remainingMs / 1000);
+	return Math.ceil(remainingMs / 1000);
 });
 
 const isPlacementTimeExpired = computed(
-    () => isInRound.value && placementEndsAtMs.value && nowMs.value >= placementEndsAtMs.value,
+	() =>
+		isInRound.value &&
+		placementEndsAtMs.value &&
+		nowMs.value >= placementEndsAtMs.value,
 );
 
 const isPlacementLocked = computed(
-    () => isInRound.value && (remainingSeconds.value > 0 || isPlacementTimeExpired.value),
+	() =>
+		isInRound.value &&
+		(remainingSeconds.value > 0 || isPlacementTimeExpired.value),
 );
 
 const prefersReducedMotion = usePreferredReducedMotion();
 
 const scrollToTop = async () => {
-    await nextTick();
+	await nextTick();
 
-    window.scrollTo({
-        top: 0,
-        behavior: prefersReducedMotion.value ? 'auto' : 'smooth',
-    });
+	window.scrollTo({
+		top: 0,
+		behavior: prefersReducedMotion.value ? "auto" : "smooth",
+	});
 };
 
 const playersListMode = computed(() => {
-    if (isInLobby.value) {
-        return { showHostBadge: true, showScore: false };
-    }
+	if (isInLobby.value) {
+		return { showHostBadge: true, showScore: false };
+	}
 
-    return { showHostBadge: false, showScore: true };
+	return { showHostBadge: false, showScore: true };
 });
 
 const {
-    spotifyDevices,
-    spotifyError,
-    isLoadingDevices,
-    hasSpotifyToken,
-    isSpotifyProvider,
-    selectedDeviceId,
-    loadSpotifyDevices,
-    selectSpotifyDevice,
-    connectSpotify,
-    spotifyPlayError,
-    isPlayingSpotify,
-    playSpotifyTrack,
+	spotifyDevices,
+	spotifyError,
+	isLoadingDevices,
+	hasSpotifyToken,
+	isSpotifyProvider,
+	selectedDeviceId,
+	loadSpotifyDevices,
+	selectSpotifyDevice,
+	connectSpotify,
+	spotifyPlayError,
+	isPlayingSpotify,
+	playSpotifyTrack,
 } = useSpotifyHostPlayback({ state, isHost, code, refreshState });
 
 // Game sounds
-const { playAmen, playClick, playReveal, playCorrect, playWrong, unlockAudio, isSoundEnabled } = useGameSounds();
+const {
+	playAmen,
+	playClick,
+	playReveal,
+	playCorrect,
+	playWrong,
+	unlockAudio,
+	isSoundEnabled,
+} = useGameSounds();
 
 // Provide sound functions to child components
-provide('gameSounds', {
-    playAmen,
-    playClick,
-    playReveal,
-    playCorrect,
-    playWrong,
+provide("gameSounds", {
+	playAmen,
+	playClick,
+	playReveal,
+	playCorrect,
+	playWrong,
 });
 
 let channel = null;
 
 onMounted(() => {
-    // Unlock audio on first user interaction (required for mobile)
-    const handleFirstInteraction = () => {
-        unlockAudio();
-        document.removeEventListener('click', handleFirstInteraction);
-        document.removeEventListener('touchstart', handleFirstInteraction);
-    };
+	// Unlock audio on first user interaction (required for mobile)
+	const handleFirstInteraction = () => {
+		unlockAudio();
+		document.removeEventListener("click", handleFirstInteraction);
+		document.removeEventListener("touchstart", handleFirstInteraction);
+	};
 
-    document.addEventListener('click', handleFirstInteraction, { once: true });
-    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+	document.addEventListener("click", handleFirstInteraction, { once: true });
+	document.addEventListener("touchstart", handleFirstInteraction, {
+		once: true,
+	});
 
-    if (!state.me) {
-        return;
-    }
+	if (!state.me) {
+		return;
+	}
 
-    if (!window.Echo) {
-        return;
-    }
+	if (!window.Echo) {
+		return;
+	}
 
-    channel = window.Echo.private(`room.${code.value}`);
+	channel = window.Echo.private(`room.${code.value}`);
 
-    channel.listen('.players.updated', scheduleRefresh);
-    channel.listen('.round.started', scheduleRefresh);
-    channel.listen('.placement.submitted', scheduleRefresh);
-    channel.listen('.round.revealed', () => {
-        playReveal();
-        scheduleRefresh();
-    });
-    channel.listen('.room.state.changed', scheduleRefresh);
-    // AMEN events
-    channel.listen('.amen.claimed', scheduleRefresh);
-    channel.listen('.amen.guess.submitted', scheduleRefresh);
-    channel.listen('.amen.vote.submitted', scheduleRefresh);
-    channel.listen('.amen.resolved', scheduleRefresh);
-    // Ready events
-    channel.listen('.player.ready', scheduleRefresh);
-    // Placement timeout
-    channel.listen('.placement.timeout.resolved', scheduleRefresh);
+	channel.listen(".players.updated", scheduleRefresh);
+	channel.listen(".round.started", scheduleRefresh);
+	channel.listen(".placement.submitted", scheduleRefresh);
+	channel.listen(".round.revealed", () => {
+		playReveal();
+		scheduleRefresh();
+	});
+	channel.listen(".room.state.changed", scheduleRefresh);
+	// AMEN events
+	channel.listen(".amen.claimed", scheduleRefresh);
+	channel.listen(".amen.guess.submitted", scheduleRefresh);
+	channel.listen(".amen.vote.submitted", scheduleRefresh);
+	channel.listen(".amen.resolved", scheduleRefresh);
+	// Ready events
+	channel.listen(".player.ready", scheduleRefresh);
+	// Placement timeout
+	channel.listen(".placement.timeout.resolved", scheduleRefresh);
 
-    channel.listen('.playback.failed', (e) => {
-        if (!isHost.value) {
-            return;
-        }
+	channel.listen(".playback.failed", (e) => {
+		if (!isHost.value) {
+			return;
+		}
 
-        if (e?.provider !== 'spotify') {
-            return;
-        }
+		if (e?.provider !== "spotify") {
+			return;
+		}
 
-        spotifyPlayError.value = e?.message || 'Spotify playback failed to start.';
-    });
+		spotifyPlayError.value = e?.message || "Spotify playback failed to start.";
+	});
 
-    scheduleRefresh();
+	scheduleRefresh();
 });
 
 // Keep countdown timer running during both unlock and placement phases
 const shouldRunTimer = computed(
-    () => isInRound.value && (remainingSeconds.value > 0 || placementTimeRemainingSeconds.value > 0),
+	() =>
+		isInRound.value &&
+		(remainingSeconds.value > 0 || placementTimeRemainingSeconds.value > 0),
 );
 
 watch(
-    shouldRunTimer,
-    (shouldRun) => {
-        if (shouldRun) {
-            resumeCountdownTimer();
-        } else {
-            pauseCountdownTimer();
-        }
-    },
-    { immediate: true },
+	shouldRunTimer,
+	(shouldRun) => {
+		if (shouldRun) {
+			resumeCountdownTimer();
+		} else {
+			pauseCountdownTimer();
+		}
+	},
+	{ immediate: true },
 );
 
 watch(
-    () => state.round?.id,
-    async (id, previousId) => {
-        if (!id || id === previousId) {
-            return;
-        }
+	() => state.round?.id,
+	async (id, previousId) => {
+		if (!id || id === previousId) {
+			return;
+		}
 
-        await scrollToTop();
-    },
+		await scrollToTop();
+	},
 );
 
 watch(
-    () => state.room.state,
-    async (roomState, previousRoomState) => {
-        if (roomState !== 'reveal' || roomState === previousRoomState) {
-            return;
-        }
+	() => state.room.state,
+	async (roomState, previousRoomState) => {
+		if (roomState !== "reveal" || roomState === previousRoomState) {
+			return;
+		}
 
-        await scrollToTop();
-    },
+		await scrollToTop();
+	},
 );
 
 // Play sound when AMEN is resolved
 watch(
-    () => state.round?.amen?.resolved,
-    (resolved, wasResolved) => {
-        if (resolved && !wasResolved) {
-            if (state.round?.amen?.correct) {
-                playCorrect();
-            } else {
-                playWrong();
-            }
-        }
-    },
+	() => state.round?.amen?.resolved,
+	(resolved, wasResolved) => {
+		if (resolved && !wasResolved) {
+			if (state.round?.amen?.correct) {
+				playCorrect();
+			} else {
+				playWrong();
+			}
+		}
+	},
 );
 
 onBeforeUnmount(() => {
-    cleanup();
+	cleanup();
 
-    pauseCountdownTimer();
+	pauseCountdownTimer();
 
-    if (window.Echo) {
-        window.Echo.leave(`room.${code.value}`);
-    }
+	if (window.Echo) {
+		window.Echo.leave(`room.${code.value}`);
+	}
 });
 </script>
 

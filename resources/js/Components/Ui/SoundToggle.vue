@@ -1,5 +1,5 @@
 <script setup>
-import { useSoundSettings } from '../../composables/useSoundSettings';
+import { useSoundSettings } from "../../Composables/useSoundSettings";
 
 const { isSoundEnabled, toggleSound } = useSoundSettings();
 </script>

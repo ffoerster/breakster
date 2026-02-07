@@ -1,52 +1,52 @@
 <script setup>
-import { inject } from 'vue';
-import { useHaptics } from '../../../composables/useHaptics';
+import { inject } from "vue";
+import { useHaptics } from "../../../Composables/useHaptics";
 
-const gameSounds = inject('gameSounds', null);
+const gameSounds = inject("gameSounds", null);
 const haptics = useHaptics();
 
 const props = defineProps({
-    variant: {
-        type: String,
-        default: 'full',
-        validator: (value) => ['full', 'compact'].includes(value),
-    },
-    canClaim: {
-        type: Boolean,
-        required: true,
-    },
-    isClaiming: {
-        type: Boolean,
-        required: true,
-    },
-    error: {
-        type: String,
-        default: '',
-    },
-    claimAmen: {
-        type: Function,
-        required: true,
-    },
+	variant: {
+		type: String,
+		default: "full",
+		validator: (value) => ["full", "compact"].includes(value),
+	},
+	canClaim: {
+		type: Boolean,
+		required: true,
+	},
+	isClaiming: {
+		type: Boolean,
+		required: true,
+	},
+	error: {
+		type: String,
+		default: "",
+	},
+	claimAmen: {
+		type: Function,
+		required: true,
+	},
 });
 
 const buttonClass = () => {
-    if (props.variant === 'compact') {
-        return 'btn-interactive w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200';
-    }
+	if (props.variant === "compact") {
+		return "btn-interactive w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200";
+	}
 
-    return 'btn-interactive relative px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-2xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200';
+	return "btn-interactive relative px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-2xl tracking-wider shadow-lg shadow-orange-500/30 disabled:shadow-none transition-all duration-200";
 };
 
 const handleClick = async () => {
-    if (!props.canClaim || props.isClaiming) {
-        return;
-    }
+	if (!props.canClaim || props.isClaiming) {
+		return;
+	}
 
-    // Play amen sound and haptic immediately (optimistic)
-    gameSounds?.playAmen();
-    haptics.heavy();
+	// Play amen sound and haptic immediately (optimistic)
+	gameSounds?.playAmen();
+	haptics.heavy();
 
-    await props.claimAmen();
+	await props.claimAmen();
 };
 </script>
 

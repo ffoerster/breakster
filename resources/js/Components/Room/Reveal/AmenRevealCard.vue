@@ -1,39 +1,39 @@
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue';
-import { usePreferredReducedMotion } from '@vueuse/core';
-import { useHaptics } from '../../../composables/useHaptics';
+import { usePreferredReducedMotion } from "@vueuse/core";
+import { computed, inject, onMounted, ref } from "vue";
+import { useHaptics } from "../../../Composables/useHaptics";
 
 const haptics = useHaptics();
 
 const props = defineProps({
-    claimantName: {
-        type: String,
-        required: true,
-    },
-    guess: {
-        type: Object,
-        default: null,
-    },
-    actual: {
-        type: Object,
-        default: null,
-    },
-    correct: {
-        type: Boolean,
-        default: null,
-    },
-    awardedPoints: {
-        type: Number,
-        default: null,
-    },
-    votes: {
-        type: Object,
-        required: true,
-    },
-    delay: {
-        type: Number,
-        default: 0,
-    },
+	claimantName: {
+		type: String,
+		required: true,
+	},
+	guess: {
+		type: Object,
+		default: null,
+	},
+	actual: {
+		type: Object,
+		default: null,
+	},
+	correct: {
+		type: Boolean,
+		default: null,
+	},
+	awardedPoints: {
+		type: Number,
+		default: null,
+	},
+	votes: {
+		type: Object,
+		required: true,
+	},
+	delay: {
+		type: Number,
+		default: 0,
+	},
 });
 
 const prefersReducedMotion = usePreferredReducedMotion();
@@ -41,55 +41,55 @@ const cardRef = ref(null);
 const showResult = ref(false);
 let confettiLib = null;
 
-const gameSounds = inject('gameSounds', null);
+const gameSounds = inject("gameSounds", null);
 
 const loadConfetti = async () => {
-    if (confettiLib) {
-        return confettiLib;
-    }
+	if (confettiLib) {
+		return confettiLib;
+	}
 
-    const mod = await import('canvas-confetti');
-    confettiLib = mod.default;
-    return confettiLib;
+	const mod = await import("canvas-confetti");
+	confettiLib = mod.default;
+	return confettiLib;
 };
 
 const fireGoldConfetti = async () => {
-    if (prefersReducedMotion.value === 'reduce') {
-        return;
-    }
+	if (prefersReducedMotion.value === "reduce") {
+		return;
+	}
 
-    const confetti = await loadConfetti();
-    const rect = cardRef.value?.getBoundingClientRect();
+	const confetti = await loadConfetti();
+	const rect = cardRef.value?.getBoundingClientRect();
 
-    if (!rect) {
-        return;
-    }
+	if (!rect) {
+		return;
+	}
 
-    const x = (rect.left + rect.width / 2) / window.innerWidth;
-    const y = (rect.top + rect.height / 2) / window.innerHeight;
+	const x = (rect.left + rect.width / 2) / window.innerWidth;
+	const y = (rect.top + rect.height / 2) / window.innerHeight;
 
-    confetti({
-        particleCount: 80,
-        spread: 100,
-        origin: { x, y },
-        colors: ['#FFD700', '#FFA500', '#FFEC8B', '#DAA520'],
-        scalar: 1.2,
-    });
+	confetti({
+		particleCount: 80,
+		spread: 100,
+		origin: { x, y },
+		colors: ["#FFD700", "#FFA500", "#FFEC8B", "#DAA520"],
+		scalar: 1.2,
+	});
 };
 
 onMounted(() => {
-    setTimeout(() => {
-        showResult.value = true;
+	setTimeout(() => {
+		showResult.value = true;
 
-        if (props.correct) {
-            fireGoldConfetti();
-            gameSounds?.playCorrect();
-            haptics.heavy();
-        } else {
-            gameSounds?.playWrong();
-            haptics.error();
-        }
-    }, props.delay);
+		if (props.correct) {
+			fireGoldConfetti();
+			gameSounds?.playCorrect();
+			haptics.heavy();
+		} else {
+			gameSounds?.playWrong();
+			haptics.error();
+		}
+	}, props.delay);
 });
 </script>
 

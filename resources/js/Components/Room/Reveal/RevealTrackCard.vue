@@ -1,22 +1,22 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { usePreferredReducedMotion } from '@vueuse/core';
-import { useHaptics } from '../../../composables/useHaptics';
+import { usePreferredReducedMotion } from "@vueuse/core";
+import { computed, onMounted, ref } from "vue";
+import { useHaptics } from "../../../Composables/useHaptics";
 
 const haptics = useHaptics();
 
 const props = defineProps({
-    track: {
-        type: Object,
-        required: true,
-    },
-    delay: {
-        type: Number,
-        default: 0,
-    },
+	track: {
+		type: Object,
+		required: true,
+	},
+	delay: {
+		type: Number,
+		default: 0,
+	},
 });
 
-const emit = defineEmits(['flipComplete']);
+const emit = defineEmits(["flipComplete"]);
 
 const prefersReducedMotion = usePreferredReducedMotion();
 const isFlipped = ref(false);
@@ -24,17 +24,17 @@ const isFlipped = ref(false);
 const actualYear = computed(() => props.track?.year);
 
 onMounted(() => {
-    if (prefersReducedMotion.value === 'reduce') {
-        isFlipped.value = true;
-        emit('flipComplete');
-        return;
-    }
+	if (prefersReducedMotion.value === "reduce") {
+		isFlipped.value = true;
+		emit("flipComplete");
+		return;
+	}
 
-    setTimeout(() => {
-        isFlipped.value = true;
-        haptics.heavy();
-        setTimeout(() => emit('flipComplete'), 600);
-    }, props.delay);
+	setTimeout(() => {
+		isFlipped.value = true;
+		haptics.heavy();
+		setTimeout(() => emit("flipComplete"), 600);
+	}, props.delay);
 });
 </script>
 

@@ -1,5 +1,5 @@
 <script setup>
-import { useHaptics } from '../../composables/useHaptics';
+import { useHaptics } from "../../Composables/useHaptics";
 
 const { isSupported, isEnabled, toggleHaptics } = useHaptics();
 </script>

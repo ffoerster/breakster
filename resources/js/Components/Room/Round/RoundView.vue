@@ -1,133 +1,140 @@
 <script setup>
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useThrottleFn, usePreferredReducedMotion } from '@vueuse/core';
-
-import BottomActionBar from '../../Ui/BottomActionBar.vue';
-import BottomSheet from '../../Ui/BottomSheet.vue';
-import CountdownRing from '../../Ui/CountdownRing.vue';
-import GlassCard from '../../Ui/GlassCard.vue';
-import PlayersList from '../PlayersList.vue';
-import AmenButton from './AmenButton.vue';
-import AmenGuessForm from './AmenGuessForm.vue';
-import AmenResult from './AmenResult.vue';
-import RoundListenPanel from './RoundListenPanel.vue';
-import { useHaptics } from '../../../composables/useHaptics';
+import { usePreferredReducedMotion, useThrottleFn } from "@vueuse/core";
+import {
+	computed,
+	inject,
+	nextTick,
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	watch,
+} from "vue";
+import { useHaptics } from "../../../Composables/useHaptics";
+import BottomActionBar from "../../Ui/BottomActionBar.vue";
+import BottomSheet from "../../Ui/BottomSheet.vue";
+import CountdownRing from "../../Ui/CountdownRing.vue";
+import GlassCard from "../../Ui/GlassCard.vue";
+import PlayersList from "../PlayersList.vue";
+import AmenButton from "./AmenButton.vue";
+import AmenGuessForm from "./AmenGuessForm.vue";
+import AmenResult from "./AmenResult.vue";
+import RoundListenPanel from "./RoundListenPanel.vue";
 
 let sortableLib = null;
 let sortableInitRunId = 0;
 
 const getSortable = async () => {
-    if (sortableLib) {
-        return sortableLib;
-    }
+	if (sortableLib) {
+		return sortableLib;
+	}
 
-    const mod = await import('sortablejs');
-    sortableLib = mod.default;
+	const mod = await import("sortablejs");
+	sortableLib = mod.default;
 
-    return sortableLib;
+	return sortableLib;
 };
 
 const props = defineProps({
-    state: {
-        type: Object,
-        required: true,
-    },
-    isHost: {
-        type: Boolean,
-        required: true,
-    },
-    playUrl: {
-        type: String,
-        required: true,
-    },
-    copyPlayUrl: {
-        type: Function,
-        required: true,
-    },
-    copiedPlayUrl: {
-        type: Boolean,
-        default: false,
-    },
-    remainingSeconds: {
-        type: Number,
-        required: true,
-    },
-    isPlacementLocked: {
-        type: Boolean,
-        required: true,
-    },
-    placementTimeRemaining: {
-        type: Number,
-        required: true,
-    },
-    isPlacementTimeExpired: {
-        type: Boolean,
-        required: true,
-    },
-    isPlacing: {
-        type: Boolean,
-        required: true,
-    },
-    placeError: {
-        type: String,
-        required: true,
-    },
-    place: {
-        type: Function,
-        required: true,
-    },
-    revealRound: {
-        type: Function,
-        required: true,
-    },
-    openDetails: {
-        type: Function,
-        required: true,
-    },
-    isSpotifyProvider: {
-        type: Boolean,
-        required: true,
-    },
-    spotifyPlayError: {
-        type: String,
-        required: true,
-    },
-    isPlayingSpotify: {
-        type: Boolean,
-        required: true,
-    },
-    playSpotifyTrack: {
-        type: Function,
-        required: true,
-    },
-    // AMEN props
-    claimAmen: {
-        type: Function,
-        required: true,
-    },
-    isClaimingAmen: {
-        type: Boolean,
-        required: true,
-    },
-    amenClaimError: {
-        type: String,
-        default: '',
-    },
-    submitAmenGuess: {
-        type: Function,
-        required: true,
-    },
-    isSubmittingAmenGuess: {
-        type: Boolean,
-        required: true,
-    },
-    amenGuessError: {
-        type: String,
-        default: '',
-    },
+	state: {
+		type: Object,
+		required: true,
+	},
+	isHost: {
+		type: Boolean,
+		required: true,
+	},
+	playUrl: {
+		type: String,
+		required: true,
+	},
+	copyPlayUrl: {
+		type: Function,
+		required: true,
+	},
+	copiedPlayUrl: {
+		type: Boolean,
+		default: false,
+	},
+	remainingSeconds: {
+		type: Number,
+		required: true,
+	},
+	isPlacementLocked: {
+		type: Boolean,
+		required: true,
+	},
+	placementTimeRemaining: {
+		type: Number,
+		required: true,
+	},
+	isPlacementTimeExpired: {
+		type: Boolean,
+		required: true,
+	},
+	isPlacing: {
+		type: Boolean,
+		required: true,
+	},
+	placeError: {
+		type: String,
+		required: true,
+	},
+	place: {
+		type: Function,
+		required: true,
+	},
+	revealRound: {
+		type: Function,
+		required: true,
+	},
+	openDetails: {
+		type: Function,
+		required: true,
+	},
+	isSpotifyProvider: {
+		type: Boolean,
+		required: true,
+	},
+	spotifyPlayError: {
+		type: String,
+		required: true,
+	},
+	isPlayingSpotify: {
+		type: Boolean,
+		required: true,
+	},
+	playSpotifyTrack: {
+		type: Function,
+		required: true,
+	},
+	// AMEN props
+	claimAmen: {
+		type: Function,
+		required: true,
+	},
+	isClaimingAmen: {
+		type: Boolean,
+		required: true,
+	},
+	amenClaimError: {
+		type: String,
+		default: "",
+	},
+	submitAmenGuess: {
+		type: Function,
+		required: true,
+	},
+	isSubmittingAmenGuess: {
+		type: Boolean,
+		required: true,
+	},
+	amenGuessError: {
+		type: String,
+		default: "",
+	},
 });
 
-const gameSounds = inject('gameSounds', null);
+const gameSounds = inject("gameSounds", null);
 const haptics = useHaptics();
 const prefersReducedMotion = usePreferredReducedMotion();
 
@@ -136,22 +143,22 @@ const lastDroppedIndex = ref(null);
 const dropAnimationType = ref(null);
 let dropAnimationTimeout = null;
 
-const triggerDropAnimation = (index, type = 'success') => {
-    if (prefersReducedMotion.value === 'reduce') {
-        return;
-    }
+const triggerDropAnimation = (index, type = "success") => {
+	if (prefersReducedMotion.value === "reduce") {
+		return;
+	}
 
-    if (dropAnimationTimeout) {
-        clearTimeout(dropAnimationTimeout);
-    }
+	if (dropAnimationTimeout) {
+		clearTimeout(dropAnimationTimeout);
+	}
 
-    lastDroppedIndex.value = index;
-    dropAnimationType.value = type;
+	lastDroppedIndex.value = index;
+	dropAnimationType.value = type;
 
-    dropAnimationTimeout = setTimeout(() => {
-        dropAnimationType.value = null;
-        lastDroppedIndex.value = null;
-    }, 400);
+	dropAnimationTimeout = setTimeout(() => {
+		dropAnimationType.value = null;
+		lastDroppedIndex.value = null;
+	}, 400);
 };
 
 // Drag direction tracking for rotation effect
@@ -160,45 +167,45 @@ let cleanupMouseMove = null;
 let cleanupTouchMove = null;
 
 const trackDragDirection = useThrottleFn((e) => {
-    const currentX = e.clientX ?? e.touches?.[0]?.clientX ?? lastDragX;
-    const delta = currentX - lastDragX;
-    const rotation = Math.max(-3, Math.min(3, delta * 0.1));
+	const currentX = e.clientX ?? e.touches?.[0]?.clientX ?? lastDragX;
+	const delta = currentX - lastDragX;
+	const rotation = Math.max(-3, Math.min(3, delta * 0.1));
 
-    const dragged = document.querySelector('.sortable-drag');
-    if (dragged) {
-        dragged.style.setProperty('--drag-rotation', `${rotation}deg`);
-    }
+	const dragged = document.querySelector(".sortable-drag");
+	if (dragged) {
+		dragged.style.setProperty("--drag-rotation", `${rotation}deg`);
+	}
 
-    lastDragX = currentX;
+	lastDragX = currentX;
 }, 16);
 
 const startDragTracking = (e) => {
-    lastDragX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+	lastDragX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
 
-    const onMove = (evt) => trackDragDirection(evt);
+	const onMove = (evt) => trackDragDirection(evt);
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('touchmove', onMove);
+	document.addEventListener("mousemove", onMove);
+	document.addEventListener("touchmove", onMove);
 
-    cleanupMouseMove = () => document.removeEventListener('mousemove', onMove);
-    cleanupTouchMove = () => document.removeEventListener('touchmove', onMove);
+	cleanupMouseMove = () => document.removeEventListener("mousemove", onMove);
+	cleanupTouchMove = () => document.removeEventListener("touchmove", onMove);
 };
 
 const stopDragTracking = () => {
-    cleanupMouseMove?.();
-    cleanupTouchMove?.();
-    cleanupMouseMove = null;
-    cleanupTouchMove = null;
+	cleanupMouseMove?.();
+	cleanupTouchMove?.();
+	cleanupMouseMove = null;
+	cleanupTouchMove = null;
 };
 
 const isListenOpen = ref(false);
 
 const openListen = () => {
-    isListenOpen.value = true;
+	isListenOpen.value = true;
 };
 
 const closeListen = () => {
-    isListenOpen.value = false;
+	isListenOpen.value = false;
 };
 
 const mysterySourceEl = ref(null);
@@ -208,310 +215,312 @@ let placementSortable = null;
 
 const optimisticPlaced = ref(false);
 
-const hasGuessInTimeline = computed(() => Boolean(props.state.me?.has_placed) || optimisticPlaced.value);
+const hasGuessInTimeline = computed(
+	() => Boolean(props.state.me?.has_placed) || optimisticPlaced.value,
+);
 
 const queuedInsertedAfterTrackId = ref(undefined);
 
 const requestPlace = async (insertedAfterTrackId) => {
-    if (props.isPlacementLocked) {
-        return;
-    }
+	if (props.isPlacementLocked) {
+		return;
+	}
 
-    if (props.isPlacing) {
-        queuedInsertedAfterTrackId.value = insertedAfterTrackId;
-        return;
-    }
+	if (props.isPlacing) {
+		queuedInsertedAfterTrackId.value = insertedAfterTrackId;
+		return;
+	}
 
-    await props.place(insertedAfterTrackId);
+	await props.place(insertedAfterTrackId);
 };
 
 watch(
-    () => props.isPlacing,
-    (placing) => {
-        if (placing) {
-            return;
-        }
+	() => props.isPlacing,
+	(placing) => {
+		if (placing) {
+			return;
+		}
 
-        if (queuedInsertedAfterTrackId.value === undefined) {
-            return;
-        }
+		if (queuedInsertedAfterTrackId.value === undefined) {
+			return;
+		}
 
-        const next = queuedInsertedAfterTrackId.value;
-        queuedInsertedAfterTrackId.value = undefined;
-        requestPlace(next);
-    },
+		const next = queuedInsertedAfterTrackId.value;
+		queuedInsertedAfterTrackId.value = undefined;
+		requestPlace(next);
+	},
 );
 
 watch(
-    () => props.state.round?.id,
-    () => {
-        queuedInsertedAfterTrackId.value = undefined;
-        optimisticPlaced.value = false;
-    },
+	() => props.state.round?.id,
+	() => {
+		queuedInsertedAfterTrackId.value = undefined;
+		optimisticPlaced.value = false;
+	},
 );
 
 watch(
-    () => props.placeError,
-    (error) => {
-        if (!error) {
-            return;
-        }
+	() => props.placeError,
+	(error) => {
+		if (!error) {
+			return;
+		}
 
-        if (props.state.me?.has_placed) {
-            return;
-        }
+		if (props.state.me?.has_placed) {
+			return;
+		}
 
-        optimisticPlaced.value = false;
-    },
+		optimisticPlaced.value = false;
+	},
 );
 
 const shouldEnablePlacementDnd = computed(() => {
-    return Boolean(!props.isPlacementLocked);
+	return Boolean(!props.isPlacementLocked);
 });
 
 const shouldEnableMysterySourceDnd = computed(() => {
-    return Boolean(!props.isPlacementLocked && !hasGuessInTimeline.value);
+	return Boolean(!props.isPlacementLocked && !hasGuessInTimeline.value);
 });
 
 const placementIndex = computed(() => {
-    if (!props.state.me?.has_placed) {
-        return null;
-    }
+	if (!props.state.me?.has_placed) {
+		return null;
+	}
 
-    const afterId = props.state.me?.placement_inserted_after_track_id ?? null;
-    const timeline = props.state.timeline ?? [];
+	const afterId = props.state.me?.placement_inserted_after_track_id ?? null;
+	const timeline = props.state.timeline ?? [];
 
-    if (afterId === null) {
-        return 0;
-    }
+	if (afterId === null) {
+		return 0;
+	}
 
-    const afterIndex = timeline.findIndex((t) => t.track_id === afterId);
-    if (afterIndex === -1) {
-        return 0;
-    }
+	const afterIndex = timeline.findIndex((t) => t.track_id === afterId);
+	if (afterIndex === -1) {
+		return 0;
+	}
 
-    return afterIndex + 1;
+	return afterIndex + 1;
 });
 
 const timelineRenderItems = computed(() => {
-    const timeline = props.state.timeline ?? [];
+	const timeline = props.state.timeline ?? [];
 
-    const items = timeline.map((t) => ({
-        kind: 'track',
-        ...t,
-    }));
+	const items = timeline.map((t) => ({
+		kind: "track",
+		...t,
+	}));
 
-    if (placementIndex.value === null) {
-        return items;
-    }
+	if (placementIndex.value === null) {
+		return items;
+	}
 
-    items.splice(placementIndex.value, 0, {
-        kind: 'mystery',
-        id: 'mystery',
-    });
+	items.splice(placementIndex.value, 0, {
+		kind: "mystery",
+		id: "mystery",
+	});
 
-    return items;
+	return items;
 });
 
 const destroyPlacementDnD = () => {
-    if (mysterySortable) {
-        mysterySortable.destroy();
-        mysterySortable = null;
-    }
+	if (mysterySortable) {
+		mysterySortable.destroy();
+		mysterySortable = null;
+	}
 
-    if (placementSortable) {
-        placementSortable.destroy();
-        placementSortable = null;
-    }
+	if (placementSortable) {
+		placementSortable.destroy();
+		placementSortable = null;
+	}
 };
 
 const initPlacementDnD = async () => {
-    if (!placementListEl.value) {
-        return;
-    }
+	if (!placementListEl.value) {
+		return;
+	}
 
-    const runId = ++sortableInitRunId;
+	const runId = ++sortableInitRunId;
 
-    destroyPlacementDnD();
+	destroyPlacementDnD();
 
-    const Sortable = await getSortable();
-    if (runId !== sortableInitRunId) {
-        return;
-    }
+	const Sortable = await getSortable();
+	if (runId !== sortableInitRunId) {
+		return;
+	}
 
-    if (shouldEnableMysterySourceDnd.value && mysterySourceEl.value) {
-        mysterySortable = Sortable.create(mysterySourceEl.value, {
-            group: {
-                name: 'placement',
-                pull: 'clone',
-                put: false,
-            },
-            sort: false,
-            animation: 200,
-            easing: 'cubic-bezier(0.2, 0, 0, 1)',
-            ghostClass: 'sortable-ghost',
-            dragClass: 'sortable-drag',
-            chosenClass: 'sortable-chosen',
-            delay: 100,
-            delayOnTouchOnly: true,
-            touchStartThreshold: 5,
-            fallbackOnBody: true,
-            onChoose: (evt) => {
-                evt.item.classList.add('drag-chosen-active');
-                haptics.light();
-            },
-            onStart: (evt) => {
-                startDragTracking(evt.originalEvent);
-            },
-            onUnchoose: (evt) => {
-                evt.item.classList.remove('drag-chosen-active');
-                stopDragTracking();
-            },
-        });
-    }
+	if (shouldEnableMysterySourceDnd.value && mysterySourceEl.value) {
+		mysterySortable = Sortable.create(mysterySourceEl.value, {
+			group: {
+				name: "placement",
+				pull: "clone",
+				put: false,
+			},
+			sort: false,
+			animation: 200,
+			easing: "cubic-bezier(0.2, 0, 0, 1)",
+			ghostClass: "sortable-ghost",
+			dragClass: "sortable-drag",
+			chosenClass: "sortable-chosen",
+			delay: 100,
+			delayOnTouchOnly: true,
+			touchStartThreshold: 5,
+			fallbackOnBody: true,
+			onChoose: (evt) => {
+				evt.item.classList.add("drag-chosen-active");
+				haptics.light();
+			},
+			onStart: (evt) => {
+				startDragTracking(evt.originalEvent);
+			},
+			onUnchoose: (evt) => {
+				evt.item.classList.remove("drag-chosen-active");
+				stopDragTracking();
+			},
+		});
+	}
 
-    placementSortable = Sortable.create(placementListEl.value, {
-        group: {
-            name: 'placement',
-            pull: false,
-            put: true,
-        },
-        sort: true,
-        draggable: '.timeline-item',
-        filter: '.timeline-track',
-        preventOnFilter: false,
-        animation: 200,
-        easing: 'cubic-bezier(0.2, 0, 0, 1)',
-        ghostClass: 'sortable-ghost',
-        dragClass: 'sortable-drag',
-        chosenClass: 'sortable-chosen',
-        fallbackOnBody: true,
-        swapThreshold: 0.4,
-        invertSwap: true,
-        invertedSwapThreshold: 0.5,
-        onChoose: (evt) => {
-            evt.item.classList.add('drag-chosen-active');
-            haptics.light();
-        },
-        onStart: (evt) => {
-            startDragTracking(evt.originalEvent);
-        },
-        onUnchoose: (evt) => {
-            evt.item.classList.remove('drag-chosen-active');
-            stopDragTracking();
-        },
-        onAdd: async (evt) => {
-            if (props.isPlacementLocked) {
-                evt.item.remove();
-                return;
-            }
+	placementSortable = Sortable.create(placementListEl.value, {
+		group: {
+			name: "placement",
+			pull: false,
+			put: true,
+		},
+		sort: true,
+		draggable: ".timeline-item",
+		filter: ".timeline-track",
+		preventOnFilter: false,
+		animation: 200,
+		easing: "cubic-bezier(0.2, 0, 0, 1)",
+		ghostClass: "sortable-ghost",
+		dragClass: "sortable-drag",
+		chosenClass: "sortable-chosen",
+		fallbackOnBody: true,
+		swapThreshold: 0.4,
+		invertSwap: true,
+		invertedSwapThreshold: 0.5,
+		onChoose: (evt) => {
+			evt.item.classList.add("drag-chosen-active");
+			haptics.light();
+		},
+		onStart: (evt) => {
+			startDragTracking(evt.originalEvent);
+		},
+		onUnchoose: (evt) => {
+			evt.item.classList.remove("drag-chosen-active");
+			stopDragTracking();
+		},
+		onAdd: async (evt) => {
+			if (props.isPlacementLocked) {
+				evt.item.remove();
+				return;
+			}
 
-            // Play sound and haptic feedback
-            gameSounds?.playClick();
-            haptics.medium();
+			// Play sound and haptic feedback
+			gameSounds?.playClick();
+			haptics.medium();
 
-            optimisticPlaced.value = true;
+			optimisticPlaced.value = true;
 
-            const newIndex = evt.newIndex;
-            const timeline = props.state.timeline ?? [];
+			const newIndex = evt.newIndex;
+			const timeline = props.state.timeline ?? [];
 
-            let insertedAfterTrackId = null;
-            if (typeof newIndex === 'number' && newIndex > 0) {
-                insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
-            }
+			let insertedAfterTrackId = null;
+			if (typeof newIndex === "number" && newIndex > 0) {
+				insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
+			}
 
-            // Trigger drop success animation
-            triggerDropAnimation(newIndex, 'success');
+			// Trigger drop success animation
+			triggerDropAnimation(newIndex, "success");
 
-            evt.item.remove();
+			evt.item.remove();
 
-            await requestPlace(insertedAfterTrackId);
-        },
-        onEnd: async (evt) => {
-            if (props.isPlacementLocked) {
-                return;
-            }
+			await requestPlace(insertedAfterTrackId);
+		},
+		onEnd: async (evt) => {
+			if (props.isPlacementLocked) {
+				return;
+			}
 
-            if (!evt.item?.classList?.contains('timeline-guess')) {
-                return;
-            }
+			if (!evt.item?.classList?.contains("timeline-guess")) {
+				return;
+			}
 
-            // Play sound and haptic feedback
-            gameSounds?.playClick();
-            haptics.medium();
+			// Play sound and haptic feedback
+			gameSounds?.playClick();
+			haptics.medium();
 
-            const newIndex = evt.newIndex;
-            const timeline = props.state.timeline ?? [];
+			const newIndex = evt.newIndex;
+			const timeline = props.state.timeline ?? [];
 
-            let insertedAfterTrackId = null;
-            if (typeof newIndex === 'number' && newIndex > 0) {
-                insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
-            }
+			let insertedAfterTrackId = null;
+			if (typeof newIndex === "number" && newIndex > 0) {
+				insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
+			}
 
-            // Trigger drop success animation
-            triggerDropAnimation(newIndex, 'success');
+			// Trigger drop success animation
+			triggerDropAnimation(newIndex, "success");
 
-            await requestPlace(insertedAfterTrackId);
-        },
-    });
-}; 
+			await requestPlace(insertedAfterTrackId);
+		},
+	});
+};
 
 watch(
-    () => shouldEnablePlacementDnd.value,
-    async (enabled) => {
-        await nextTick();
+	() => shouldEnablePlacementDnd.value,
+	async (enabled) => {
+		await nextTick();
 
-        if (enabled) {
-            await initPlacementDnD();
-        } else {
-            destroyPlacementDnD();
-        }
-    },
-    { immediate: true },
+		if (enabled) {
+			await initPlacementDnD();
+		} else {
+			destroyPlacementDnD();
+		}
+	},
+	{ immediate: true },
 );
 
 watch(
-    () => shouldEnableMysterySourceDnd.value,
-    async () => {
-        await nextTick();
+	() => shouldEnableMysterySourceDnd.value,
+	async () => {
+		await nextTick();
 
-        if (shouldEnablePlacementDnd.value) {
-            await initPlacementDnD();
-        }
-    },
+		if (shouldEnablePlacementDnd.value) {
+			await initPlacementDnD();
+		}
+	},
 );
 
 onMounted(async () => {
-    await nextTick();
+	await nextTick();
 
-    if (shouldEnablePlacementDnd.value) {
-        await initPlacementDnD();
-    }
+	if (shouldEnablePlacementDnd.value) {
+		await initPlacementDnD();
+	}
 });
 
 onBeforeUnmount(() => {
-    destroyPlacementDnD();
-    stopDragTracking();
-    sortableInitRunId += 1;
+	destroyPlacementDnD();
+	stopDragTracking();
+	sortableInitRunId += 1;
 
-    if (dropAnimationTimeout) {
-        clearTimeout(dropAnimationTimeout);
-    }
+	if (dropAnimationTimeout) {
+		clearTimeout(dropAnimationTimeout);
+	}
 
-    if (longPressTimeout) {
-        clearTimeout(longPressTimeout);
-    }
+	if (longPressTimeout) {
+		clearTimeout(longPressTimeout);
+	}
 });
 
 const placementsProgress = computed(() => {
-    const total = props.state.round?.players_count ?? 0;
-    if (total <= 0) {
-        return 0;
-    }
+	const total = props.state.round?.players_count ?? 0;
+	if (total <= 0) {
+		return 0;
+	}
 
-    const placed = props.state.round?.placements_count ?? 0;
+	const placed = props.state.round?.placements_count ?? 0;
 
-    return Math.min(100, Math.max(0, Math.round((placed / total) * 100)));
+	return Math.min(100, Math.max(0, Math.round((placed / total) * 100)));
 });
 
 // Long-press gesture for opening details (350ms threshold, longer than SortableJS 100ms delay)
@@ -519,32 +528,32 @@ let longPressTimeout = null;
 const isLongPressing = ref(false);
 
 const handleTimelinePointerDown = (e) => {
-    // Only handle touch events (desktop uses click)
-    if (e.pointerType === 'mouse') {
-        return;
-    }
+	// Only handle touch events (desktop uses click)
+	if (e.pointerType === "mouse") {
+		return;
+	}
 
-    longPressTimeout = setTimeout(() => {
-        isLongPressing.value = true;
-        haptics.medium();
-        props.openDetails();
-    }, 350);
+	longPressTimeout = setTimeout(() => {
+		isLongPressing.value = true;
+		haptics.medium();
+		props.openDetails();
+	}, 350);
 };
 
 const handleTimelinePointerUp = () => {
-    if (longPressTimeout) {
-        clearTimeout(longPressTimeout);
-        longPressTimeout = null;
-    }
-    isLongPressing.value = false;
+	if (longPressTimeout) {
+		clearTimeout(longPressTimeout);
+		longPressTimeout = null;
+	}
+	isLongPressing.value = false;
 };
 
 const handleTimelinePointerCancel = () => {
-    if (longPressTimeout) {
-        clearTimeout(longPressTimeout);
-        longPressTimeout = null;
-    }
-    isLongPressing.value = false;
+	if (longPressTimeout) {
+		clearTimeout(longPressTimeout);
+		longPressTimeout = null;
+	}
+	isLongPressing.value = false;
 };
 </script>
 
