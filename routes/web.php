@@ -17,7 +17,7 @@ use Inertia\Inertia;
 Route::get('/manifest.webmanifest', function () {
     $path = public_path('build/manifest.webmanifest');
 
-    if (! is_file($path)) {
+    if (!is_file($path)) {
         abort(404);
     }
 
@@ -30,12 +30,6 @@ Route::get('/manifest.webmanifest', function () {
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
-
-Route::get('/__inertia', function () {
-    return Inertia::render('Test', [
-        'message' => 'If you can see this page, Phase 1 is wired up correctly.',
-    ]);
-})->name('inertia.test');
 
 Route::get('/play/{roomCode}/{roundId}', PlayRedirectController::class)
     ->where('roomCode', '[A-Z0-9]{6,8}')
@@ -58,7 +52,9 @@ Route::prefix('/room/{code}')
         Route::get('/summary', RoomSummaryController::class)->name('room.summary');
 
         Route::post('/provider', [RoomActionController::class, 'setPlaybackProvider'])->name('room.provider');
-        Route::post('/placement-timer', [RoomActionController::class, 'setPlacementTimer'])->name('room.placement-timer');
+        Route::post('/placement-timer', [RoomActionController::class, 'setPlacementTimer'])->name(
+            'room.placement-timer',
+        );
         Route::post('/start', [RoomActionController::class, 'start'])->name('room.start');
         Route::post('/place', [RoomActionController::class, 'place'])->name('room.place');
         Route::post('/reveal', [RoomActionController::class, 'reveal'])->name('room.reveal');
