@@ -31,8 +31,8 @@ defineProps({
                 selectedProviderId === provider.id
                     ? 'border-accent-400/70 bg-accent-500/15 shadow-lg shadow-black/20'
                     : isHost
-                        ? 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8'
-                        : 'border-white/10 bg-white/4 opacity-60 cursor-not-allowed'
+                        ? 'border-accent-500/15 bg-white/5 hover:border-accent-500/30 hover:bg-white/8'
+                        : 'border-accent-500/10 bg-white/4 opacity-60 cursor-not-allowed'
             "
             @click="onSelect(provider.id)"
         >

@@ -99,16 +99,16 @@ onMounted(() => {
         class="relative overflow-hidden rounded-xl border-2 transition-all duration-500"
         :class="[
             showResult && correct
-                ? 'bg-gradient-to-br from-amber-500/30 to-yellow-600/30 border-yellow-500 animate-pulse-glow-gold'
+                ? 'bg-gradient-to-br from-accent-500/30 to-accent-600/30 border-accent-500 animate-pulse-glow'
             : showResult && !correct
                 ? 'bg-red-500/20 border-red-500'
-                : 'bg-white/5 border-white/10',
+                : 'bg-white/5 border-accent-500/15',
         ]"
     >
         <!-- Spotlight effect overlay for success -->
         <div
             v-if="showResult && correct"
-            class="absolute inset-0 bg-gradient-radial from-yellow-400/20 via-transparent to-transparent pointer-events-none"
+            class="absolute inset-0 bg-gradient-radial from-accent-400/20 via-transparent to-transparent pointer-events-none"
         />
 
         <!-- Wilting overlay for failure -->
@@ -120,7 +120,7 @@ onMounted(() => {
         <div class="relative p-6">
             <h3
                 class="text-xl font-bold mb-3 text-center transition-colors duration-300 font-display"
-                :class="showResult ? (correct ? 'text-yellow-300' : 'text-red-300') : 'text-white/80'"
+                :class="showResult ? (correct ? 'text-accent-200' : 'text-red-300') : 'text-white/80'"
             >
                 <template v-if="showResult">
                     {{ correct ? 'AMEN confirmed!' : 'False AMEN.' }}
@@ -153,7 +153,7 @@ onMounted(() => {
             <div
                 v-if="showResult"
                 class="mt-4 text-center text-2xl font-black font-mono-party"
-                :class="correct ? 'text-yellow-300 animate-scale-pop' : 'text-red-300'"
+                :class="correct ? 'text-accent-200 animate-scale-pop' : 'text-red-300'"
             >
                 {{ awardedPoints > 0 ? `+${awardedPoints}` : awardedPoints }} pts
             </div>

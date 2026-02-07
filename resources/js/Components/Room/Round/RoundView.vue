@@ -587,7 +587,7 @@ const handleTimelinePointerCancel = () => {
                             :class="isPlacementLocked ? 'opacity-50' : ''"
                         >
                             <div
-                                class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-accent-600/30 to-pink-600/30 border-2 border-accent-500/50 rounded-lg"
+                                class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-accent-600/30 to-accent-500/20 border-2 border-accent-500/50 rounded-lg"
                                 :class="isPlacementLocked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'"
                             >
                                 <div class="w-16 h-16 rounded bg-accent-900/60 flex items-center justify-center shrink-0">
@@ -614,7 +614,7 @@ const handleTimelinePointerCancel = () => {
                             class="select-none"
                             :class="isPlacementLocked ? 'opacity-60' : ''"
                         >
-                            <div class="flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5">
+                            <div class="flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-accent-500/15 bg-white/5">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <div class="w-10 h-10 rounded bg-accent-900/50 flex items-center justify-center shrink-0">
                                         <svg class="w-6 h-6 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
@@ -691,9 +691,9 @@ const handleTimelinePointerCancel = () => {
                         <!-- Waiting state for claimant after guess -->
                         <GlassCard
                             v-else-if="state.round.amen.is_claimant && state.round.amen.has_guess"
-                            class="p-6 bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50"
+                            class="p-6 bg-gradient-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40"
                         >
-                            <p class="text-center text-amber-300 font-medium">
+                            <p class="text-center text-accent-200 font-medium">
                                 Waiting for reveal...
                             </p>
                         </GlassCard>
@@ -711,28 +711,6 @@ const handleTimelinePointerCancel = () => {
                     <div class="h-2 rounded bg-white/10 overflow-hidden mb-6">
                         <div class="h-full bg-accent-500/70" :style="{ width: `${placementsProgress}%` }" />
                     </div>
-
-                    <!-- Phase 1: Unlocking countdown -->
-                    <Transition name="feedback-slide">
-                        <div
-                            v-if="remainingSeconds > 0"
-                            class="flex items-center justify-center gap-4 p-4 bg-blue-500/20 border border-blue-500 rounded-lg mb-4"
-                        >
-                            <CountdownRing :remaining="remainingSeconds" :total="3" />
-                            <span class="font-medium">Placement unlocks soon...</span>
-                        </div>
-                    </Transition>
-
-                    <!-- Phase 2: Time remaining countdown -->
-                    <Transition name="feedback-slide">
-                        <div
-                            v-if="remainingSeconds === 0 && placementTimeRemaining > 0 && !isPlacementTimeExpired"
-                            class="flex items-center justify-center gap-4 p-4 bg-amber-500/20 border border-amber-500 rounded-lg mb-4"
-                        >
-                            <CountdownRing :remaining="placementTimeRemaining" :total="12" />
-                            <span class="font-medium text-amber-200">Time left: {{ placementTimeRemaining }}s</span>
-                        </div>
-                    </Transition>
 
                     <!-- Phase 3: Time expired -->
                     <Transition name="feedback-slide">
@@ -768,7 +746,7 @@ const handleTimelinePointerCancel = () => {
                         :class="
                             shouldEnablePlacementDnd
                                 ? 'placement-enabled border-accent-500/40 bg-white/5'
-                                : 'border-white/10 bg-white/3'
+                                : 'border-accent-500/15 bg-white/3'
                         "
                     >
                         <li
@@ -780,7 +758,7 @@ const handleTimelinePointerCancel = () => {
                                     ? shouldEnablePlacementDnd
                                         ? 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/30 cursor-grab active:cursor-grabbing'
                                         : 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/20 cursor-not-allowed opacity-70'
-                                    : 'timeline-item timeline-track bg-white/5 border border-white/10',
+                                    : 'timeline-item timeline-track bg-white/5 border border-accent-500/15',
                                 dropAnimationType === 'success' && lastDroppedIndex === index ? 'animate-drop-success' : '',
                                 dropAnimationType === 'error' && lastDroppedIndex === index ? 'animate-drop-error' : '',
                             ]"

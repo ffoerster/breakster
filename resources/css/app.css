@@ -393,13 +393,13 @@
     animation: shake 400ms ease;
 }
 
-/* Pulse glow for winner */
+/* Pulse glow (cyan) */
 @keyframes pulse-glow {
     0%, 100% {
-        box-shadow: 0 0 0 0 oklch(0.85 0.15 85 / 0.4);
+        box-shadow: 0 0 0 0 oklch(0.72 0.15 200 / 0.4);
     }
     50% {
-        box-shadow: 0 0 20px 8px oklch(0.85 0.15 85 / 0.2);
+        box-shadow: 0 0 20px 8px oklch(0.72 0.15 200 / 0.2);
     }
 }
 

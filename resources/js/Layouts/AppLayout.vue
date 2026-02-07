@@ -9,16 +9,16 @@ const isOnline = useOnline();
 const toastOptions = {
     unstyled: true,
     classes: {
-        toast: 'rounded-2xl border border-white/10 bg-gray-950/90 backdrop-blur shadow-2xl px-4 py-3 text-white',
+        toast: 'rounded-2xl border border-accent-500/25 bg-gray-950/90 backdrop-blur shadow-2xl px-4 py-3 text-white',
         title: 'text-sm font-bold text-white',
         description: 'text-xs text-gray-200/80 mt-1',
         actionButton: 'btn-interactive btn-secondary min-h-[36px] px-3 py-2 rounded-xl text-white font-bold',
         cancelButton: 'btn-interactive btn-secondary min-h-[36px] px-3 py-2 rounded-xl text-white/90 font-bold',
         closeButton: 'btn-interactive btn-secondary rounded-lg text-white/90',
-        success: 'border border-green-500/30',
-        error: 'border border-red-500/30',
-        warning: 'border border-amber-500/30',
-        info: 'border border-blue-500/30',
+        success: 'border-accent-400/40',
+        error: 'border-red-500/40',
+        warning: 'border-amber-500/40',
+        info: 'border-accent-500/40',
     },
 };
 
@@ -41,11 +41,11 @@ defineProps({
 <template>
     <div class="min-h-screen flex flex-col arcade-shell">
         <Toaster
-            position="bottom-center"
+            position="top-center"
             :toast-options="toastOptions"
             :visible-toasts="3"
             :duration="2400"
-            offset="calc(env(safe-area-inset-bottom, 0px) + 88px)"
+            offset="calc(env(safe-area-inset-top, 0px) + 12px)"
         />
 
         <div v-if="!isOnline" class="bg-amber-500/15 border-b border-amber-500/30">

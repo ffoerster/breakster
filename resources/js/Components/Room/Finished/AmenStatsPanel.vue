@@ -17,7 +17,7 @@ defineProps({
         class="p-6"
     >
         <h3 class="text-lg font-bold mb-4 flex items-center gap-2 font-display">
-            <span class="text-yellow-400">AMEN</span>
+            <span class="text-accent-300">AMEN</span>
             Stats
         </h3>
 
@@ -31,7 +31,7 @@ defineProps({
                 :initial="{ x: -20, opacity: 0 }"
                 :enter="{ x: 0, opacity: 1, transition: { delay: 150 + index * 50, type: 'spring', stiffness: 300, damping: 25 } }"
                 class="flex items-center justify-between p-3 rounded-lg"
-                :class="index === 0 && player.net_points > 0 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-white/5 border border-white/10'"
+                :class="index === 0 && player.net_points > 0 ? 'bg-accent-500/10 border border-accent-500/30' : 'bg-white/5 border border-accent-500/15'"
             >
                 <div class="flex items-center gap-3">
                     <div class="font-medium">{{ player.display_name }}</div>

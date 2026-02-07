@@ -215,7 +215,7 @@ onBeforeUnmount(() => {
                         <div class="mx-auto w-full px-4" :class="maxWidthClass">
                             <div
                                 ref="panelEl"
-                                class="rounded-t-3xl border border-white/10 bg-gray-950/90 backdrop-blur shadow-2xl"
+                                class="rounded-t-3xl border border-accent-500/20 bg-gray-950/90 backdrop-blur shadow-2xl"
                                 style="padding-bottom: env(safe-area-inset-bottom, 0px)"
                                 role="dialog"
                                 aria-modal="true"

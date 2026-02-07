@@ -48,8 +48,8 @@ const handleVote = async (vote) => {
 </script>
 
 <template>
-    <div class="p-6 bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50 rounded-xl">
-        <h3 class="text-lg font-bold text-amber-300 mb-2 text-center font-display">
+    <div class="p-6 bg-gradient-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40 rounded-xl">
+        <h3 class="text-lg font-bold text-accent-200 mb-2 text-center font-display">
             {{ claimantName }} hat AMEN gerufen!
         </h3>
 

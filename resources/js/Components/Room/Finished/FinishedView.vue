@@ -132,7 +132,7 @@ onMounted(async () => {
                             ? 'bg-yellow-500/20 border border-yellow-500'
                             : p.is_me
                                 ? 'bg-accent-500/20'
-                                : 'bg-white/5 border border-white/10'
+                                : 'bg-white/5 border border-accent-500/15'
                     "
                 >
                     <div class="flex items-center gap-3">

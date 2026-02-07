@@ -24,7 +24,7 @@ defineProps({
         <div
             v-for="p in players"
             :key="p.id"
-            class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10"
+            class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-accent-500/15"
         >
             <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center font-bold shrink-0 text-white">
@@ -40,7 +40,7 @@ defineProps({
                 <!-- Ready indicator (checkmark) -->
                 <svg
                     v-if="showReadyStatus && p.is_ready && !p.is_host"
-                    class="w-5 h-5 text-blue-400"
+                    class="w-5 h-5 text-accent-400"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                 >
