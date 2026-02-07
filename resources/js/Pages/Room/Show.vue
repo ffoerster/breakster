@@ -287,7 +287,7 @@ onMounted(() => {
         return;
     }
 
-    channel = window.Echo.channel(`room.${code.value}`);
+    channel = window.Echo.private(`room.${code.value}`);
 
     channel.listen('.players.updated', scheduleRefresh);
     channel.listen('.round.started', scheduleRefresh);
@@ -306,6 +306,18 @@ onMounted(() => {
     channel.listen('.player.ready', scheduleRefresh);
     // Placement timeout
     channel.listen('.placement.timeout.resolved', scheduleRefresh);
+
+    channel.listen('.playback.failed', (e) => {
+        if (!isHost.value) {
+            return;
+        }
+
+        if (e?.provider !== 'spotify') {
+            return;
+        }
+
+        spotifyPlayError.value = e?.message || 'Spotify playback failed to start.';
+    });
 
     scheduleRefresh();
 });

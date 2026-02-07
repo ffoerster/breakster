@@ -1,11 +1,5 @@
 # Breakster — TODO
 
-## Production & Security
-
-- [ ] Upgrade broadcast channels from public to private with session-based player authentication (`routes/channels.php`)
-- [ ] Broadcast Spotify playback failure event to UI for user feedback (`app/Domain/Game/GameService.php:319`)
-- [ ] Schedule `PruneRoomsCommand` for automatic cleanup of stale rooms
-
 ## Player Identity
 
 - [ ] Game history — track past games, scores, and placements per player

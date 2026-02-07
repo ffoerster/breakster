@@ -13,6 +13,7 @@ use App\Events\AmenClaimed;
 use App\Events\AmenGuessSubmitted;
 use App\Events\AmenResolved;
 use App\Events\AmenVoteSubmitted;
+use App\Events\PlaybackFailed;
 use App\Events\PlacementSubmitted;
 use App\Events\PlayerReady;
 use App\Events\RoomPlayersUpdated;
@@ -316,7 +317,11 @@ class GameService
                 'track_uri' => $spotifyUri,
             ]);
 
-            // TODO: Broadcast a playback.failed event for UI feedback
+            event(new PlaybackFailed(
+                roomCode: $room->code,
+                providerKey: 'spotify',
+                message: 'Spotify playback failed to start. Open Spotify on your device and try "Retry Spotify".',
+            ));
         }
     }
 

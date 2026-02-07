@@ -11,8 +11,11 @@ use App\Http\Controllers\Room\RoomShowController;
 use App\Http\Controllers\Room\RoomStateController;
 use App\Http\Controllers\Room\RoomSummaryController;
 use App\Http\Controllers\Room\SpotifyDeviceController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Broadcast::routes(['middleware' => ['web']]);
 
 Route::get('/manifest.webmanifest', function () {
     $path = public_path('build/manifest.webmanifest');
