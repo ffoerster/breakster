@@ -172,7 +172,7 @@ defineProps({
                             :is-marking="isMarkingReady"
                             :mark-ready="markReady"
                             :ready-count="state.room.ready_count ?? 0"
-                            :total-players="state.room.players_count ?? 0"
+                            :total-players="state.room.ready_total ?? 0"
                             :error="markReadyError"
                         />
                     </div>

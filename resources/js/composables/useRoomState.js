@@ -29,6 +29,29 @@ export function useRoomState(props) {
     const isFinished = computed(() => state.room.state === 'finished');
     const code = computed(() => state.room.code);
 
+    const allGuestsReady = computed(() => {
+        if (!isHost.value || !isInLobby.value) {
+            return false;
+        }
+
+        const total = state.room.ready_total ?? 0;
+        const ready = state.room.ready_count ?? 0;
+
+        if (total <= 0) {
+            return false;
+        }
+
+        return ready >= total;
+    });
+
+    watch(allGuestsReady, (isReady, wasReady) => {
+        if (!isReady || wasReady) {
+            return;
+        }
+
+        toast.success('All players are ready');
+    });
+
     const playUrl = computed(() => {
         if (!state.round?.id) {
             return '';

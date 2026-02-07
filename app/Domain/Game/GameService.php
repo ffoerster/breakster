@@ -485,7 +485,12 @@ class GameService
         }
 
         // Load room fresh from DB to ensure we have all players
-        $room = Room::find($round->room_id);
+        $room = Room::query()->find($round->room_id);
+
+        if (! $room instanceof Room) {
+            return 0;
+        }
+
         $playersWithPlacements = Placement::query()
             ->where('round_id', $round->id)
             ->pluck('room_player_id');
@@ -866,10 +871,14 @@ class GameService
             throw new \RuntimeException('Ready can only be marked in the lobby.');
         }
 
+        if ($player->is_host) {
+            return;
+        }
+
         $player->markReady();
 
-        $readyCount = $room->players()->where('is_ready', true)->count();
-        $totalPlayers = $room->players()->count();
+        $readyCount = $room->players()->where('is_host', false)->where('is_ready', true)->count();
+        $totalPlayers = $room->players()->where('is_host', false)->count();
         $roomCode = $room->code;
 
         event(new PlayerReady($roomCode, $player->id, $readyCount, $totalPlayers));

@@ -39,7 +39,7 @@ defineProps({
             <div class="flex items-center gap-2">
                 <!-- Ready indicator (checkmark) -->
                 <svg
-                    v-if="showReadyStatus && p.is_ready"
+                    v-if="showReadyStatus && p.is_ready && !p.is_host"
                     class="w-5 h-5 text-blue-400"
                     fill="currentColor"
                     viewBox="0 0 20 20"

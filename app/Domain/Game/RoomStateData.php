@@ -71,6 +71,8 @@ class RoomStateData
      */
     private function room(Room $room, ?RoomPlayer $me): array
     {
+        $readyTotal = $room->players()->where('is_host', false)->count();
+
         return [
             'code' => $room->code,
             'state' => $room->state->value,
@@ -91,7 +93,8 @@ class RoomStateData
             'spotify_device_id' => $room->spotify_device_id,
             'host_has_spotify_token' => $this->hostHasSpotifyToken($room),
             'is_host' => (bool) ($me->is_host ?? false),
-            'ready_count' => $room->players()->where('is_ready', true)->count(),
+            'ready_count' => $room->players()->where('is_host', false)->where('is_ready', true)->count(),
+            'ready_total' => $readyTotal,
             'players_count' => $room->players()->count(),
             'placement_timer_enabled' => $room->placement_timer_enabled,
         ];
