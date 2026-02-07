@@ -17,6 +17,7 @@ import PlayersList from "../../Components/Room/PlayersList.vue";
 import RevealView from "../../Components/Room/Reveal/RevealView.vue";
 import RoomIntroCard from "../../Components/Room/RoomIntroCard.vue";
 import RoundView from "../../Components/Room/Round/RoundView.vue";
+import GameHud from "../../Components/Room/GameHud.vue";
 import BottomSheet from "../../Components/Ui/BottomSheet.vue";
 import ConfirmDialog from "../../Components/Ui/ConfirmDialog.vue";
 import GlassCard from "../../Components/Ui/GlassCard.vue";
@@ -419,17 +420,26 @@ onBeforeUnmount(() => {
     >
         <template #header-right>
             <div class="text-right">
-                <div class="text-xs text-gray-500 dark:text-gray-400">Room code</div>
-                <div class="font-mono font-bold text-accent-500 tracking-widest">{{ state.room.code }}</div>
+                <div class="text-xs text-white/60 font-display">Room code</div>
+                <div class="font-mono-party font-bold text-accent-500 tracking-widest">{{ state.room.code }}</div>
             </div>
         </template>
 
+        <GameHud
+            v-if="state.me"
+            class="mb-6"
+            :state="state"
+            :remaining-seconds="remainingSeconds"
+            :placement-time-remaining="placementTimeRemainingSeconds"
+            :is-placement-locked="isPlacementLocked"
+        />
+
         <div v-if="!state.me">
             <GlassCard class="p-8 text-center">
-                <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-50">You're not in this room</h2>
+                <h2 class="text-2xl font-bold mb-4 text-white font-display">You're not in this room</h2>
                 <Link
                     :href="`/room/join?code=${state.room.code}`"
-                    class="btn-interactive inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-accent-500 hover:bg-accent-600 rounded-lg font-bold transition text-white"
+                    class="btn-interactive btn-primary inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-lg font-bold transition text-white"
                 >
                     Join Room {{ state.room.code }}
                 </Link>
@@ -558,7 +568,7 @@ onBeforeUnmount(() => {
                     <div class="bg-gray-800/30 backdrop-blur rounded-2xl border border-white/10 p-6 flex justify-center">
                         <button
                             type="button"
-                            class="btn-interactive px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg"
+                            class="btn-interactive btn-danger px-8 py-4 text-white font-bold rounded-lg"
                             @click="openFinishGameConfirm"
                         >
                             Close Game
@@ -596,7 +606,7 @@ onBeforeUnmount(() => {
                     <div v-if="isHost && !isFinished" class="pt-2">
                         <button
                             type="button"
-                            class="btn-interactive w-full min-h-[44px] px-6 py-3 bg-red-600 text-white font-bold rounded-xl"
+                            class="btn-interactive btn-danger w-full min-h-[44px] px-6 py-3 text-white font-bold rounded-xl"
                             @click="openFinishGameConfirm"
                         >
                             Close Game

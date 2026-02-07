@@ -154,7 +154,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="bg-gray-800/60 backdrop-blur rounded-xl p-4 border border-gray-700/50">
+    <div class="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
         <audio
             ref="audioRef"
             :src="src"
@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
             <div class="flex-1 space-y-1">
                 <div
                     ref="progressBarEl"
-                    class="relative h-2 rounded-full bg-gray-700 cursor-pointer overflow-hidden"
+                    class="relative h-2 rounded-full bg-white/10 cursor-pointer overflow-hidden"
                     @click="seek"
                 >
                     <div
@@ -209,7 +209,7 @@ onBeforeUnmount(() => {
                 <div v-if="autoplayBlocked" class="text-xs text-amber-400">
                     Tap play to start audio
                 </div>
-                <div class="flex justify-between text-xs text-gray-400 tabular-nums">
+                <div class="flex justify-between text-xs text-white/60 font-mono-party">
                     <span>{{ formatTime(currentTime) }}</span>
                     <span>{{ formatTime(duration) }}</span>
                 </div>

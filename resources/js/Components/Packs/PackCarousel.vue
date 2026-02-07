@@ -64,7 +64,7 @@ const onImageError = (event, packId) => {
       >
         <button
           type="button"
-          class="group relative block aspect-3/4 w-full overflow-hidden rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-sm"
+          class="group relative block aspect-3/4 w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-sm"
           :aria-pressed="modelValue === pack.id"
           @click="select(pack.id)"
         >
@@ -89,7 +89,7 @@ const onImageError = (event, packId) => {
           </div>
 
           <div
-            class="absolute inset-0 ring-2 ring-accent-400 ring-offset-2 ring-offset-gray-50 dark:ring-offset-gray-950 pointer-events-none"
+            class="absolute inset-0 ring-2 ring-accent-400 ring-offset-2 ring-offset-gray-950 pointer-events-none"
             v-if="modelValue === pack.id"
           />
         </button>

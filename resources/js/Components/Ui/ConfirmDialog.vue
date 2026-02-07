@@ -57,7 +57,7 @@ const cancel = () => {
         @close="cancel"
     >
         <div class="space-y-6">
-            <p class="text-sm text-gray-200 leading-relaxed">
+            <p class="text-sm text-white/80 leading-relaxed">
                 {{ message }}
             </p>
 
@@ -68,7 +68,7 @@ const cancel = () => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                     type="button"
-                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
                     :disabled="isConfirming"
                     @click="cancel"
                 >
@@ -78,7 +78,7 @@ const cancel = () => {
                 <button
                     type="button"
                     class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold text-white disabled:opacity-60"
-                    :class="danger ? 'bg-red-600 hover:bg-red-700' : 'bg-accent-600 hover:bg-accent-700'"
+                    :class="danger ? 'btn-danger' : 'btn-primary'"
                     :disabled="isConfirming"
                     @click="confirm"
                 >

@@ -33,7 +33,7 @@ defineProps({
         <button
             v-if="!isReady"
             type="button"
-            class="btn-interactive w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white"
+            class="btn-interactive btn-primary w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 text-white"
             :disabled="isMarking"
             @click="markReady"
         >
@@ -47,20 +47,20 @@ defineProps({
         <!-- Ready confirmation (when ready) -->
         <div
             v-else
-            class="flex items-center justify-center gap-2 py-3 px-4 bg-blue-500/20 border border-blue-500 rounded-lg"
+            class="flex items-center justify-center gap-2 py-3 px-4 bg-accent-500/15 border border-accent-500/40 rounded-lg"
         >
-            <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-5 h-5 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
                 <path
                     fill-rule="evenodd"
                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                     clip-rule="evenodd"
                 />
             </svg>
-            <span class="font-medium text-blue-300">You're ready!</span>
+            <span class="font-medium text-accent-200">You're ready!</span>
         </div>
 
         <!-- Ready count -->
-        <div class="text-center text-xs text-gray-400">
+        <div class="text-center text-xs text-white/60 font-mono-party">
             {{ readyCount }} / {{ totalPlayers }} ready
         </div>
 

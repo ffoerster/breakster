@@ -31,7 +31,7 @@ Route::get('/manifest.webmanifest', function () {
 })->name('pwa.manifest');
 
 Route::get('/', function () {
-    return view('welcome');
+    return Inertia::render('Home');
 })->name('home');
 
 Route::get('/play/{roomCode}/{roundId}', PlayRedirectController::class)

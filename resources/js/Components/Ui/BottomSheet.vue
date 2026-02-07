@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
                                 <div class="pt-3">
                                     <div
                                         ref="dragHandleEl"
-                                        class="mx-auto h-1.5 w-12 rounded-full bg-gray-600/60"
+                                        class="mx-auto h-1.5 w-12 rounded-full bg-white/20"
                                         style="touch-action: pan-x"
                                         aria-hidden="true"
                                     />
@@ -234,7 +234,7 @@ onBeforeUnmount(() => {
                                     <div
                                         v-if="title"
                                         :id="titleId"
-                                        class="text-sm font-semibold text-gray-200"
+                                        class="text-sm font-semibold text-white/85 font-display"
                                     >
                                         {{ title }}
                                     </div>
@@ -244,7 +244,7 @@ onBeforeUnmount(() => {
                                         v-if="showCloseButton"
                                         ref="closeButtonEl"
                                         type="button"
-                                        class="btn-interactive min-h-[44px] px-4 py-2 rounded-xl bg-gray-800/70 text-white font-bold"
+                                        class="btn-interactive btn-secondary min-h-[44px] px-4 py-2 rounded-xl text-white font-bold"
                                         @click="close"
                                     >
                                         {{ closeLabel }}

@@ -99,7 +99,7 @@ onMounted(async () => {
                 v-motion
                 :initial="{ scale: 0.8, opacity: 0 }"
                 :enter="{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 15 } }"
-                class="text-4xl font-bold mb-6"
+                class="text-4xl font-bold mb-6 font-display"
             >
                 Game Over!
             </h1>
@@ -111,9 +111,9 @@ onMounted(async () => {
                 :enter="{ scale: 1, opacity: 1, transition: { delay: 200, type: 'spring', stiffness: 180, damping: 12 } }"
                 class="inline-block p-6 bg-yellow-500/20 rounded-2xl border border-yellow-500 mb-4 animate-pulse-glow"
             >
-                <div class="text-yellow-400 text-sm mb-2">Winner</div>
+                <div class="text-yellow-300 text-sm mb-2 font-display">Winner</div>
                 <div class="text-3xl font-bold">{{ leaderboard[0].display_name }}</div>
-                <div class="text-2xl text-yellow-400 tabular-nums">{{ leaderboard[0].score }} points</div>
+                <div class="text-2xl text-yellow-300 font-mono-party">{{ leaderboard[0].score }} points</div>
             </div>
         </GlassCard>
 
@@ -132,7 +132,7 @@ onMounted(async () => {
                             ? 'bg-yellow-500/20 border border-yellow-500'
                             : p.is_me
                                 ? 'bg-accent-500/20'
-                                : 'bg-gray-700/30'
+                                : 'bg-white/5 border border-white/10'
                     "
                 >
                     <div class="flex items-center gap-3">
@@ -141,16 +141,16 @@ onMounted(async () => {
                             :initial="{ scale: 0 }"
                             :enter="{ scale: 1, transition: { delay: 500 + index * 80, type: 'spring', stiffness: 400, damping: 15 } }"
                             class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
-                            :class="p.rank === 1 ? 'bg-yellow-500 text-black' : 'bg-gray-600'"
+                            :class="p.rank === 1 ? 'bg-yellow-500 text-black' : 'bg-white/10'"
                         >
                             {{ p.rank }}
                         </div>
                         <span class="font-medium">
                             {{ p.display_name }}
-                            <span v-if="p.is_me" class="text-gray-400">(You)</span>
+                            <span v-if="p.is_me" class="text-white/60">(You)</span>
                         </span>
                     </div>
-                    <span class="font-bold text-accent-400 tabular-nums">{{ p.score }} pts</span>
+                    <span class="font-bold text-accent-200 font-mono-party">{{ p.score }} pts</span>
                 </div>
             </div>
         </GlassCard>
@@ -175,7 +175,7 @@ onMounted(async () => {
         </div>
 
         <!-- Loading state for summary -->
-        <div v-else-if="isLoadingSummary" class="text-center py-4 text-gray-400">Loading stats...</div>
+        <div v-else-if="isLoadingSummary" class="text-center py-4 text-white/60">Loading stats...</div>
 
         <!-- AMEN Stats -->
         <AmenStatsPanel v-if="amenStats && amenStats.total_claims > 0" :stats="amenStats" />
@@ -190,16 +190,16 @@ onMounted(async () => {
         >
             <div class="flex justify-center gap-8 text-center">
                 <div>
-                    <div class="text-2xl font-bold tabular-nums">{{ gameStats.rounds_played }}</div>
-                    <div class="text-sm text-gray-400">Rounds</div>
+                    <div class="text-2xl font-bold font-mono-party">{{ gameStats.rounds_played }}</div>
+                    <div class="text-sm text-white/60 font-display">Rounds</div>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold tabular-nums">{{ gameStats.overall_accuracy }}%</div>
-                    <div class="text-sm text-gray-400">Accuracy</div>
+                    <div class="text-2xl font-bold font-mono-party">{{ gameStats.overall_accuracy }}%</div>
+                    <div class="text-sm text-white/60 font-display">Accuracy</div>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold tabular-nums">{{ gameStats.total_placements }}</div>
-                    <div class="text-sm text-gray-400">Placements</div>
+                    <div class="text-2xl font-bold font-mono-party">{{ gameStats.total_placements }}</div>
+                    <div class="text-sm text-white/60 font-display">Placements</div>
                 </div>
             </div>
         </GlassCard>
@@ -210,10 +210,10 @@ onMounted(async () => {
             :enter="{ y: 0, opacity: 1, transition: { delay: 600, type: 'spring', stiffness: 200, damping: 20 } }"
             class="flex justify-center gap-4"
         >
-            <Link href="/room/create" class="btn-interactive px-6 py-3 bg-accent-600 hover:bg-accent-700 rounded-lg font-bold">
+            <Link href="/room/create" class="btn-interactive btn-primary px-6 py-3 rounded-lg font-bold">
                 Play Again
             </Link>
-            <Link href="/" class="btn-interactive px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold">Home</Link>
+            <Link href="/" class="btn-interactive btn-secondary px-6 py-3 rounded-lg font-bold text-white">Home</Link>
         </div>
     </div>
 </template>

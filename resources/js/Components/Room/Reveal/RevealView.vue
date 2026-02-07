@@ -140,7 +140,7 @@ onMounted(() => {
 <template>
     <div class="space-y-6">
         <GlassCard class="p-8 text-center">
-            <div class="text-sm text-gray-400 mb-4">Round {{ state.round.round_number }} - Revealed!</div>
+            <div class="text-sm text-white/60 mb-4 font-mono-party">Round {{ state.round.round_number }} - Revealed!</div>
 
             <RevealTrackCard
                 v-if="state.round.track"
@@ -197,14 +197,14 @@ onMounted(() => {
 
                     <div v-if="state.round.amen.guess && state.round.track" class="grid grid-cols-2 gap-4 text-sm">
                         <div class="text-center">
-                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Guessed</p>
+                            <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Guessed</p>
                             <p class="font-bold text-white">{{ state.round.amen.guess.artist }}</p>
-                            <p class="text-gray-300">{{ state.round.amen.guess.title }}</p>
+                            <p class="text-white/80">{{ state.round.amen.guess.title }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Actual</p>
+                            <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Actual</p>
                             <p class="font-bold text-white">{{ state.round.track.artist }}</p>
-                            <p class="text-gray-300">{{ state.round.track.title }}</p>
+                            <p class="text-white/80">{{ state.round.track.title }}</p>
                         </div>
                     </div>
 
@@ -218,15 +218,15 @@ onMounted(() => {
                     </div>
                 </GlassCard>
 
-                <GlassCard v-else class="p-6 bg-gray-800/30 border border-white/10">
-                    <p class="text-center text-gray-300">Waiting for the AMEN guess…</p>
+                <GlassCard v-else class="p-6 bg-white/4 border border-white/10">
+                    <p class="text-center text-white/70">Waiting for the AMEN guess…</p>
                 </GlassCard>
             </template>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-12">
             <GlassCard class="p-8 lg:col-span-7">
-                <h3 class="text-xl font-bold mb-4">Results</h3>
+                <h3 class="text-xl font-bold mb-4 font-display">Results</h3>
                 <Transition name="view-fade">
                     <div v-if="showResults" class="space-y-3">
                         <RevealResultItem
@@ -244,7 +244,7 @@ onMounted(() => {
             </GlassCard>
 
             <GlassCard class="p-8 lg:col-span-5">
-                <h3 class="text-xl font-bold mb-4">Leaderboard</h3>
+                <h3 class="text-xl font-bold mb-4 font-display">Leaderboard</h3>
                 <Transition name="view-fade">
                     <RevealLeaderboard
                         v-if="showLeaderboard"
@@ -260,20 +260,20 @@ onMounted(() => {
             <div class="flex flex-col sm:flex-row gap-3">
                 <button
                     type="button"
-                    class="btn-interactive px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-lg"
+                    class="btn-interactive btn-success px-8 py-4 rounded-lg font-bold text-lg"
                     @click="nextRound"
                 >
                     Next Round
                 </button>
             </div>
         </div>
-        <div v-else class="text-center text-gray-400">Waiting for host to start the next round…</div>
+        <div v-else class="text-center text-white/60">Waiting for host to start the next round…</div>
 
         <BottomActionBar class="lg:hidden" max-width-class="max-w-6xl">
             <div class="grid grid-cols-2 gap-2">
                 <button
                     type="button"
-                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
                     @click="openDetails"
                 >
                     Details
@@ -282,7 +282,7 @@ onMounted(() => {
                 <button
                     v-if="isHost"
                     type="button"
-                    class="btn-interactive min-h-[44px] px-4 py-3 bg-green-600 text-white font-bold rounded-xl"
+                    class="btn-interactive btn-success min-h-[44px] px-4 py-3 font-bold rounded-xl"
                     @click="nextRound"
                 >
                     Next
@@ -290,7 +290,7 @@ onMounted(() => {
 
                 <div
                     v-else
-                    class="min-h-[44px] px-4 py-3 bg-gray-900/40 text-gray-300 font-bold rounded-xl text-center flex items-center justify-center"
+                    class="min-h-[44px] px-4 py-3 bg-white/8 text-white/70 font-bold rounded-xl text-center flex items-center justify-center"
                 >
                     Waiting…
                 </div>

@@ -39,7 +39,7 @@ const getRankChangeClass = (change) => {
         return 'text-red-400';
     }
 
-    return 'text-gray-500';
+    return 'text-white/55';
 };
 
 const getRankChangeIcon = (change) => {
@@ -76,13 +76,13 @@ const getRankChangeIcon = (change) => {
             :class="[
                 p.rank === 1 ? 'bg-yellow-500/20 border border-yellow-500/50' : '',
                 p.is_me && p.rank !== 1 ? 'bg-accent-500/20' : '',
-                !p.is_me && p.rank !== 1 ? 'bg-gray-700/30' : '',
+                !p.is_me && p.rank !== 1 ? 'bg-white/5 border border-white/10' : '',
             ]"
         >
             <div class="flex items-center gap-3">
                 <div
                     class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-                    :class="p.rank === 1 ? 'bg-yellow-500 text-black' : 'bg-gray-600'"
+                    :class="p.rank === 1 ? 'bg-yellow-500 text-black' : 'bg-white/10'"
                 >
                     {{ p.rank }}
                 </div>
@@ -109,7 +109,7 @@ const getRankChangeIcon = (change) => {
                 </span>
             </div>
 
-            <span class="font-bold text-accent-400 tabular-nums">{{ p.score }} pts</span>
+            <span class="font-bold text-accent-200 font-mono-party">{{ p.score }} pts</span>
         </div>
     </div>
 </template>

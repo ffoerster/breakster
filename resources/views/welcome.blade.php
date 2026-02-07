@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,17 +15,7 @@
     <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
     <title>Breakster - Timeline Music Game</title>
 
-    <!-- Theme initialization script -->
-    <script>
-        (function() {
-            const theme = localStorage.getItem('theme') || 'system';
-            const isDark = theme === 'dark' ||
-                (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-    </script>
+    <!-- Dark theme is the only supported mode -->
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -46,7 +36,7 @@
         .animate-delay-400 { animation-delay: 400ms; }
     </style>
 </head>
-<body class="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50 overflow-x-hidden">
+<body class="min-h-screen bg-gray-950 text-gray-50 overflow-x-hidden arcade-shell">
     <!-- Background gradient orbs -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
         <div class="absolute -top-40 -right-40 w-80 h-80 bg-accent-500/20 rounded-full blur-3xl"></div>

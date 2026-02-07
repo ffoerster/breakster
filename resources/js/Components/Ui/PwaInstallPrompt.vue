@@ -110,14 +110,14 @@ useEventListener(window, 'appinstalled', () => {
             <div class="flex items-center gap-2 shrink-0">
                 <button
                     type="button"
-                    class="btn-interactive min-h-[40px] px-4 py-2 rounded-xl bg-accent-500 hover:bg-accent-600 text-white font-bold"
+                    class="btn-interactive btn-primary min-h-[40px] px-4 py-2 rounded-xl text-white font-bold"
                     @click="handlePrimary"
                 >
                     {{ primaryLabel }}
                 </button>
                 <button
                     type="button"
-                    class="btn-interactive min-h-[40px] px-3 py-2 rounded-xl bg-gray-800/50 text-white/90 font-bold"
+                    class="btn-interactive btn-secondary min-h-[40px] px-3 py-2 rounded-xl text-white/90 font-bold"
                     @click="dismiss"
                 >
                     Not now
@@ -133,12 +133,12 @@ useEventListener(window, 'appinstalled', () => {
         max-width-class="max-w-md"
         @close="isInstallSheetOpen = false"
     >
-        <div class="space-y-4 text-sm text-gray-200">
-            <p class="text-gray-200/90">
+        <div class="space-y-4 text-sm text-white/80">
+            <p class="text-white/80">
                 iOS doesn't support an automatic install prompt. Add Breakster to your Home Screen:
             </p>
 
-            <ol class="space-y-2 list-decimal list-inside text-gray-200/85">
+            <ol class="space-y-2 list-decimal list-inside text-white/75">
                 <li>Tap the Share button in Safari.</li>
                 <li>Choose "Add to Home Screen".</li>
                 <li>Tap "Add".</li>
@@ -147,7 +147,7 @@ useEventListener(window, 'appinstalled', () => {
             <div class="pt-2">
                 <button
                     type="button"
-                    class="btn-interactive w-full min-h-[44px] px-4 py-3 rounded-xl bg-gray-800/70 text-white font-bold"
+                    class="btn-interactive btn-secondary w-full min-h-[44px] px-4 py-3 rounded-xl text-white font-bold"
                     @click="dismiss"
                 >
                     Hide for a week

@@ -8,7 +8,10 @@ defineProps({
 </script>
 
 <template>
-    <div class="bg-white/90 dark:bg-gray-900/90 backdrop-blur border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl" :class="$props.class">
+    <div
+        class="bg-gray-950/70 backdrop-blur border border-white/10 rounded-2xl shadow-2xl"
+        :class="$props.class"
+    >
         <slot />
     </div>
 </template>

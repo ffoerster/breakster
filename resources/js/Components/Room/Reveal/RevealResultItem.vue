@@ -132,12 +132,12 @@ onMounted(() => {
                 {{ placement.player.display_name }}
                 <span
                     v-if="placement.is_auto_placed"
-                    class="px-2 py-0.5 text-xs font-medium rounded bg-gray-600 text-gray-300"
+                    class="px-2 py-0.5 text-xs font-medium rounded bg-white/10 text-white/70 font-display"
                 >
                     Auto-placed
                 </span>
             </div>
-            <div class="text-sm text-gray-400">
+            <div class="text-sm text-white/60">
                 <span v-if="placement.inserted_after_track_id === null">Placed at beginning</span>
                 <span v-else>Placed after {{ placement.inserted_after_year ?? 'unknown' }}</span>
             </div>
@@ -146,7 +146,7 @@ onMounted(() => {
         <div class="flex items-center gap-4">
             <div
                 class="text-2xl font-black tabular-nums min-w-[4ch] text-right"
-                :class="isAnimating ? 'text-gray-300' : (placement.is_correct ? 'text-green-400' : 'text-red-400')"
+                :class="isAnimating ? 'text-white/70' : (placement.is_correct ? 'text-green-300' : 'text-red-300')"
             >
                 {{ displayedYear ?? '----' }}
             </div>

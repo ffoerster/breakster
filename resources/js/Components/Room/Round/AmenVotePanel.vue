@@ -49,25 +49,25 @@ const handleVote = async (vote) => {
 
 <template>
     <div class="p-6 bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50 rounded-xl">
-        <h3 class="text-lg font-bold text-amber-300 mb-2 text-center">
+        <h3 class="text-lg font-bold text-amber-300 mb-2 text-center font-display">
             {{ claimantName }} hat AMEN gerufen!
         </h3>
 
-        <p class="text-sm text-gray-400 mb-4 text-center">
+        <p class="text-sm text-white/60 mb-4 text-center">
             Hat {{ claimantName }} recht?
         </p>
 
         <div v-if="guess && actual" class="mb-4">
             <div class="grid grid-cols-2 gap-4 text-sm">
                 <div class="text-center">
-                    <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Guessed</p>
+                    <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Guessed</p>
                     <p class="font-bold text-white">{{ guess.artist }}</p>
-                    <p class="text-gray-300">{{ guess.title }}</p>
+                    <p class="text-white/80">{{ guess.title }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Actual</p>
+                    <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Actual</p>
                     <p class="font-bold text-white">{{ actual.artist }}</p>
-                    <p class="text-gray-300">{{ actual.title }}</p>
+                    <p class="text-white/80">{{ actual.title }}</p>
                 </div>
             </div>
         </div>
@@ -75,7 +75,7 @@ const handleVote = async (vote) => {
         <div v-if="canVote" class="flex gap-3">
             <button
                 type="button"
-                class="btn-interactive flex-1 px-4 py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-bold transition-colors"
+                class="btn-interactive btn-success flex-1 px-4 py-3 disabled:cursor-not-allowed rounded-lg font-bold transition-colors"
                 :disabled="isSubmitting"
                 @click="handleVote(true)"
             >
@@ -85,7 +85,7 @@ const handleVote = async (vote) => {
 
             <button
                 type="button"
-                class="btn-interactive flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-bold transition-colors"
+                class="btn-interactive btn-danger flex-1 px-4 py-3 disabled:cursor-not-allowed rounded-lg font-bold transition-colors"
                 :disabled="isSubmitting"
                 @click="handleVote(false)"
             >
@@ -95,7 +95,7 @@ const handleVote = async (vote) => {
         </div>
 
         <div v-else-if="myVote !== null" class="text-center">
-            <p class="text-sm text-gray-300">
+            <p class="text-sm text-white/70">
                 Du hast abgestimmt:
                 <span :class="myVote ? 'text-green-400' : 'text-red-400'" class="font-bold">
                     {{ myVote ? 'Ja, safe.' : 'Nope.' }}

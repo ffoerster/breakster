@@ -30,20 +30,20 @@ const handleSubmit = async () => {
 
 <template>
     <div class="p-6 bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50 rounded-xl">
-        <h3 class="text-lg font-bold text-amber-300 mb-4 text-center">
+        <h3 class="text-lg font-bold text-amber-300 mb-4 text-center font-display">
             Alright. Name it.
         </h3>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
             <div>
-                <label for="amen-artist" class="block text-sm font-medium text-gray-300 mb-1">
+                <label for="amen-artist" class="block text-sm font-medium text-white/70 mb-1 font-display">
                     Artist
                 </label>
                 <input
                     id="amen-artist"
                     v-model="artist"
                     type="text"
-                    class="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                    class="w-full px-4 py-3 bg-white/8 border border-white/10 rounded-lg text-white placeholder-white/35 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
                     placeholder="Artist name..."
                     :disabled="isSubmitting"
                     autocomplete="off"
@@ -51,14 +51,14 @@ const handleSubmit = async () => {
             </div>
 
             <div>
-                <label for="amen-title" class="block text-sm font-medium text-gray-300 mb-1">
+                <label for="amen-title" class="block text-sm font-medium text-white/70 mb-1 font-display">
                     Track Title
                 </label>
                 <input
                     id="amen-title"
                     v-model="title"
                     type="text"
-                    class="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                    class="w-full px-4 py-3 bg-white/8 border border-white/10 rounded-lg text-white placeholder-white/35 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
                     placeholder="Track title..."
                     :disabled="isSubmitting"
                     autocomplete="off"
@@ -67,7 +67,7 @@ const handleSubmit = async () => {
 
             <button
                 type="submit"
-                class="btn-interactive w-full px-6 py-3 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-bold transition-colors"
+                class="btn-interactive btn-warning w-full px-6 py-3 disabled:cursor-not-allowed rounded-lg font-bold transition-colors"
                 :disabled="!artist.trim() || !title.trim() || isSubmitting"
             >
                 <span v-if="isSubmitting" class="flex items-center justify-center gap-2">

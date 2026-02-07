@@ -576,7 +576,7 @@ const handleTimelinePointerCancel = () => {
 
             <div class="lg:col-span-5 space-y-6">
                 <GlassCard class="p-6">
-                    <h3 class="text-lg font-bold mb-4 text-center">Current Track</h3>
+                    <h3 class="text-lg font-bold mb-4 text-center font-display">Current Track</h3>
 
                     <Transition name="feedback-slide" mode="out-in">
                         <div
@@ -599,8 +599,8 @@ const handleTimelinePointerCancel = () => {
                                 </div>
                                 <div class="flex-1 min-w-0 text-center">
                                     <div class="text-2xl font-black text-accent-300">???</div>
-                                    <div class="text-sm text-gray-300 font-medium">Mystery Track</div>
-                                    <div class="text-xs text-gray-400 mt-1">
+                                    <div class="text-sm text-white/80 font-medium">Mystery Track</div>
+                                    <div class="text-xs text-white/60 mt-1">
                                         <span v-if="isPlacementLocked">Locked</span>
                                         <span v-else>Drag into your timeline</span>
                                     </div>
@@ -614,7 +614,7 @@ const handleTimelinePointerCancel = () => {
                             class="select-none"
                             :class="isPlacementLocked ? 'opacity-60' : ''"
                         >
-                            <div class="flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-white/10 bg-gray-900/40">
+                            <div class="flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <div class="w-10 h-10 rounded bg-accent-900/50 flex items-center justify-center shrink-0">
                                         <svg class="w-6 h-6 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
@@ -624,8 +624,8 @@ const handleTimelinePointerCancel = () => {
                                         </svg>
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="text-sm font-bold text-gray-100 truncate">Guess placed</div>
-                                        <div class="text-xs text-gray-400">
+                                        <div class="text-sm font-bold text-white truncate">Guess placed</div>
+                                        <div class="text-xs text-white/60">
                                             <span v-if="isPlacementLocked">Locked</span>
                                             <span v-else>Drag within your timeline to reposition</span>
                                         </div>
@@ -635,7 +635,7 @@ const handleTimelinePointerCancel = () => {
                                 <div class="w-10 h-10 shrink-0 flex items-center justify-center">
                                     <div
                                         v-if="isPlacing"
-                                        class="w-6 h-6 rounded-full border-2 border-gray-300/30 border-t-gray-200 animate-spin"
+                                        class="w-6 h-6 rounded-full border-2 border-white/25 border-t-white/80 animate-spin"
                                     />
                                     <div
                                         v-else
@@ -702,13 +702,13 @@ const handleTimelinePointerCancel = () => {
 
                 <GlassCard class="p-8">
                     <div class="flex items-center justify-between gap-4 mb-4">
-                        <h3 class="text-xl font-bold">Your Timeline</h3>
-                        <div class="text-xs text-gray-400">
+                        <h3 class="text-xl font-bold font-display">Your Timeline</h3>
+                        <div class="text-xs text-white/60 font-mono-party">
                             {{ state.round.placements_count }} / {{ state.round.players_count }} placed
                         </div>
                     </div>
 
-                    <div class="h-2 rounded bg-gray-700/60 overflow-hidden mb-6">
+                    <div class="h-2 rounded bg-white/10 overflow-hidden mb-6">
                         <div class="h-full bg-accent-500/70" :style="{ width: `${placementsProgress}%` }" />
                     </div>
 
@@ -757,7 +757,7 @@ const handleTimelinePointerCancel = () => {
                         </div>
                     </Transition>
 
-                    <div class="text-sm text-gray-400 mb-3">
+                    <div class="text-sm text-white/65 mb-3">
                         <span v-if="!state.me.has_placed">Drop the mystery card between years.</span>
                         <span v-else>Drag your guess within the timeline to update it.</span>
                     </div>
@@ -767,8 +767,8 @@ const handleTimelinePointerCancel = () => {
                         class="space-y-2 min-h-[4rem] p-3 rounded-lg border-2 border-dashed lg:max-h-[52vh] lg:overflow-auto"
                         :class="
                             shouldEnablePlacementDnd
-                                ? 'placement-enabled border-accent-500/40 bg-gray-900/20'
-                                : 'border-gray-700/60 bg-gray-900/10'
+                                ? 'placement-enabled border-accent-500/40 bg-white/5'
+                                : 'border-white/10 bg-white/3'
                         "
                     >
                         <li
@@ -780,7 +780,7 @@ const handleTimelinePointerCancel = () => {
                                     ? shouldEnablePlacementDnd
                                         ? 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/30 cursor-grab active:cursor-grabbing'
                                         : 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/20 cursor-not-allowed opacity-70'
-                                    : 'timeline-item timeline-track bg-gray-700/30',
+                                    : 'timeline-item timeline-track bg-white/5 border border-white/10',
                                 dropAnimationType === 'success' && lastDroppedIndex === index ? 'animate-drop-success' : '',
                                 dropAnimationType === 'error' && lastDroppedIndex === index ? 'animate-drop-error' : '',
                             ]"
@@ -796,13 +796,13 @@ const handleTimelinePointerCancel = () => {
                                     alt=""
                                     class="w-16 h-16 rounded object-cover shrink-0"
                                 />
-                                <div v-else class="w-16 h-16 rounded bg-gray-600 shrink-0" />
+                                <div v-else class="w-16 h-16 rounded bg-white/10 shrink-0" />
                                 <div class="flex-1 min-w-0">
                                     <div class="text-[clamp(1.6rem,6vw,2.25rem)] font-black text-accent-400 leading-none mb-1">
                                         {{ item.year }}
                                     </div>
                                     <div class="font-medium truncate">{{ item.title }}</div>
-                                    <div class="text-sm text-gray-400 truncate">{{ item.artist }}</div>
+                                    <div class="text-sm text-white/60 truncate">{{ item.artist }}</div>
                                 </div>
                             </template>
 
@@ -817,13 +817,13 @@ const handleTimelinePointerCancel = () => {
                                 <div class="flex-1 min-w-0">
                                     <div class="text-[clamp(1.6rem,6vw,2.25rem)] font-black text-accent-200 leading-none mb-1">???</div>
                                     <div class="font-medium truncate">Your guess</div>
-                                    <div class="text-sm text-gray-400 truncate">Drag to reposition</div>
+                                    <div class="text-sm text-white/60 truncate">Drag to reposition</div>
                                 </div>
 
                                 <div class="w-8 h-8 shrink-0 flex items-center justify-center">
                                     <div
                                         v-if="isPlacing"
-                                        class="w-5 h-5 rounded-full border-2 border-gray-300/30 border-t-gray-200 animate-spin"
+                                        class="w-5 h-5 rounded-full border-2 border-white/25 border-t-white/80 animate-spin"
                                     />
                                     <div v-else class="w-6 h-6 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center">
                                         <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -839,33 +839,33 @@ const handleTimelinePointerCancel = () => {
                         </li>
                     </ul>
 
-                    <div v-if="(state.timeline?.length ?? 0) === 0" class="text-center text-gray-500 mt-3">
+                    <div v-if="(state.timeline?.length ?? 0) === 0" class="text-center text-white/55 mt-3">
                         Drop into the empty box to place as your first track
                     </div>
                 </GlassCard>
 
                 <GlassCard class="p-4 hidden lg:block">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div class="text-sm text-gray-400">
+                        <div class="text-sm text-white/60 font-mono-party">
                             {{ state.round.placements_count }} / {{ state.round.players_count }} players have placed
                         </div>
                         <button
                             v-if="isHost"
                             type="button"
-                            class="btn-interactive px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="btn-interactive btn-warning px-6 py-2 rounded-lg font-bold disabled:cursor-not-allowed"
                             :disabled="state.round.players_count === 0"
                             @click="revealRound"
                         >
                             Reveal Answers
                         </button>
-                        <div v-else class="text-sm text-gray-400">Waiting for host to reveal…</div>
+                        <div v-else class="text-sm text-white/60">Waiting for host to reveal…</div>
                     </div>
                 </GlassCard>
             </div>
 
             <div class="lg:col-span-3 lg:sticky lg:top-6 space-y-6">
                 <GlassCard class="p-8">
-                    <h2 class="text-xl font-bold mb-4">Players</h2>
+                    <h2 class="text-xl font-bold mb-4 font-display">Players</h2>
                     <PlayersList :players="state.players" show-score />
                 </GlassCard>
             </div>
@@ -875,7 +875,7 @@ const handleTimelinePointerCancel = () => {
             <div class="grid grid-cols-2 gap-2">
                 <button
                     type="button"
-                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
                     @click="openDetails"
                 >
                     Details
@@ -883,7 +883,7 @@ const handleTimelinePointerCancel = () => {
 
                 <button
                     type="button"
-                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold bg-gray-800/70 text-white"
+                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
                     @click="openListen"
                 >
                     Listen
@@ -902,7 +902,7 @@ const handleTimelinePointerCancel = () => {
                 <button
                     v-if="isHost"
                     type="button"
-                    class="btn-interactive col-span-2 min-h-[44px] px-4 py-3 rounded-xl font-bold bg-yellow-600 text-white"
+                    class="btn-interactive btn-warning col-span-2 min-h-[44px] px-4 py-3 rounded-xl font-bold"
                     :disabled="state.round.players_count === 0"
                     @click="revealRound"
                 >

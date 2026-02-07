@@ -100,9 +100,9 @@ onMounted(() => {
         :class="[
             showResult && correct
                 ? 'bg-gradient-to-br from-amber-500/30 to-yellow-600/30 border-yellow-500 animate-pulse-glow-gold'
-                : showResult && !correct
-                    ? 'bg-red-500/20 border-red-500'
-                    : 'bg-gray-800/50 border-gray-600',
+            : showResult && !correct
+                ? 'bg-red-500/20 border-red-500'
+                : 'bg-white/5 border-white/10',
         ]"
     >
         <!-- Spotlight effect overlay for success -->
@@ -119,8 +119,8 @@ onMounted(() => {
 
         <div class="relative p-6">
             <h3
-                class="text-xl font-bold mb-3 text-center transition-colors duration-300"
-                :class="showResult ? (correct ? 'text-yellow-400' : 'text-red-400') : 'text-gray-300'"
+                class="text-xl font-bold mb-3 text-center transition-colors duration-300 font-display"
+                :class="showResult ? (correct ? 'text-yellow-300' : 'text-red-300') : 'text-white/80'"
             >
                 <template v-if="showResult">
                     {{ correct ? 'AMEN confirmed!' : 'False AMEN.' }}
@@ -130,21 +130,21 @@ onMounted(() => {
                 </template>
             </h3>
 
-            <p class="text-sm text-gray-400 text-center mb-4">
+            <p class="text-sm text-white/60 text-center mb-4 font-mono-party">
                 {{ claimantName }}'s AMEN
             </p>
 
             <div v-if="guess && actual" class="space-y-3">
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div class="text-center">
-                        <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Guessed</p>
+                        <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Guessed</p>
                         <p class="font-bold text-white">{{ guess.artist }}</p>
-                        <p class="text-gray-300">{{ guess.title }}</p>
+                        <p class="text-white/80">{{ guess.title }}</p>
                     </div>
                     <div class="text-center">
-                        <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Actual</p>
+                        <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Actual</p>
                         <p class="font-bold text-white">{{ actual.artist }}</p>
-                        <p class="text-gray-300">{{ actual.title }}</p>
+                        <p class="text-white/80">{{ actual.title }}</p>
                     </div>
                 </div>
             </div>
@@ -152,14 +152,14 @@ onMounted(() => {
             <!-- Points display -->
             <div
                 v-if="showResult"
-                class="mt-4 text-center text-2xl font-black"
-                :class="correct ? 'text-yellow-400 animate-scale-pop' : 'text-red-400'"
+                class="mt-4 text-center text-2xl font-black font-mono-party"
+                :class="correct ? 'text-yellow-300 animate-scale-pop' : 'text-red-300'"
             >
                 {{ awardedPoints > 0 ? `+${awardedPoints}` : awardedPoints }} pts
             </div>
 
             <!-- Vote counts -->
-            <div class="mt-4 flex justify-center gap-6 text-sm border-t border-gray-700/50 pt-3">
+            <div class="mt-4 flex justify-center gap-6 text-sm border-t border-white/10 pt-3">
                 <span class="text-green-400">
                     <span class="font-bold">{{ votes.yes }}</span> voted Ja
                 </span>

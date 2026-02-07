@@ -24,13 +24,13 @@ defineProps({
         <div
             v-for="p in players"
             :key="p.id"
-            class="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700"
+            class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10"
         >
             <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center font-bold shrink-0 text-white">
                     {{ String(p.display_name).slice(0, 1).toUpperCase() }}
                 </div>
-                <div class="font-medium truncate text-gray-900 dark:text-gray-50">
+                <div class="font-medium truncate text-white">
                     {{ p.display_name }}
                     <span v-if="p.is_me" class="text-accent-500">(You)</span>
                 </div>
@@ -53,12 +53,12 @@ defineProps({
 
                 <span
                     v-if="showHostBadge && p.is_host"
-                    class="px-3 py-1 bg-accent-500/20 text-accent-600 dark:text-accent-400 text-sm rounded-full font-medium"
+                    class="px-3 py-1 bg-accent-500/15 text-accent-200 text-sm rounded-full font-medium font-display"
                 >
                     Host
                 </span>
 
-                <div v-if="showScore" class="font-bold text-accent-600 dark:text-accent-400 tabular-nums">{{ p.score }} pts</div>
+                <div v-if="showScore" class="font-bold text-accent-200 font-mono-party">{{ p.score }} pts</div>
             </div>
         </div>
     </TransitionGroup>

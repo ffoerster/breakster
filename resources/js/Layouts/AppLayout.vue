@@ -12,9 +12,9 @@ const toastOptions = {
         toast: 'rounded-2xl border border-white/10 bg-gray-950/90 backdrop-blur shadow-2xl px-4 py-3 text-white',
         title: 'text-sm font-bold text-white',
         description: 'text-xs text-gray-200/80 mt-1',
-        actionButton: 'btn-interactive min-h-[36px] px-3 py-2 rounded-xl bg-gray-800/70 text-white font-bold',
-        cancelButton: 'btn-interactive min-h-[36px] px-3 py-2 rounded-xl bg-gray-800/40 text-white/90 font-bold',
-        closeButton: 'btn-interactive rounded-lg bg-gray-800/60 text-white/90',
+        actionButton: 'btn-interactive btn-secondary min-h-[36px] px-3 py-2 rounded-xl text-white font-bold',
+        cancelButton: 'btn-interactive btn-secondary min-h-[36px] px-3 py-2 rounded-xl text-white/90 font-bold',
+        closeButton: 'btn-interactive btn-secondary rounded-lg text-white/90',
         success: 'border border-green-500/30',
         error: 'border border-red-500/30',
         warning: 'border border-amber-500/30',
@@ -39,7 +39,7 @@ defineProps({
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col">
+    <div class="min-h-screen flex flex-col arcade-shell">
         <Toaster
             position="bottom-center"
             :toast-options="toastOptions"

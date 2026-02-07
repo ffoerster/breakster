@@ -38,7 +38,7 @@ const isUrgent = computed(() => props.remaining <= 1 && props.remaining > 0);
                 fill="none"
                 stroke="currentColor"
                 stroke-width="6"
-                class="text-gray-700/40"
+                class="text-white/10"
             />
             <circle
                 cx="50"
@@ -60,8 +60,8 @@ const isUrgent = computed(() => props.remaining <= 1 && props.remaining > 0);
                 :initial="{ scale: 1.3, opacity: 0 }"
                 :enter="{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } }"
                 :key="remaining"
-                class="text-2xl font-bold tabular-nums"
-                :class="isUrgent ? 'text-red-400' : 'text-accent-400'"
+                class="text-2xl font-bold font-mono-party"
+                :class="isUrgent ? 'text-red-300' : 'text-accent-200'"
             >
                 {{ remaining }}
             </span>

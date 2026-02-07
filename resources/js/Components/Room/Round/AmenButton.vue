@@ -66,7 +66,7 @@ const handleClick = async () => {
             <span v-else>AMEN</span>
         </button>
 
-        <p v-if="variant === 'full' && canClaim" class="mt-2 text-xs text-gray-400">
+        <p v-if="variant === 'full' && canClaim" class="mt-2 text-xs text-white/60">
             Nur drücken, wenn du's wirklich weißt.
         </p>
 

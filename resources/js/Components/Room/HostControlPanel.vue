@@ -76,7 +76,7 @@ const isFinished = computed(() => props.state.room.state === 'finished');
 
 <template>
     <GlassCard v-if="isHost && !isFinished" class="p-6 bg-amber-500/10 border-amber-500/30">
-        <h3 class="text-lg font-bold mb-4 text-amber-400">Host Controls</h3>
+        <h3 class="text-lg font-bold mb-4 text-amber-300 font-display">Host Controls</h3>
 
         <!-- Lobby: Start Game -->
         <div v-if="isInLobby" class="space-y-3">
@@ -85,8 +85,8 @@ const isFinished = computed(() => props.state.room.state === 'finished');
                 class="btn-interactive w-full py-3 px-4 font-bold rounded-lg transition-all duration-200"
                 :class="
                     canStart
-                        ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        ? 'btn-success'
+                        : 'bg-white/10 text-white/40 cursor-not-allowed'
                 "
                 :disabled="!canStart || isStarting"
                 @click="startGame"
@@ -100,7 +100,7 @@ const isFinished = computed(() => props.state.room.state === 'finished');
             <p v-if="startError" class="text-sm text-red-400 animate-shake">
                 {{ startError }}
             </p>
-            <p v-if="!state.room.playback_provider" class="text-xs text-gray-400">
+            <p v-if="!state.room.playback_provider" class="text-xs text-white/60">
                 Select a playback provider to start
             </p>
         </div>
@@ -108,15 +108,15 @@ const isFinished = computed(() => props.state.room.state === 'finished');
         <!-- In Round: Ready count + Reveal -->
         <div v-else-if="isInRound" class="space-y-4">
             <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-400">Players ready:</span>
-                <span class="font-bold text-blue-400">
+                <span class="text-white/60 font-display">Players ready:</span>
+                <span class="font-bold text-accent-200 font-mono-party">
                     {{ state.round?.ready_count ?? 0 }} / {{ state.round?.players_count ?? 0 }}
                 </span>
             </div>
 
             <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-400">Placements:</span>
-                <span class="font-bold text-green-400">
+                <span class="text-white/60 font-display">Placements:</span>
+                <span class="font-bold text-green-300 font-mono-party">
                     {{ state.round?.placements_count ?? 0 }} / {{ state.round?.players_count ?? 0 }}
                 </span>
             </div>
@@ -125,7 +125,7 @@ const isFinished = computed(() => props.state.room.state === 'finished');
             <button
                 v-if="isSpotifyProvider && playSpotifyTrack"
                 type="button"
-                class="btn-interactive w-full py-2 px-4 bg-green-700 hover:bg-green-600 rounded-lg text-sm transition-all duration-200"
+                class="btn-interactive btn-success w-full py-2 px-4 rounded-lg text-sm transition-all duration-200"
                 :disabled="isPlayingSpotify"
                 @click="playSpotifyTrack"
             >
@@ -141,7 +141,7 @@ const isFinished = computed(() => props.state.room.state === 'finished');
 
             <button
                 type="button"
-                class="btn-interactive w-full py-3 px-4 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold transition-all duration-200"
+                class="btn-interactive btn-warning w-full py-3 px-4 rounded-lg font-bold transition-all duration-200"
                 @click="revealRound"
             >
                 Reveal Answers
@@ -152,7 +152,7 @@ const isFinished = computed(() => props.state.room.state === 'finished');
         <div v-else-if="isInReveal" class="space-y-3">
             <button
                 type="button"
-                class="btn-interactive w-full py-3 px-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition-all duration-200"
+                class="btn-interactive btn-success w-full py-3 px-4 rounded-lg font-bold transition-all duration-200"
                 @click="nextRound"
             >
                 Next Round
@@ -162,7 +162,7 @@ const isFinished = computed(() => props.state.room.state === 'finished');
         <!-- Always show Close Game -->
         <button
             type="button"
-            class="btn-interactive w-full mt-4 py-2 px-4 bg-red-600/50 hover:bg-red-600 rounded-lg text-sm transition-all duration-200"
+            class="btn-interactive btn-danger w-full mt-4 py-2 px-4 rounded-lg text-sm transition-all duration-200"
             @click="finishGame"
         >
             Close Game
