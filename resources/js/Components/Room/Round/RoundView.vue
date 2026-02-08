@@ -148,8 +148,7 @@ const timelineWithDropZones = computed(() => {
 		kind: "drop-zone",
 		insertAfterTrackId: null,
 		isActive:
-			hasGuessInTimeline.value &&
-			placementInsertAfterTrackId.value === null,
+			hasGuessInTimeline.value && placementInsertAfterTrackId.value === null,
 	});
 
 	for (const track of timeline) {
@@ -302,7 +301,7 @@ const totalPlacementTime = computed(() => {
                         <!-- Waiting state for claimant after guess -->
                         <GlassCard
                             v-else-if="state.round.amen.is_claimant && state.round.amen.has_guess"
-                            class="p-6 bg-gradient-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40"
+                            class="p-6 bg-linear-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40"
                         >
                             <p class="text-center text-accent-200 font-medium">
                                 Waiting for reveal...
@@ -443,7 +442,7 @@ const totalPlacementTime = computed(() => {
             <div class="grid grid-cols-2 gap-2">
                 <button
                     type="button"
-                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
+                    class="btn-interactive btn-secondary min-h-11 px-4 py-3 rounded-xl font-bold text-white"
                     @click="openDetails"
                 >
                     Details
@@ -451,7 +450,7 @@ const totalPlacementTime = computed(() => {
 
                 <button
                     type="button"
-                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
+                    class="btn-interactive btn-secondary min-h-11 px-4 py-3 rounded-xl font-bold text-white"
                     @click="openListen"
                 >
                     Listen
@@ -470,7 +469,7 @@ const totalPlacementTime = computed(() => {
                 <button
                     v-if="isHost"
                     type="button"
-                    class="btn-interactive btn-warning col-span-2 min-h-[44px] px-4 py-3 rounded-xl font-bold"
+                    class="btn-interactive btn-warning col-span-2 min-h-11 px-4 py-3 rounded-xl font-bold"
                     :disabled="state.round.players_count === 0"
                     @click="revealRound"
                 >

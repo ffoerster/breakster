@@ -46,7 +46,7 @@ onMounted(() => {
         >
             <!-- Front: Mystery -->
             <div class="backface-hidden">
-                <div class="p-8 bg-gradient-to-br from-accent-600/30 to-pink-600/30 border-2 border-accent-500/50 rounded-xl">
+                <div class="p-8 bg-linear-to-br from-accent-600/30 to-pink-600/30 border-2 border-accent-500/50 rounded-xl">
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <div class="w-32 h-32 rounded-lg bg-white/10 flex items-center justify-center">
                             <span class="text-6xl font-black text-accent-300/50">?</span>
@@ -64,7 +64,7 @@ onMounted(() => {
 
             <!-- Back: Revealed -->
             <div class="backface-hidden rotate-y-180 absolute inset-0">
-                <div class="p-8 bg-gradient-to-br from-accent-600/20 to-purple-600/20 border-2 border-accent-500 rounded-xl">
+                <div class="p-8 bg-linear-to-br from-accent-600/20 to-purple-600/20 border-2 border-accent-500 rounded-xl">
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <img
                             v-if="track?.artwork_url"

@@ -1,49 +1,49 @@
 <script setup>
-import BottomSheet from './BottomSheet.vue';
+import BottomSheet from "./BottomSheet.vue";
 
 defineProps({
-    open: {
-        type: Boolean,
-        required: true,
-    },
-    title: {
-        type: String,
-        required: true,
-    },
-    message: {
-        type: String,
-        required: true,
-    },
-    confirmLabel: {
-        type: String,
-        default: 'Confirm',
-    },
-    cancelLabel: {
-        type: String,
-        default: 'Cancel',
-    },
-    danger: {
-        type: Boolean,
-        default: false,
-    },
-    isConfirming: {
-        type: Boolean,
-        default: false,
-    },
-    error: {
-        type: String,
-        default: '',
-    },
+	open: {
+		type: Boolean,
+		required: true,
+	},
+	title: {
+		type: String,
+		required: true,
+	},
+	message: {
+		type: String,
+		required: true,
+	},
+	confirmLabel: {
+		type: String,
+		default: "Confirm",
+	},
+	cancelLabel: {
+		type: String,
+		default: "Cancel",
+	},
+	danger: {
+		type: Boolean,
+		default: false,
+	},
+	isConfirming: {
+		type: Boolean,
+		default: false,
+	},
+	error: {
+		type: String,
+		default: "",
+	},
 });
 
-const emit = defineEmits(['confirm', 'cancel']);
+const emit = defineEmits(["confirm", "cancel"]);
 
 const confirm = () => {
-    emit('confirm');
+	emit("confirm");
 };
 
 const cancel = () => {
-    emit('cancel');
+	emit("cancel");
 };
 </script>
 
@@ -68,7 +68,7 @@ const cancel = () => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                     type="button"
-                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
+                    class="btn-interactive btn-secondary min-h-11 px-4 py-3 rounded-xl font-bold text-white"
                     :disabled="isConfirming"
                     @click="cancel"
                 >
@@ -77,7 +77,7 @@ const cancel = () => {
 
                 <button
                     type="button"
-                    class="btn-interactive min-h-[44px] px-4 py-3 rounded-xl font-bold text-white disabled:opacity-60"
+                    class="btn-interactive min-h-11 px-4 py-3 rounded-xl font-bold text-white disabled:opacity-60"
                     :class="danger ? 'btn-danger' : 'btn-primary'"
                     :disabled="isConfirming"
                     @click="confirm"

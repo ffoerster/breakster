@@ -1,105 +1,104 @@
 <script setup>
-import { computed } from 'vue';
-
-import GlassCard from '../../Ui/GlassCard.vue';
-import BottomActionBar from '../../Ui/BottomActionBar.vue';
-import PlayersList from '../PlayersList.vue';
-import ProviderPicker from './ProviderPicker.vue';
-import SpotifyHostSetup from './SpotifyHostSetup.vue';
-import ReadyButton from './ReadyButton.vue';
+import { computed } from "vue";
+import BottomActionBar from "../../Ui/BottomActionBar.vue";
+import GlassCard from "../../Ui/GlassCard.vue";
+import PlayersList from "../PlayersList.vue";
+import ProviderPicker from "./ProviderPicker.vue";
+import ReadyButton from "./ReadyButton.vue";
+import SpotifyHostSetup from "./SpotifyHostSetup.vue";
 
 const props = defineProps({
-    state: {
-        type: Object,
-        required: true,
-    },
-    isHost: {
-        type: Boolean,
-        required: true,
-    },
-    canStart: {
-        type: Boolean,
-        required: true,
-    },
-    selectProvider: {
-        type: Function,
-        required: true,
-    },
-    startGame: {
-        type: Function,
-        required: true,
-    },
-    openDetails: {
-        type: Function,
-        required: true,
-    },
-    isSpotifyProvider: {
-        type: Boolean,
-        required: true,
-    },
-    hasSpotifyToken: {
-        type: Boolean,
-        required: true,
-    },
-    spotifyDevices: {
-        type: Array,
-        required: true,
-    },
-    spotifyError: {
-        type: String,
-        required: true,
-    },
-    isLoadingDevices: {
-        type: Boolean,
-        required: true,
-    },
-    selectedDeviceId: {
-        type: [String, null],
-        default: null,
-    },
-    connectSpotify: {
-        type: Function,
-        required: true,
-    },
-    loadSpotifyDevices: {
-        type: Function,
-        required: true,
-    },
-    selectSpotifyDevice: {
-        type: Function,
-        required: true,
-    },
-    markReady: {
-        type: Function,
-        required: true,
-    },
-    isMarkingReady: {
-        type: Boolean,
-        default: false,
-    },
-    markReadyError: {
-        type: String,
-        default: '',
-    },
-    togglePlacementTimer: {
-        type: Function,
-        required: true,
-    },
-    isTogglingPlacementTimer: {
-        type: Boolean,
-        default: false,
-    },
+	state: {
+		type: Object,
+		required: true,
+	},
+	isHost: {
+		type: Boolean,
+		required: true,
+	},
+	canStart: {
+		type: Boolean,
+		required: true,
+	},
+	selectProvider: {
+		type: Function,
+		required: true,
+	},
+	startGame: {
+		type: Function,
+		required: true,
+	},
+	openDetails: {
+		type: Function,
+		required: true,
+	},
+	isSpotifyProvider: {
+		type: Boolean,
+		required: true,
+	},
+	hasSpotifyToken: {
+		type: Boolean,
+		required: true,
+	},
+	spotifyDevices: {
+		type: Array,
+		required: true,
+	},
+	spotifyError: {
+		type: String,
+		required: true,
+	},
+	isLoadingDevices: {
+		type: Boolean,
+		required: true,
+	},
+	selectedDeviceId: {
+		type: [String, null],
+		default: null,
+	},
+	connectSpotify: {
+		type: Function,
+		required: true,
+	},
+	loadSpotifyDevices: {
+		type: Function,
+		required: true,
+	},
+	selectSpotifyDevice: {
+		type: Function,
+		required: true,
+	},
+	markReady: {
+		type: Function,
+		required: true,
+	},
+	isMarkingReady: {
+		type: Boolean,
+		default: false,
+	},
+	markReadyError: {
+		type: String,
+		default: "",
+	},
+	togglePlacementTimer: {
+		type: Function,
+		required: true,
+	},
+	isTogglingPlacementTimer: {
+		type: Boolean,
+		default: false,
+	},
 });
 
 const allGuestsReady = computed(() => {
-    if (!props.isHost) {
-        return false;
-    }
+	if (!props.isHost) {
+		return false;
+	}
 
-    const total = props.state.room.ready_total ?? 0;
-    const ready = props.state.room.ready_count ?? 0;
+	const total = props.state.room.ready_total ?? 0;
+	const ready = props.state.room.ready_count ?? 0;
 
-    return total > 0 && ready >= total;
+	return total > 0 && ready >= total;
 });
 </script>
 
@@ -203,7 +202,7 @@ const allGuestsReady = computed(() => {
             <div class="grid grid-cols-2 gap-2">
                 <button
                     type="button"
-                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
+                    class="btn-interactive btn-secondary min-h-11 px-4 py-3 rounded-xl font-bold text-white"
                     @click="openDetails"
                 >
                     Details
@@ -212,7 +211,7 @@ const allGuestsReady = computed(() => {
                 <button
                     v-if="isHost"
                     type="button"
-                    class="btn-interactive min-h-[44px] px-4 py-3 font-bold rounded-xl"
+                    class="btn-interactive min-h-11 px-4 py-3 font-bold rounded-xl"
                     :class="[
                         canStart ? 'btn-success' : 'btn-secondary text-white/40',
                         allGuestsReady && canStart ? 'pulse-ready' : '',
@@ -226,7 +225,7 @@ const allGuestsReady = computed(() => {
                 <button
                     v-else-if="!state.me?.is_ready"
                     type="button"
-                    class="btn-interactive btn-primary min-h-[44px] px-4 py-3 font-bold rounded-xl text-white"
+                    class="btn-interactive btn-primary min-h-11 px-4 py-3 font-bold rounded-xl text-white"
                     :disabled="isMarkingReady"
                     @click="markReady"
                 >
@@ -236,7 +235,7 @@ const allGuestsReady = computed(() => {
 
                 <div
                     v-else
-                    class="min-h-[44px] px-4 py-3 bg-accent-500/15 border border-accent-500/40 text-accent-200 font-bold rounded-xl text-center flex items-center justify-center gap-2"
+                    class="min-h-11 px-4 py-3 bg-accent-500/15 border border-accent-500/40 text-accent-200 font-bold rounded-xl text-center flex items-center justify-center gap-2"
                 >
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />

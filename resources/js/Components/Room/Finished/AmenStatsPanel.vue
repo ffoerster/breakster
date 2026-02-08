@@ -1,11 +1,11 @@
 <script setup>
-import GlassCard from '../../Ui/GlassCard.vue';
+import GlassCard from "../../Ui/GlassCard.vue";
 
 defineProps({
-    stats: {
-        type: Object,
-        required: true,
-    },
+	stats: {
+		type: Object,
+		required: true,
+	},
 });
 </script>
 
@@ -54,7 +54,7 @@ defineProps({
                     </div>
 
                     <div
-                        class="font-bold font-mono-party min-w-[60px] text-right"
+                        class="font-bold font-mono-party min-w-15 text-right"
                         :class="{
                             'text-green-400': player.net_points > 0,
                             'text-red-400': player.net_points < 0,

@@ -99,7 +99,7 @@ onMounted(() => {
         class="relative overflow-hidden rounded-xl border-2 transition-all duration-500"
         :class="[
             showResult && correct
-                ? 'bg-gradient-to-br from-accent-500/30 to-accent-600/30 border-accent-500 animate-pulse-glow'
+                ? 'bg-linear-to-br from-accent-500/30 to-accent-600/30 border-accent-500 animate-pulse-glow'
             : showResult && !correct
                 ? 'bg-red-500/20 border-red-500'
                 : 'bg-white/5 border-accent-500/15',
@@ -114,7 +114,7 @@ onMounted(() => {
         <!-- Wilting overlay for failure -->
         <div
             v-if="showResult && !correct"
-            class="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent pointer-events-none"
+            class="absolute inset-0 bg-linear-to-t from-gray-900/40 to-transparent pointer-events-none"
         />
 
         <div class="relative p-6">

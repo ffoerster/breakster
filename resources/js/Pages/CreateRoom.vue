@@ -1,27 +1,27 @@
 <script setup>
-import { Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '../Layouts/AppLayout.vue';
-import GlassCard from '../Components/Ui/GlassCard.vue';
-import PackCarousel from '../Components/Packs/PackCarousel.vue';
+import { Link, useForm } from "@inertiajs/vue3";
+import PackCarousel from "../Components/Packs/PackCarousel.vue";
+import GlassCard from "../Components/Ui/GlassCard.vue";
+import AppLayout from "../Layouts/AppLayout.vue";
 
 const props = defineProps({
-    initial_display_name: {
-        type: String,
-        default: '',
-    },
-    packs: {
-        type: Array,
-        required: true,
-    },
+	initial_display_name: {
+		type: String,
+		default: "",
+	},
+	packs: {
+		type: Array,
+		required: true,
+	},
 });
 
 const form = useForm({
-    display_name: props.initial_display_name,
-    pack_id: null,
+	display_name: props.initial_display_name,
+	pack_id: null,
 });
 
 const submit = () => {
-    form.post('/room/create');
+	form.post("/room/create");
 };
 </script>
 
@@ -56,7 +56,7 @@ const submit = () => {
 
                 <button
                     type="submit"
-                    class="btn-interactive btn-primary w-full min-h-[44px] py-4 px-6 text-white font-bold rounded-lg transition disabled:cursor-not-allowed"
+                    class="btn-interactive btn-primary w-full min-h-11 py-4 px-6 text-white font-bold rounded-lg transition disabled:cursor-not-allowed"
                     :disabled="form.processing"
                 >
                     {{ form.processing ? 'Creating…' : 'Create Room' }}

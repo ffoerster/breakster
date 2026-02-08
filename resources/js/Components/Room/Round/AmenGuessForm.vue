@@ -1,35 +1,35 @@
 <script setup>
-import { ref } from 'vue';
+import { ref } from "vue";
 
 const props = defineProps({
-    isSubmitting: {
-        type: Boolean,
-        required: true,
-    },
-    error: {
-        type: String,
-        default: '',
-    },
-    submitGuess: {
-        type: Function,
-        required: true,
-    },
+	isSubmitting: {
+		type: Boolean,
+		required: true,
+	},
+	error: {
+		type: String,
+		default: "",
+	},
+	submitGuess: {
+		type: Function,
+		required: true,
+	},
 });
 
-const artist = ref('');
-const title = ref('');
+const artist = ref("");
+const title = ref("");
 
 const handleSubmit = async () => {
-    if (!artist.value.trim() || !title.value.trim() || props.isSubmitting) {
-        return;
-    }
+	if (!artist.value.trim() || !title.value.trim() || props.isSubmitting) {
+		return;
+	}
 
-    await props.submitGuess(artist.value.trim(), title.value.trim());
+	await props.submitGuess(artist.value.trim(), title.value.trim());
 };
 </script>
 
 <template>
-    <div class="p-6 bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50 rounded-xl">
+    <div class="p-6 bg-linear-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50 rounded-xl">
         <h3 class="text-lg font-bold text-amber-300 mb-4 text-center font-display">
             Alright. Name it.
         </h3>

@@ -31,7 +31,7 @@ const props = defineProps({
 
 const buttonClass = () => {
 	if (props.variant === "compact") {
-		return "btn-interactive w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-xl tracking-wider shadow-lg shadow-accent-500/30 disabled:shadow-none transition-all duration-200";
+		return "btn-interactive w-full min-h-11 px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-xl tracking-wider shadow-lg shadow-accent-500/30 disabled:shadow-none transition-all duration-200";
 	}
 
 	return "btn-interactive relative px-8 py-4 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-400 hover:to-accent-500 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-black text-2xl tracking-wider shadow-lg shadow-accent-500/30 disabled:shadow-none transition-all duration-200";

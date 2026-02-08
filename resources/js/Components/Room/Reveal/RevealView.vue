@@ -1,65 +1,65 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { usePreferredReducedMotion } from '@vueuse/core';
-import GlassCard from '../../Ui/GlassCard.vue';
-import BottomActionBar from '../../Ui/BottomActionBar.vue';
-import AmenGuessForm from '../Round/AmenGuessForm.vue';
-import AmenVotePanel from '../Round/AmenVotePanel.vue';
-import RevealTrackCard from './RevealTrackCard.vue';
-import RevealResultItem from './RevealResultItem.vue';
-import RevealLeaderboard from './RevealLeaderboard.vue';
-import AmenRevealCard from './AmenRevealCard.vue';
-import ScreenFlash from './ScreenFlash.vue';
+import { usePreferredReducedMotion } from "@vueuse/core";
+import { computed, onMounted, ref } from "vue";
+import BottomActionBar from "../../Ui/BottomActionBar.vue";
+import GlassCard from "../../Ui/GlassCard.vue";
+import AmenGuessForm from "../Round/AmenGuessForm.vue";
+import AmenVotePanel from "../Round/AmenVotePanel.vue";
+import AmenRevealCard from "./AmenRevealCard.vue";
+import RevealLeaderboard from "./RevealLeaderboard.vue";
+import RevealResultItem from "./RevealResultItem.vue";
+import RevealTrackCard from "./RevealTrackCard.vue";
+import ScreenFlash from "./ScreenFlash.vue";
 
 const props = defineProps({
-    state: {
-        type: Object,
-        required: true,
-    },
-    isHost: {
-        type: Boolean,
-        required: true,
-    },
-    leaderboard: {
-        type: Array,
-        required: true,
-    },
-    previousLeaderboard: {
-        type: Array,
-        default: () => [],
-    },
-    nextRound: {
-        type: Function,
-        required: true,
-    },
-    openDetails: {
-        type: Function,
-        required: true,
-    },
-    submitAmenGuess: {
-        type: Function,
-        required: true,
-    },
-    isSubmittingAmenGuess: {
-        type: Boolean,
-        required: true,
-    },
-    amenGuessError: {
-        type: String,
-        default: '',
-    },
-    submitAmenVote: {
-        type: Function,
-        required: true,
-    },
-    isSubmittingAmenVote: {
-        type: Boolean,
-        required: true,
-    },
-    amenVoteError: {
-        type: String,
-        default: '',
-    },
+	state: {
+		type: Object,
+		required: true,
+	},
+	isHost: {
+		type: Boolean,
+		required: true,
+	},
+	leaderboard: {
+		type: Array,
+		required: true,
+	},
+	previousLeaderboard: {
+		type: Array,
+		default: () => [],
+	},
+	nextRound: {
+		type: Function,
+		required: true,
+	},
+	openDetails: {
+		type: Function,
+		required: true,
+	},
+	submitAmenGuess: {
+		type: Function,
+		required: true,
+	},
+	isSubmittingAmenGuess: {
+		type: Boolean,
+		required: true,
+	},
+	amenGuessError: {
+		type: String,
+		default: "",
+	},
+	submitAmenVote: {
+		type: Function,
+		required: true,
+	},
+	isSubmittingAmenVote: {
+		type: Boolean,
+		required: true,
+	},
+	amenVoteError: {
+		type: String,
+		default: "",
+	},
 });
 
 const prefersReducedMotion = usePreferredReducedMotion();
@@ -72,68 +72,70 @@ const screenFlashActive = ref(false);
 let confettiLib = null;
 
 const actualYear = computed(() => {
-    const year = props.state.round?.track?.year;
-    return year ? parseInt(year, 10) : 0;
+	const year = props.state.round?.track?.year;
+	return year ? parseInt(year, 10) : 0;
 });
 
 const hasAmenResolved = computed(() => {
-    return props.state.round?.amen?.claimed_by && props.state.round?.amen?.resolved;
+	return (
+		props.state.round?.amen?.claimed_by && props.state.round?.amen?.resolved
+	);
 });
 
 const getConfetti = async () => {
-    if (confettiLib) {
-        return confettiLib;
-    }
+	if (confettiLib) {
+		return confettiLib;
+	}
 
-    const mod = await import('canvas-confetti');
-    confettiLib = mod.default;
-    return confettiLib;
+	const mod = await import("canvas-confetti");
+	confettiLib = mod.default;
+	return confettiLib;
 };
 
 const triggerConfetti = async () => {
-    if (prefersReducedMotion.value === 'reduce') {
-        return;
-    }
+	if (prefersReducedMotion.value === "reduce") {
+		return;
+	}
 
-    const confetti = await getConfetti();
-    confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { x: 0.5, y: 0.6 },
-        colors: ['#00d4ff', '#22c55e', '#ffd93d'],
-    });
+	const confetti = await getConfetti();
+	confetti({
+		particleCount: 40,
+		spread: 60,
+		origin: { x: 0.5, y: 0.6 },
+		colors: ["#00d4ff", "#22c55e", "#ffd93d"],
+	});
 };
 
 const triggerScreenFlash = () => {
-    screenFlashActive.value = true;
-    setTimeout(() => {
-        screenFlashActive.value = false;
-    }, 50);
+	screenFlashActive.value = true;
+	setTimeout(() => {
+		screenFlashActive.value = false;
+	}, 50);
 };
 
 const onTrackFlipComplete = () => {
-    showResults.value = true;
+	showResults.value = true;
 };
 
 const onResultAnimationComplete = () => {
-    // Results are animating
+	// Results are animating
 };
 
 onMounted(() => {
-    if (prefersReducedMotion.value === 'reduce') {
-        showResults.value = true;
-        showAmen.value = true;
-        showLeaderboard.value = true;
-        return;
-    }
+	if (prefersReducedMotion.value === "reduce") {
+		showResults.value = true;
+		showAmen.value = true;
+		showLeaderboard.value = true;
+		return;
+	}
 
-    setTimeout(() => {
-        showAmen.value = true;
-    }, 1400);
+	setTimeout(() => {
+		showAmen.value = true;
+	}, 1400);
 
-    setTimeout(() => {
-        showLeaderboard.value = true;
-    }, 1800);
+	setTimeout(() => {
+		showLeaderboard.value = true;
+	}, 1800);
 });
 </script>
 
@@ -189,7 +191,7 @@ onMounted(() => {
 
                 <GlassCard
                     v-else-if="state.round.amen.is_claimant && state.round.amen.has_guess"
-                    class="p-6 bg-gradient-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40"
+                    class="p-6 bg-linear-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40"
                 >
                     <h3 class="text-lg font-bold text-accent-200 mb-2 text-center">
                         Waiting for votes...
@@ -273,7 +275,7 @@ onMounted(() => {
             <div class="grid grid-cols-2 gap-2">
                 <button
                     type="button"
-                    class="btn-interactive btn-secondary min-h-[44px] px-4 py-3 rounded-xl font-bold text-white"
+                    class="btn-interactive btn-secondary min-h-11 px-4 py-3 rounded-xl font-bold text-white"
                     @click="openDetails"
                 >
                     Details
@@ -282,7 +284,7 @@ onMounted(() => {
                 <button
                     v-if="isHost"
                     type="button"
-                    class="btn-interactive btn-success min-h-[44px] px-4 py-3 font-bold rounded-xl"
+                    class="btn-interactive btn-success min-h-11 px-4 py-3 font-bold rounded-xl"
                     @click="nextRound"
                 >
                     Next
@@ -290,7 +292,7 @@ onMounted(() => {
 
                 <div
                     v-else
-                    class="min-h-[44px] px-4 py-3 bg-white/8 text-white/70 font-bold rounded-xl text-center flex items-center justify-center"
+                    class="min-h-11 px-4 py-3 bg-white/8 text-white/70 font-bold rounded-xl text-center flex items-center justify-center"
                 >
                     Waiting…
                 </div>

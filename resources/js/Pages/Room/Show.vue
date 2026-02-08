@@ -441,7 +441,7 @@ onBeforeUnmount(() => {
                 <h2 class="text-2xl font-bold mb-4 text-white font-display">You're not in this room</h2>
                 <Link
                     :href="`/room/join?code=${state.room.code}`"
-                    class="btn-interactive btn-primary inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-lg font-bold transition text-white"
+                    class="btn-interactive btn-primary inline-flex items-center justify-center min-h-11 px-6 py-3 rounded-lg font-bold transition text-white"
                 >
                     Join Room {{ state.room.code }}
                 </Link>
@@ -610,7 +610,7 @@ onBeforeUnmount(() => {
                     <div v-if="isHost && !isFinished" class="pt-2">
                         <button
                             type="button"
-                            class="btn-interactive btn-danger w-full min-h-[44px] px-6 py-3 text-white font-bold rounded-xl"
+                            class="btn-interactive btn-danger w-full min-h-11 px-6 py-3 text-white font-bold rounded-xl"
                             @click="openFinishGameConfirm"
                         >
                             Close Game

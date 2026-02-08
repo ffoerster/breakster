@@ -1,56 +1,56 @@
 <script setup>
-import { defineAsyncComponent } from 'vue';
+import { defineAsyncComponent } from "vue";
 
-import AudioPlayer from '../../Ui/AudioPlayer.vue';
-import GlassCard from '../../Ui/GlassCard.vue';
+import AudioPlayer from "../../Ui/AudioPlayer.vue";
+import GlassCard from "../../Ui/GlassCard.vue";
 
-const QrcodeVue = defineAsyncComponent(() => import('qrcode.vue'));
+const QrcodeVue = defineAsyncComponent(() => import("qrcode.vue"));
 
 const props = defineProps({
-    state: {
-        type: Object,
-        required: true,
-    },
-    isHost: {
-        type: Boolean,
-        required: true,
-    },
-    playUrl: {
-        type: String,
-        required: true,
-    },
-    copyPlayUrl: {
-        type: Function,
-        required: true,
-    },
-    copiedPlayUrl: {
-        type: Boolean,
-        default: false,
-    },
-    isSpotifyProvider: {
-        type: Boolean,
-        required: true,
-    },
-    spotifyPlayError: {
-        type: String,
-        required: true,
-    },
-    isPlayingSpotify: {
-        type: Boolean,
-        required: true,
-    },
-    playSpotifyTrack: {
-        type: Function,
-        required: true,
-    },
-    compact: {
-        type: Boolean,
-        default: false,
-    },
+	state: {
+		type: Object,
+		required: true,
+	},
+	isHost: {
+		type: Boolean,
+		required: true,
+	},
+	playUrl: {
+		type: String,
+		required: true,
+	},
+	copyPlayUrl: {
+		type: Function,
+		required: true,
+	},
+	copiedPlayUrl: {
+		type: Boolean,
+		default: false,
+	},
+	isSpotifyProvider: {
+		type: Boolean,
+		required: true,
+	},
+	spotifyPlayError: {
+		type: String,
+		required: true,
+	},
+	isPlayingSpotify: {
+		type: Boolean,
+		required: true,
+	},
+	playSpotifyTrack: {
+		type: Function,
+		required: true,
+	},
+	compact: {
+		type: Boolean,
+		default: false,
+	},
 });
 
 const qrSize = () => (props.compact ? 190 : 220);
-const outerPaddingClass = () => (props.compact ? 'p-6' : 'p-8');
+const outerPaddingClass = () => (props.compact ? "p-6" : "p-8");
 </script>
 
 <template>
@@ -65,7 +65,7 @@ const outerPaddingClass = () => (props.compact ? 'p-6' : 'p-8');
             >
                 <button
                     type="button"
-                    class="btn-interactive btn-success w-full min-h-[44px] px-6 py-3 disabled:cursor-not-allowed rounded-lg font-bold flex items-center justify-center gap-3"
+                    class="btn-interactive btn-success w-full min-h-11 px-6 py-3 disabled:cursor-not-allowed rounded-lg font-bold flex items-center justify-center gap-3"
                     :disabled="isPlayingSpotify"
                     @click="playSpotifyTrack"
                 >
@@ -99,7 +99,7 @@ const outerPaddingClass = () => (props.compact ? 'p-6' : 'p-8');
 
             <button
                 type="button"
-                class="btn-interactive btn-secondary mt-3 min-h-[44px] px-4 py-2 rounded-lg font-bold"
+                class="btn-interactive btn-secondary mt-3 min-h-11 px-4 py-2 rounded-lg font-bold"
                 :disabled="!playUrl"
                 @click="copyPlayUrl"
             >
@@ -120,7 +120,7 @@ const outerPaddingClass = () => (props.compact ? 'p-6' : 'p-8');
                 :href="state.round.playback.external_url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="btn-interactive btn-primary inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 rounded-lg font-bold mt-4"
+                class="btn-interactive btn-primary inline-flex items-center justify-center gap-2 min-h-11 px-6 py-3 rounded-lg font-bold mt-4"
             >
                 Open in {{ state.round.playback.provider_name }}
             </a>

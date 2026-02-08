@@ -22,7 +22,7 @@ const props = defineProps({
 	},
 });
 
-const emit = defineEmits(['place', 'undo']);
+const emit = defineEmits(["place", "undo"]);
 
 const handleClick = () => {
 	if (props.disabled) {
@@ -33,7 +33,7 @@ const handleClick = () => {
 		return;
 	}
 
-	emit('place', props.insertAfterTrackId);
+	emit("place", props.insertAfterTrackId);
 };
 
 const handleUndo = () => {
@@ -41,7 +41,7 @@ const handleUndo = () => {
 		return;
 	}
 
-	emit('undo');
+	emit("undo");
 };
 </script>
 
@@ -102,8 +102,8 @@ const handleUndo = () => {
             disabled
                 ? 'border-white/10 bg-white/3 opacity-40 cursor-not-allowed'
                 : hasPlaced
-                    ? 'drop-zone-idle border-accent-500/20 bg-transparent min-h-[32px] hover:min-h-[44px]'
-                    : 'drop-zone-waiting border-accent-500/30 bg-accent-500/5 min-h-[44px]',
+                    ? 'drop-zone-idle border-accent-500/20 bg-transparent min-h-[32px] hover:min-h-11'
+                    : 'drop-zone-waiting border-accent-500/30 bg-accent-500/5 min-h-11',
         ]"
         :disabled="disabled"
         @click="handleClick"
