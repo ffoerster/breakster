@@ -28,7 +28,6 @@
 - [ ] Bulk track import improvements
 - [ ] Community-submitted packs
 - [ ] Auto-calculate track difficulty from metadata
-- [ ] Analytics dashboard (games played, popular packs, player retention)
 
 ## Technical
 

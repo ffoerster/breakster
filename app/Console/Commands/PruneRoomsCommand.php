@@ -1,9 +1,10 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Domain\Analytics\GameSessionRecorder;
 use App\Domain\Game\Enums\RoomState;
 use App\Models\Room;
 use Illuminate\Console\Command;
@@ -12,6 +13,11 @@ use Illuminate\Support\Carbon;
 
 class PruneRoomsCommand extends Command
 {
+    public function __construct(private readonly GameSessionRecorder $sessionRecorder)
+    {
+        parent::__construct();
+    }
+
     /**
      * The name and signature of the console command.
      *
@@ -55,6 +61,17 @@ class PruneRoomsCommand extends Command
             $this->info('Dry run: no rooms will be deleted.');
         }
 
+        if (! $dryRun) {
+            Room::query()
+                ->where('state', RoomState::Finished)
+                ->where('updated_at', '<', $finishedCutoff)
+                ->chunkById(100, function ($rooms): void {
+                    foreach ($rooms as $room) {
+                        $this->sessionRecorder->record($room);
+                    }
+                });
+        }
+
         $deletedFinished = $this->pruneRooms(
             label: "finished > {$finishedHours}h",
             query: Room::query()->where('state', RoomState::Finished)->where('updated_at', '<', $finishedCutoff),
@@ -83,7 +100,7 @@ class PruneRoomsCommand extends Command
         $total = $deletedFinished + $deletedStalled + $deletedEmpty;
 
         $this->newLine();
-        $this->info('Total rooms '.( $dryRun ? 'matched' : 'deleted' ).": {$total}");
+        $this->info('Total rooms '.($dryRun ? 'matched' : 'deleted').": {$total}");
 
         return self::SUCCESS;
     }
@@ -92,7 +109,7 @@ class PruneRoomsCommand extends Command
     {
         $value = $this->option($name);
 
-        if (!is_string($value) && !is_int($value)) {
+        if (! is_string($value) && ! is_int($value)) {
             $this->error("Invalid value for --{$name}.");
 
             return null;
@@ -100,7 +117,7 @@ class PruneRoomsCommand extends Command
 
         $intValue = (int) $value;
 
-        if ((string) $intValue !== (string) $value && !is_int($value)) {
+        if ((string) $intValue !== (string) $value && ! is_int($value)) {
             $this->error("--{$name} must be an integer.");
 
             return null;

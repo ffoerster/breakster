@@ -35,6 +35,7 @@ class BackendPanelProvider extends PanelProvider
                 'primary' => '#00E5FF',
             ])
             ->font('DM Sans')
+            ->viteTheme('resources/css/filament/backend/theme.css')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
