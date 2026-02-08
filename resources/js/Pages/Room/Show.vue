@@ -316,7 +316,7 @@ onMounted(() => {
 		return;
 	}
 
-	channel = window.Echo.private(`room.${code.value}`);
+	channel = window.Echo.channel(`room.${code.value}`);
 
 	channel.listen(".players.updated", scheduleRefresh);
 	channel.listen(".round.started", scheduleRefresh);
