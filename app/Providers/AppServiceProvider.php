@@ -6,6 +6,7 @@ use App\Domain\Game\GameService;
 use App\Domain\Game\PlacementValidator;
 use App\Domain\Game\RoomCodeGenerator;
 use App\Domain\Game\ScoreCalculator;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(PlacementValidator::class),
                 $app->make(ScoreCalculator::class),
             );
+        });
+
+        Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+            $event->extendSocialite('authentik', \SocialiteProviders\Authentik\Provider::class);
         });
     }
 

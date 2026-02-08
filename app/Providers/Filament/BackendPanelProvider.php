@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Models\User;
+use DutchCodingCompany\FilamentSocialite\FilamentSocialitePlugin;
+use DutchCodingCompany\FilamentSocialite\Provider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -17,6 +20,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Laravel\Socialite\Contracts\User as SocialiteUserContract;
 
 class BackendPanelProvider extends PanelProvider
 {
@@ -52,6 +56,26 @@ class BackendPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->plugin(
+                FilamentSocialitePlugin::make()
+                    ->providers([
+                        Provider::make('authentik')
+                            ->label('BR Auth'),
+                    ])
+                    ->slug('admin')
+                    ->registration(function (
+                        string $provider,
+                        SocialiteUserContract $socialiteUser,
+                        FilamentSocialitePlugin $plugin,
+                    ) {
+                        return User::create([
+                            'name' => $socialiteUser->getName() ?? $socialiteUser->getNickname() ?? 'User',
+                            'email' => $socialiteUser->getEmail(),
+                            'is_admin' => true,
+                        ]);
+                    })
+                    ->userModelClass(User::class),
+            )
             ->authMiddleware([
                 Authenticate::class,
             ]);
