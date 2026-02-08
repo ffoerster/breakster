@@ -334,7 +334,7 @@ class RoomActionController extends Controller
 
         $round = $this->round($roundId, $room);
 
-        $vote = (bool) $request->validated('vote');
+        $vote = $request->boolean('vote');
 
         try {
             $gameService->submitAmenVote($round, $player, $vote);

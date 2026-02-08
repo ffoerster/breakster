@@ -329,7 +329,9 @@ class RoomStateData
             ],
             'my_vote' => $myVote,
             'resolved' => $isResolved,
-            'correct' => $isResolved ? $round->amen_awarded_points > 0 : null,
+            'correct' => $isResolved
+                ? ($round->amen_awarded_points > 0 ? true : ($round->amen_awarded_points < 0 ? false : null))
+                : null,
             'awarded_points' => $round->amen_awarded_points,
             'can_claim' => $amenEnabled && $round->canClaimAmen() && $playerCount >= 2,
             'voting_open' => $votingOpen,

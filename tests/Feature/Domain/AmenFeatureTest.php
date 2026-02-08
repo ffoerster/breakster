@@ -64,7 +64,7 @@ describe('GameService::claimAmen', function () {
 
         $this->gameService->claimAmen($round, $player1);
 
-        expect(fn() => $this->gameService->claimAmen($round->fresh(), $player2))
+        expect(fn () => $this->gameService->claimAmen($round->fresh(), $player2))
             ->toThrow(\RuntimeException::class, 'AMEN has already been claimed for this round.');
     });
 
@@ -76,7 +76,7 @@ describe('GameService::claimAmen', function () {
         $round->update(['status' => RoundStatus::Revealed]);
         $player = $room->players()->where('is_host', true)->first();
 
-        expect(fn() => $this->gameService->claimAmen($round->fresh(), $player))
+        expect(fn () => $this->gameService->claimAmen($round->fresh(), $player))
             ->toThrow(\RuntimeException::class, 'This round is not active.');
     });
 
@@ -85,7 +85,7 @@ describe('GameService::claimAmen', function () {
         $round = $this->gameService->startRound($room);
         $player = $room->players()->where('is_host', true)->first();
 
-        expect(fn() => $this->gameService->claimAmen($round, $player))
+        expect(fn () => $this->gameService->claimAmen($round, $player))
             ->toThrow(\RuntimeException::class, 'AMEN requires at least 2 players.');
     });
 });
@@ -125,7 +125,7 @@ describe('GameService::submitAmenGuess', function () {
 
         $this->gameService->claimAmen($round, $player1);
 
-        expect(fn() => $this->gameService->submitAmenGuess($round->fresh(), $player2, 'Artist', 'Title'))
+        expect(fn () => $this->gameService->submitAmenGuess($round->fresh(), $player2, 'Artist', 'Title'))
             ->toThrow(\RuntimeException::class, 'Only the AMEN claimant can submit a guess.');
     });
 
@@ -139,7 +139,7 @@ describe('GameService::submitAmenGuess', function () {
         $this->gameService->claimAmen($round, $player);
         $this->gameService->submitAmenGuess($round->fresh(), $player, 'Artist', 'Title');
 
-        expect(fn() => $this->gameService->submitAmenGuess($round->fresh(), $player, 'Other', 'Song'))
+        expect(fn () => $this->gameService->submitAmenGuess($round->fresh(), $player, 'Other', 'Song'))
             ->toThrow(\RuntimeException::class, 'An AMEN guess has already been submitted for this round.');
     });
 });
@@ -155,7 +155,7 @@ describe('GameService::submitAmenVote', function () {
         $this->gameService->claimAmen($round, $player1);
         $this->gameService->submitAmenGuess($round->fresh(), $player1, 'Artist', 'Title');
 
-        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
+        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
             ->toThrow(\RuntimeException::class, 'Amen voting is only allowed after reveal.');
     });
 
@@ -204,7 +204,7 @@ describe('GameService::submitAmenVote', function () {
             'revealed_at' => now(),
         ]);
 
-        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player1, true))
+        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player1, true))
             ->toThrow(\RuntimeException::class, 'The AMEN claimant cannot vote.');
     });
 
@@ -226,7 +226,7 @@ describe('GameService::submitAmenVote', function () {
 
         $this->gameService->submitAmenVote($round->fresh(), $player2, true);
 
-        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player2, false))
+        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player2, false))
             ->toThrow(\RuntimeException::class, 'You have already voted for this round.');
     });
 
@@ -241,7 +241,7 @@ describe('GameService::submitAmenVote', function () {
             'revealed_at' => now(),
         ]);
 
-        expect(fn() => $this->gameService->submitAmenVote($round, $player2, true))
+        expect(fn () => $this->gameService->submitAmenVote($round, $player2, true))
             ->toThrow(\RuntimeException::class, 'No AMEN claim exists for this round.');
     });
 
@@ -259,7 +259,7 @@ describe('GameService::submitAmenVote', function () {
             'revealed_at' => now(),
         ]);
 
-        expect(fn() => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
+        expect(fn () => $this->gameService->submitAmenVote($round->fresh(), $player2, true))
             ->toThrow(\RuntimeException::class, 'The AMEN claimant has not submitted a guess yet.');
     });
 
@@ -384,7 +384,7 @@ describe('GameService::resolveAmen', function () {
             ->toBe($initialScore);
     });
 
-    it('awards zero points when fewer than 2 votes', function () {
+    it('allows a single eligible vote to decide in a 2-player room', function () {
         $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $player2 = RoomPlayer::factory()->create(['room_id' => $room->id, 'display_name' => 'Player2']);
 
@@ -400,19 +400,19 @@ describe('GameService::resolveAmen', function () {
             'revealed_at' => now(),
         ]);
 
-        // Only one voter (player2), so auto-resolves with < 2 votes
+        // Only one voter (player2), so their vote decides
         $this->gameService->submitAmenVote($round->fresh(), $player2, true);
 
         $round = $round->fresh();
         $player1 = $player1->fresh();
 
-        // Only 1 vote, so 0 points even though it's a yes
+        // Only 1 vote, and it is a yes
         expect($round->isAmenResolved())
             ->toBeTrue()
             ->and($round->amen_awarded_points)
-            ->toBe(0)
+            ->toBe(ScoreCalculator::AMEN_BONUS_POINTS)
             ->and($player1->score)
-            ->toBe($initialScore);
+            ->toBe($initialScore + ScoreCalculator::AMEN_BONUS_POINTS);
     });
 
     it('is idempotent - calling twice does not re-apply points', function () {

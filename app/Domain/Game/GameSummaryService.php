@@ -63,7 +63,7 @@ class GameSummaryService
             ->select([
                 'room_player_id',
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct'),
+                DB::raw('SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct'),
             ])
             ->groupBy('room_player_id')
             ->get()
@@ -128,7 +128,7 @@ class GameSummaryService
                 'room_player_id',
                 DB::raw('AVG(year_delta) as avg_delta'),
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct'),
+                DB::raw('SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct'),
             ])
             ->groupBy('room_player_id')
             ->orderBy('avg_delta')
@@ -299,7 +299,7 @@ class GameSummaryService
             ->whereIn('round_id', $roundIds)
             ->select([
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct'),
+                DB::raw('SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct'),
             ])
             ->first();
 

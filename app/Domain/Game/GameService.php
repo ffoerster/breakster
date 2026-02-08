@@ -904,22 +904,19 @@ class GameService
 
             $yesVotes = $round->amenVotes()->where('vote', true)->count();
             $noVotes = $round->amenVotes()->where('vote', false)->count();
-            $totalVotes = $yesVotes + $noVotes;
 
-            // Determine points based on voting
+            // Determine points based on majority vote.
+            // If there is a tie (or no votes), the AMEN resolves with 0 points (neutral outcome).
             $points = 0;
             $wasCorrect = false;
 
-            if ($totalVotes >= 2 && $yesVotes > $noVotes) {
-                // Majority voted yes
+            if ($yesVotes > $noVotes) {
                 $points = ScoreCalculator::AMEN_BONUS_POINTS;
                 $wasCorrect = true;
-            } elseif ($totalVotes >= 2 && $noVotes > $yesVotes) {
-                // Majority voted no
+            } elseif ($noVotes > $yesVotes) {
                 $points = ScoreCalculator::AMEN_PENALTY_POINTS;
                 $wasCorrect = false;
             }
-            // Tie or insufficient votes = 0 points
 
             // Apply points to claimant
             $claimant = $round->amenClaimant;

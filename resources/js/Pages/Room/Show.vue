@@ -397,9 +397,9 @@ watch(
 	() => state.round?.amen?.resolved,
 	(resolved, wasResolved) => {
 		if (resolved && !wasResolved) {
-			if (state.round?.amen?.correct) {
+			if (state.round?.amen?.correct === true) {
 				playCorrect();
-			} else {
+			} else if (state.round?.amen?.correct === false) {
 				playWrong();
 			}
 		}

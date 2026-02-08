@@ -41,6 +41,10 @@ const cardRef = ref(null);
 const showResult = ref(false);
 let confettiLib = null;
 
+const isNeutral = computed(() => props.correct === null);
+const isCorrect = computed(() => props.correct === true);
+const isWrong = computed(() => props.correct === false);
+
 const gameSounds = inject("gameSounds", null);
 
 const loadConfetti = async () => {
@@ -81,11 +85,11 @@ onMounted(() => {
 	setTimeout(() => {
 		showResult.value = true;
 
-		if (props.correct) {
+		if (isCorrect.value) {
 			fireGoldConfetti();
 			gameSounds?.playCorrect();
 			haptics.heavy();
-		} else {
+		} else if (isWrong.value) {
 			gameSounds?.playWrong();
 			haptics.error();
 		}
@@ -98,32 +102,34 @@ onMounted(() => {
         ref="cardRef"
         class="relative overflow-hidden rounded-xl border-2 transition-all duration-500"
         :class="[
-            showResult && correct
+            showResult && isCorrect
                 ? 'bg-linear-to-br from-accent-500/30 to-accent-600/30 border-accent-500 animate-pulse-glow'
-            : showResult && !correct
+            : showResult && isWrong
                 ? 'bg-red-500/20 border-red-500'
+                : showResult && isNeutral
+                    ? 'bg-white/10 border-white/20'
                 : 'bg-white/5 border-accent-500/15',
         ]"
     >
         <!-- Spotlight effect overlay for success -->
         <div
-            v-if="showResult && correct"
+            v-if="showResult && isCorrect"
             class="absolute inset-0 bg-gradient-radial from-accent-400/20 via-transparent to-transparent pointer-events-none"
         />
 
         <!-- Wilting overlay for failure -->
         <div
-            v-if="showResult && !correct"
+            v-if="showResult && isWrong"
             class="absolute inset-0 bg-linear-to-t from-gray-900/40 to-transparent pointer-events-none"
         />
 
         <div class="relative p-6">
             <h3
                 class="text-xl font-bold mb-3 text-center transition-colors duration-300 font-display"
-                :class="showResult ? (correct ? 'text-accent-200' : 'text-red-300') : 'text-white/80'"
+                :class="showResult ? (isCorrect ? 'text-accent-200' : isWrong ? 'text-red-300' : 'text-white/85') : 'text-white/80'"
             >
                 <template v-if="showResult">
-                    {{ correct ? 'AMEN confirmed!' : 'False AMEN.' }}
+                    {{ isCorrect ? 'AMEN confirmed!' : isWrong ? 'False AMEN.' : 'No verdict.' }}
                 </template>
                 <template v-else>
                     Resolving AMEN...
@@ -153,7 +159,7 @@ onMounted(() => {
             <div
                 v-if="showResult"
                 class="mt-4 text-center text-2xl font-black font-mono-party"
-                :class="correct ? 'text-accent-200 animate-scale-pop' : 'text-red-300'"
+                :class="isCorrect ? 'text-accent-200 animate-scale-pop' : isWrong ? 'text-red-300' : 'text-white/80'"
             >
                 {{ awardedPoints > 0 ? `+${awardedPoints}` : awardedPoints }} pts
             </div>

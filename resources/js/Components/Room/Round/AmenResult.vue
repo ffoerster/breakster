@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
     claimantName: {
         type: String,
         required: true,
@@ -25,15 +27,22 @@ defineProps({
         required: true,
     },
 });
+
+const isNeutral = computed(() => props.correct === null);
+const isCorrect = computed(() => props.correct === true);
+const isWrong = computed(() => props.correct === false);
 </script>
 
 <template>
     <div
         class="p-6 rounded-xl border-2"
-        :class="correct ? 'bg-green-500/20 border-green-500' : 'bg-red-500/20 border-red-500'"
+        :class="isCorrect ? 'bg-green-500/20 border-green-500' : isWrong ? 'bg-red-500/20 border-red-500' : 'bg-white/10 border-white/20'"
     >
-        <h3 class="text-xl font-bold mb-3 text-center font-display" :class="correct ? 'text-green-300' : 'text-red-300'">
-            {{ correct ? 'AMEN confirmed.' : 'False AMEN.' }}
+        <h3
+            class="text-xl font-bold mb-3 text-center font-display"
+            :class="isCorrect ? 'text-green-300' : isWrong ? 'text-red-300' : 'text-white/85'"
+        >
+            {{ isCorrect ? 'AMEN confirmed.' : isWrong ? 'False AMEN.' : 'No verdict.' }}
             <span class="ml-2">
                 {{ awardedPoints > 0 ? `+${awardedPoints}` : awardedPoints }}
             </span>
