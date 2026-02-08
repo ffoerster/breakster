@@ -20,7 +20,7 @@ Broadcast::routes(['middleware' => ['web']]);
 Route::get('/manifest.webmanifest', function () {
     $path = public_path('build/manifest.webmanifest');
 
-    if (!is_file($path)) {
+    if (! is_file($path)) {
         abort(404);
     }
 
@@ -60,6 +60,7 @@ Route::prefix('/room/{code}')
         );
         Route::post('/start', [RoomActionController::class, 'start'])->name('room.start');
         Route::post('/place', [RoomActionController::class, 'place'])->name('room.place');
+        Route::delete('/place', [RoomActionController::class, 'undoPlace'])->name('room.place.undo');
         Route::post('/reveal', [RoomActionController::class, 'reveal'])->name('room.reveal');
         Route::post('/next', [RoomActionController::class, 'next'])->name('room.next');
         Route::post('/finish', [RoomActionController::class, 'finish'])->name('room.finish');

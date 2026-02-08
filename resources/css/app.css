@@ -505,6 +505,27 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Drop zone styles */
+@keyframes drop-zone-pulse {
+    0%, 100% { border-color: oklch(0.72 0.15 200 / 0.3); }
+    50% { border-color: oklch(0.72 0.15 200 / 0.6); }
+}
+
+.drop-zone-idle {
+    transition: all 200ms ease;
+}
+
+.drop-zone-idle:hover:not(:disabled),
+.drop-zone-idle:focus-visible:not(:disabled) {
+    background: oklch(0.72 0.15 200 / 0.08);
+    border-color: oklch(0.72 0.15 200 / 0.4);
+    min-height: 44px;
+}
+
+.drop-zone-waiting {
+    animation: drop-zone-pulse 1.5s ease-in-out infinite;
+}
+
 /* Audio player styles */
 .audio-player-progress::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -575,7 +596,8 @@
     .animate-shake-dramatic,
     .animate-crown-bounce,
     .animate-drop-success,
-    .animate-drop-error {
+    .animate-drop-error,
+    .drop-zone-waiting {
         animation: none;
     }
 

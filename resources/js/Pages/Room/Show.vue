@@ -76,6 +76,8 @@ const {
 	place,
 	placeError,
 	isPlacing,
+	undoPlacement,
+	isUndoingPlacement,
 	revealRound,
 	nextRound,
 	finishGame,
@@ -523,6 +525,8 @@ onBeforeUnmount(() => {
                     :is-placing="isPlacing"
                     :place-error="placeError"
                     :place="place"
+                    :undo-placement="undoPlacement"
+                    :is-undoing-placement="isUndoingPlacement"
                     :reveal-round="revealRound"
                     :open-details="openDetails"
                     :is-spotify-provider="isSpotifyProvider"

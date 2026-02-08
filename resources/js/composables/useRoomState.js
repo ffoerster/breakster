@@ -265,6 +265,7 @@ export function useRoomState(props) {
 
     const placeError = ref('');
     const isPlacing = ref(false);
+    const isUndoingPlacement = ref(false);
 
     const place = async (insertedAfterTrackId) => {
         if (!isInRound.value) {
@@ -309,6 +310,39 @@ export function useRoomState(props) {
             }
         } finally {
             isPlacing.value = false;
+        }
+    };
+
+    const undoPlacement = async () => {
+        if (!isInRound.value || isUndoingPlacement.value) {
+            return;
+        }
+
+        isUndoingPlacement.value = true;
+        placeError.value = '';
+
+        if (!isOnline.value) {
+            placeError.value = "You're offline.";
+            isUndoingPlacement.value = false;
+            return;
+        }
+
+        try {
+            const result = await actionRequest.execute(`/room/${code.value}/place`, {
+                method: 'DELETE',
+            });
+
+            if (result.error.value) {
+                placeError.value = result.error.value?.response?.data?.message
+                    ?? 'Could not undo placement.';
+                return;
+            }
+
+            await refreshState();
+
+            toast.success('Placement removed');
+        } finally {
+            isUndoingPlacement.value = false;
         }
     };
 
@@ -698,6 +732,8 @@ export function useRoomState(props) {
         place,
         placeError,
         isPlacing,
+        undoPlacement,
+        isUndoingPlacement,
         revealRound,
         nextRound,
         finishGame,

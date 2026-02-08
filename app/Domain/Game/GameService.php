@@ -13,8 +13,8 @@ use App\Events\AmenClaimed;
 use App\Events\AmenGuessSubmitted;
 use App\Events\AmenResolved;
 use App\Events\AmenVoteSubmitted;
-use App\Events\PlaybackFailed;
 use App\Events\PlacementSubmitted;
+use App\Events\PlaybackFailed;
 use App\Events\PlayerReady;
 use App\Events\RoomPlayersUpdated;
 use App\Events\RoomStateChanged;
@@ -462,6 +462,33 @@ class GameService
         event(new PlacementSubmitted($player->room->code, $round->id, $player->id));
 
         return $placement->fresh();
+    }
+
+    /**
+     * Undo a placement for the current round.
+     */
+    public function undoPlacement(RoomPlayer $player, Round $round): void
+    {
+        if (! $round->isActive()) {
+            throw new \RuntimeException('This round is not active.');
+        }
+
+        if ($round->isPlacementPeriodExpired()) {
+            throw new \RuntimeException('Placement time has expired.');
+        }
+
+        $placement = Placement::query()
+            ->where('round_id', $round->id)
+            ->where('room_player_id', $player->id)
+            ->first();
+
+        if (! $placement) {
+            throw new \RuntimeException('No placement to undo.');
+        }
+
+        $placement->delete();
+
+        event(new PlacementSubmitted($player->room->code, $round->id, $player->id));
     }
 
     /**

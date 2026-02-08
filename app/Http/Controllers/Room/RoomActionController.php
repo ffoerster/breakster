@@ -102,6 +102,45 @@ class RoomActionController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function undoPlace(
+        string $code,
+        RoomSession $roomSession,
+        GameService $gameService,
+    ): JsonResponse {
+        $room = $this->room($code)->loadMissing('currentRound');
+        $player = $roomSession->requirePlayer($room);
+
+        $round = $room->currentRound;
+        if (! $round) {
+            abort(409, 'No active round.');
+        }
+
+        $key = sprintf('placement-submit:%d', $player->id);
+        if (RateLimiter::tooManyAttempts($key, 30)) {
+            abort(429, 'Too many placement attempts. Please slow down.');
+        }
+
+        RateLimiter::hit($key, 60);
+
+        $placementUnlocksAt = $round->placement_unlocks_at;
+        if ($placementUnlocksAt !== null && now()->lt($placementUnlocksAt)) {
+            abort(409, 'Placement will unlock in a moment.');
+        }
+
+        $placementEndsAt = $round->placement_ends_at;
+        if ($placementEndsAt !== null && now()->gte($placementEndsAt)) {
+            abort(409, 'Placement time has expired.');
+        }
+
+        try {
+            $gameService->undoPlacement($player, $round);
+        } catch (\RuntimeException $e) {
+            abort(409, $e->getMessage());
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
     public function reveal(string $code, RoomSession $roomSession, GameService $gameService): JsonResponse
     {
         $room = $this->room($code)->loadMissing('currentRound');

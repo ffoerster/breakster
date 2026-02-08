@@ -1,14 +1,5 @@
 <script setup>
-import { usePreferredReducedMotion, useThrottleFn } from "@vueuse/core";
-import {
-	computed,
-	inject,
-	nextTick,
-	onBeforeUnmount,
-	onMounted,
-	ref,
-	watch,
-} from "vue";
+import { computed, inject, ref, watch } from "vue";
 import { useHaptics } from "../../../Composables/useHaptics";
 import BottomActionBar from "../../Ui/BottomActionBar.vue";
 import BottomSheet from "../../Ui/BottomSheet.vue";
@@ -19,20 +10,7 @@ import AmenButton from "./AmenButton.vue";
 import AmenGuessForm from "./AmenGuessForm.vue";
 import AmenResult from "./AmenResult.vue";
 import RoundListenPanel from "./RoundListenPanel.vue";
-
-let sortableLib = null;
-let sortableInitRunId = 0;
-
-const getSortable = async () => {
-	if (sortableLib) {
-		return sortableLib;
-	}
-
-	const mod = await import("sortablejs");
-	sortableLib = mod.default;
-
-	return sortableLib;
-};
+import TimelineDropZone from "./TimelineDropZone.vue";
 
 const props = defineProps({
 	state: {
@@ -81,6 +59,14 @@ const props = defineProps({
 	},
 	place: {
 		type: Function,
+		required: true,
+	},
+	undoPlacement: {
+		type: Function,
+		required: true,
+	},
+	isUndoingPlacement: {
+		type: Boolean,
 		required: true,
 	},
 	revealRound: {
@@ -136,67 +122,6 @@ const props = defineProps({
 
 const gameSounds = inject("gameSounds", null);
 const haptics = useHaptics();
-const prefersReducedMotion = usePreferredReducedMotion();
-
-// Drop animation state
-const lastDroppedIndex = ref(null);
-const dropAnimationType = ref(null);
-let dropAnimationTimeout = null;
-
-const triggerDropAnimation = (index, type = "success") => {
-	if (prefersReducedMotion.value === "reduce") {
-		return;
-	}
-
-	if (dropAnimationTimeout) {
-		clearTimeout(dropAnimationTimeout);
-	}
-
-	lastDroppedIndex.value = index;
-	dropAnimationType.value = type;
-
-	dropAnimationTimeout = setTimeout(() => {
-		dropAnimationType.value = null;
-		lastDroppedIndex.value = null;
-	}, 400);
-};
-
-// Drag direction tracking for rotation effect
-let lastDragX = 0;
-let cleanupMouseMove = null;
-let cleanupTouchMove = null;
-
-const trackDragDirection = useThrottleFn((e) => {
-	const currentX = e.clientX ?? e.touches?.[0]?.clientX ?? lastDragX;
-	const delta = currentX - lastDragX;
-	const rotation = Math.max(-3, Math.min(3, delta * 0.1));
-
-	const dragged = document.querySelector(".sortable-drag");
-	if (dragged) {
-		dragged.style.setProperty("--drag-rotation", `${rotation}deg`);
-	}
-
-	lastDragX = currentX;
-}, 16);
-
-const startDragTracking = (e) => {
-	lastDragX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
-
-	const onMove = (evt) => trackDragDirection(evt);
-
-	document.addEventListener("mousemove", onMove);
-	document.addEventListener("touchmove", onMove);
-
-	cleanupMouseMove = () => document.removeEventListener("mousemove", onMove);
-	cleanupTouchMove = () => document.removeEventListener("touchmove", onMove);
-};
-
-const stopDragTracking = () => {
-	cleanupMouseMove?.();
-	cleanupTouchMove?.();
-	cleanupMouseMove = null;
-	cleanupTouchMove = null;
-};
 
 const isListenOpen = ref(false);
 
@@ -208,16 +133,38 @@ const closeListen = () => {
 	isListenOpen.value = false;
 };
 
-const mysterySourceEl = ref(null);
-const placementListEl = ref(null);
-let mysterySortable = null;
-let placementSortable = null;
+const hasGuessInTimeline = computed(() => Boolean(props.state.me?.has_placed));
 
-const optimisticPlaced = ref(false);
-
-const hasGuessInTimeline = computed(
-	() => Boolean(props.state.me?.has_placed) || optimisticPlaced.value,
+const placementInsertAfterTrackId = computed(
+	() => props.state.me?.placement_inserted_after_track_id ?? null,
 );
+
+const timelineWithDropZones = computed(() => {
+	const timeline = props.state.timeline ?? [];
+	const items = [];
+
+	// Drop zone at the beginning (insertAfterTrackId = null)
+	items.push({
+		kind: "drop-zone",
+		insertAfterTrackId: null,
+		isActive:
+			hasGuessInTimeline.value &&
+			placementInsertAfterTrackId.value === null,
+	});
+
+	for (const track of timeline) {
+		items.push({ kind: "track", ...track });
+		items.push({
+			kind: "drop-zone",
+			insertAfterTrackId: track.track_id,
+			isActive:
+				hasGuessInTimeline.value &&
+				placementInsertAfterTrackId.value === track.track_id,
+		});
+	}
+
+	return items;
+});
 
 const queuedInsertedAfterTrackId = ref(undefined);
 
@@ -255,262 +202,28 @@ watch(
 	() => props.state.round?.id,
 	() => {
 		queuedInsertedAfterTrackId.value = undefined;
-		optimisticPlaced.value = false;
 	},
 );
 
-watch(
-	() => props.placeError,
-	(error) => {
-		if (!error) {
-			return;
-		}
-
-		if (props.state.me?.has_placed) {
-			return;
-		}
-
-		optimisticPlaced.value = false;
-	},
-);
-
-const shouldEnablePlacementDnd = computed(() => {
-	return Boolean(!props.isPlacementLocked);
-});
-
-const shouldEnableMysterySourceDnd = computed(() => {
-	return Boolean(!props.isPlacementLocked && !hasGuessInTimeline.value);
-});
-
-const placementIndex = computed(() => {
-	if (!props.state.me?.has_placed) {
-		return null;
-	}
-
-	const afterId = props.state.me?.placement_inserted_after_track_id ?? null;
-	const timeline = props.state.timeline ?? [];
-
-	if (afterId === null) {
-		return 0;
-	}
-
-	const afterIndex = timeline.findIndex((t) => t.track_id === afterId);
-	if (afterIndex === -1) {
-		return 0;
-	}
-
-	return afterIndex + 1;
-});
-
-const timelineRenderItems = computed(() => {
-	const timeline = props.state.timeline ?? [];
-
-	const items = timeline.map((t) => ({
-		kind: "track",
-		...t,
-	}));
-
-	if (placementIndex.value === null) {
-		return items;
-	}
-
-	items.splice(placementIndex.value, 0, {
-		kind: "mystery",
-		id: "mystery",
-	});
-
-	return items;
-});
-
-const destroyPlacementDnD = () => {
-	if (mysterySortable) {
-		mysterySortable.destroy();
-		mysterySortable = null;
-	}
-
-	if (placementSortable) {
-		placementSortable.destroy();
-		placementSortable = null;
-	}
-};
-
-const initPlacementDnD = async () => {
-	if (!placementListEl.value) {
+const handleDropZonePlace = async (insertAfterTrackId) => {
+	if (props.isPlacementLocked || props.isPlacementTimeExpired) {
 		return;
 	}
 
-	const runId = ++sortableInitRunId;
+	gameSounds?.playClick();
+	haptics.medium();
+	await requestPlace(insertAfterTrackId);
+};
 
-	destroyPlacementDnD();
-
-	const Sortable = await getSortable();
-	if (runId !== sortableInitRunId) {
+const handleUndo = async () => {
+	if (props.isPlacementLocked || props.isPlacementTimeExpired) {
 		return;
 	}
 
-	if (shouldEnableMysterySourceDnd.value && mysterySourceEl.value) {
-		mysterySortable = Sortable.create(mysterySourceEl.value, {
-			group: {
-				name: "placement",
-				pull: "clone",
-				put: false,
-			},
-			sort: false,
-			animation: 200,
-			easing: "cubic-bezier(0.2, 0, 0, 1)",
-			ghostClass: "sortable-ghost",
-			dragClass: "sortable-drag",
-			chosenClass: "sortable-chosen",
-			delay: 100,
-			delayOnTouchOnly: true,
-			touchStartThreshold: 5,
-			fallbackOnBody: true,
-			onChoose: (evt) => {
-				evt.item.classList.add("drag-chosen-active");
-				haptics.light();
-			},
-			onStart: (evt) => {
-				startDragTracking(evt.originalEvent);
-			},
-			onUnchoose: (evt) => {
-				evt.item.classList.remove("drag-chosen-active");
-				stopDragTracking();
-			},
-		});
-	}
-
-	placementSortable = Sortable.create(placementListEl.value, {
-		group: {
-			name: "placement",
-			pull: false,
-			put: true,
-		},
-		sort: true,
-		draggable: ".timeline-item",
-		filter: ".timeline-track",
-		preventOnFilter: false,
-		animation: 200,
-		easing: "cubic-bezier(0.2, 0, 0, 1)",
-		ghostClass: "sortable-ghost",
-		dragClass: "sortable-drag",
-		chosenClass: "sortable-chosen",
-		fallbackOnBody: true,
-		swapThreshold: 0.4,
-		invertSwap: true,
-		invertedSwapThreshold: 0.5,
-		onChoose: (evt) => {
-			evt.item.classList.add("drag-chosen-active");
-			haptics.light();
-		},
-		onStart: (evt) => {
-			startDragTracking(evt.originalEvent);
-		},
-		onUnchoose: (evt) => {
-			evt.item.classList.remove("drag-chosen-active");
-			stopDragTracking();
-		},
-		onAdd: async (evt) => {
-			if (props.isPlacementLocked) {
-				evt.item.remove();
-				return;
-			}
-
-			// Play sound and haptic feedback
-			gameSounds?.playClick();
-			haptics.medium();
-
-			optimisticPlaced.value = true;
-
-			const newIndex = evt.newIndex;
-			const timeline = props.state.timeline ?? [];
-
-			let insertedAfterTrackId = null;
-			if (typeof newIndex === "number" && newIndex > 0) {
-				insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
-			}
-
-			// Trigger drop success animation
-			triggerDropAnimation(newIndex, "success");
-
-			evt.item.remove();
-
-			await requestPlace(insertedAfterTrackId);
-		},
-		onEnd: async (evt) => {
-			if (props.isPlacementLocked) {
-				return;
-			}
-
-			if (!evt.item?.classList?.contains("timeline-guess")) {
-				return;
-			}
-
-			// Play sound and haptic feedback
-			gameSounds?.playClick();
-			haptics.medium();
-
-			const newIndex = evt.newIndex;
-			const timeline = props.state.timeline ?? [];
-
-			let insertedAfterTrackId = null;
-			if (typeof newIndex === "number" && newIndex > 0) {
-				insertedAfterTrackId = timeline[newIndex - 1]?.track_id ?? null;
-			}
-
-			// Trigger drop success animation
-			triggerDropAnimation(newIndex, "success");
-
-			await requestPlace(insertedAfterTrackId);
-		},
-	});
+	gameSounds?.playClick();
+	haptics.light();
+	await props.undoPlacement();
 };
-
-watch(
-	() => shouldEnablePlacementDnd.value,
-	async (enabled) => {
-		await nextTick();
-
-		if (enabled) {
-			await initPlacementDnD();
-		} else {
-			destroyPlacementDnD();
-		}
-	},
-	{ immediate: true },
-);
-
-watch(
-	() => shouldEnableMysterySourceDnd.value,
-	async () => {
-		await nextTick();
-
-		if (shouldEnablePlacementDnd.value) {
-			await initPlacementDnD();
-		}
-	},
-);
-
-onMounted(async () => {
-	await nextTick();
-
-	if (shouldEnablePlacementDnd.value) {
-		await initPlacementDnD();
-	}
-});
-
-onBeforeUnmount(() => {
-	destroyPlacementDnD();
-	stopDragTracking();
-	sortableInitRunId += 1;
-
-	if (dropAnimationTimeout) {
-		clearTimeout(dropAnimationTimeout);
-	}
-
-	if (longPressTimeout) {
-		clearTimeout(longPressTimeout);
-	}
-});
 
 const placementsProgress = computed(() => {
 	const total = props.state.round?.players_count ?? 0;
@@ -523,38 +236,17 @@ const placementsProgress = computed(() => {
 	return Math.min(100, Math.max(0, Math.round((placed / total) * 100)));
 });
 
-// Long-press gesture for opening details (350ms threshold, longer than SortableJS 100ms delay)
-let longPressTimeout = null;
-const isLongPressing = ref(false);
-
-const handleTimelinePointerDown = (e) => {
-	// Only handle touch events (desktop uses click)
-	if (e.pointerType === "mouse") {
-		return;
+const totalPlacementTime = computed(() => {
+	const unlocks = props.state.round?.placement_unlocks_at;
+	const ends = props.state.round?.placement_ends_at;
+	if (!unlocks || !ends) {
+		return 0;
 	}
 
-	longPressTimeout = setTimeout(() => {
-		isLongPressing.value = true;
-		haptics.medium();
-		props.openDetails();
-	}, 350);
-};
+	const ms = new Date(ends).getTime() - new Date(unlocks).getTime();
 
-const handleTimelinePointerUp = () => {
-	if (longPressTimeout) {
-		clearTimeout(longPressTimeout);
-		longPressTimeout = null;
-	}
-	isLongPressing.value = false;
-};
-
-const handleTimelinePointerCancel = () => {
-	if (longPressTimeout) {
-		clearTimeout(longPressTimeout);
-		longPressTimeout = null;
-	}
-	isLongPressing.value = false;
-};
+	return Math.max(0, Math.ceil(ms / 1000));
+});
 </script>
 
 <template>
@@ -575,87 +267,6 @@ const handleTimelinePointerCancel = () => {
             </div>
 
             <div class="lg:col-span-5 space-y-6">
-                <GlassCard class="p-6">
-                    <h3 class="text-lg font-bold mb-4 text-center font-display">Current Track</h3>
-
-                    <Transition name="feedback-slide" mode="out-in">
-                        <div
-                            v-if="!hasGuessInTimeline"
-                            key="mystery-source"
-                            ref="mysterySourceEl"
-                            class="select-none"
-                            :class="isPlacementLocked ? 'opacity-50' : ''"
-                        >
-                            <div
-                                class="timeline-item timeline-guess flex items-center gap-3 p-4 bg-linear-to-r from-accent-600/30 to-accent-500/20 border-2 border-accent-500/50 rounded-lg"
-                                :class="isPlacementLocked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'"
-                            >
-                                <div class="w-16 h-16 rounded bg-accent-900/60 flex items-center justify-center shrink-0">
-                                    <svg class="w-8 h-8 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
-                                        />
-                                    </svg>
-                                </div>
-                                <div class="flex-1 min-w-0 text-center">
-                                    <div class="text-2xl font-black text-accent-300">???</div>
-                                    <div class="text-sm text-white/80 font-medium">Mystery Track</div>
-                                    <div class="text-xs text-white/60 mt-1">
-                                        <span v-if="isPlacementLocked">Locked</span>
-                                        <span v-else>Drag into your timeline</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            v-else
-                            key="mystery-status"
-                            class="select-none"
-                            :class="isPlacementLocked ? 'opacity-60' : ''"
-                        >
-                            <div class="flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-accent-500/15 bg-white/5">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded bg-accent-900/50 flex items-center justify-center shrink-0">
-                                        <svg class="w-6 h-6 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
-                                            <path
-                                                d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="text-sm font-bold text-white truncate">Guess placed</div>
-                                        <div class="text-xs text-white/60">
-                                            <span v-if="isPlacementLocked">Locked</span>
-                                            <span v-else>Drag within your timeline to reposition</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="w-10 h-10 shrink-0 flex items-center justify-center">
-                                    <div
-                                        v-if="isPlacing"
-                                        class="w-6 h-6 rounded-full border-2 border-white/25 border-t-white/80 animate-spin"
-                                    />
-                                    <div
-                                        v-else
-                                        class="w-8 h-8 rounded-full bg-green-500/15 border border-green-500/50 flex items-center justify-center"
-                                        title="Placement saved"
-                                    >
-                                        <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path
-                                                fill-rule="evenodd"
-                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                clip-rule="evenodd"
-                                            />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </Transition>
-                </GlassCard>
-
                 <!-- AMEN Section -->
                 <div v-if="state.round?.amen" class="space-y-4">
                     <!-- AMEN Button (when can claim) -->
@@ -700,19 +311,29 @@ const handleTimelinePointerCancel = () => {
                     </template>
                 </div>
 
-                <GlassCard class="p-8">
+                <!-- Unified Timeline -->
+                <GlassCard class="p-6">
                     <div class="flex items-center justify-between gap-4 mb-4">
-                        <h3 class="text-xl font-bold font-display">Your Timeline</h3>
+                        <h3 class="text-xl font-bold font-display">Timeline</h3>
                         <div class="text-xs text-white/60 font-mono-party">
                             {{ state.round.placements_count }} / {{ state.round.players_count }} placed
                         </div>
                     </div>
 
-                    <div class="h-2 rounded bg-white/10 overflow-hidden mb-6">
-                        <div class="h-full bg-accent-500/70" :style="{ width: `${placementsProgress}%` }" />
+                    <!-- Progress bar -->
+                    <div class="h-2 rounded bg-white/10 overflow-hidden mb-4">
+                        <div class="h-full bg-accent-500/70 transition-all duration-300" :style="{ width: `${placementsProgress}%` }" />
                     </div>
 
-                    <!-- Phase 3: Time expired -->
+                    <!-- Placement timer (when active) -->
+                    <div v-if="placementTimeRemaining > 0" class="flex items-center justify-center gap-2 mb-4">
+                        <CountdownRing :remaining="placementTimeRemaining" :total="totalPlacementTime" />
+                        <span class="text-sm font-mono-party" :class="placementTimeRemaining <= 5 ? 'text-red-400' : 'text-white/70'">
+                            {{ placementTimeRemaining }}s
+                        </span>
+                    </div>
+
+                    <!-- Time expired -->
                     <Transition name="feedback-slide">
                         <div
                             v-if="isPlacementTimeExpired"
@@ -725,100 +346,69 @@ const handleTimelinePointerCancel = () => {
                                     clip-rule="evenodd"
                                 />
                             </svg>
-                            <span class="font-medium text-red-200">Time's up! Waiting for reveal...</span>
+                            <span class="font-medium text-red-200">Time's up!</span>
                         </div>
                     </Transition>
 
+                    <!-- Error -->
                     <Transition name="feedback-slide">
                         <div v-if="placeError" class="p-4 bg-red-500/20 border border-red-500 rounded-lg text-center mb-4 animate-shake">
                             {{ placeError }}
                         </div>
                     </Transition>
 
+                    <!-- Instruction text -->
                     <div class="text-sm text-white/65 mb-3">
-                        <span v-if="!state.me.has_placed">Drop the mystery card between years.</span>
-                        <span v-else>Drag your guess within the timeline to update it.</span>
+                        <span v-if="isPlacementLocked && remainingSeconds > 0">Listen to the track...</span>
+                        <span v-else-if="isPlacementTimeExpired">Waiting for reveal...</span>
+                        <span v-else-if="!hasGuessInTimeline">Tap a slot to place the mystery track.</span>
+                        <span v-else-if="!isPlacementLocked">Tap another slot to move, or undo.</span>
+                        <span v-else>Placement locked.</span>
                     </div>
 
-                    <ul
-                        ref="placementListEl"
-                        class="space-y-2 min-h-[4rem] p-3 rounded-lg border-2 border-dashed lg:max-h-[52vh] lg:overflow-auto"
-                        :class="
-                            shouldEnablePlacementDnd
-                                ? 'placement-enabled border-accent-500/40 bg-white/5'
-                                : 'border-accent-500/15 bg-white/3'
-                        "
-                    >
-                        <li
-                            v-for="(item, index) in timelineRenderItems"
-                            :key="item.kind === 'track' ? item.track_id : item.id"
-                            class="flex items-center gap-3 p-4 rounded-lg"
-                            :class="[
-                                item.kind === 'mystery'
-                                    ? shouldEnablePlacementDnd
-                                        ? 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/30 cursor-grab active:cursor-grabbing'
-                                        : 'timeline-item timeline-guess bg-accent-500/10 border border-accent-500/20 cursor-not-allowed opacity-70'
-                                    : 'timeline-item timeline-track bg-white/5 border border-accent-500/15',
-                                dropAnimationType === 'success' && lastDroppedIndex === index ? 'animate-drop-success' : '',
-                                dropAnimationType === 'error' && lastDroppedIndex === index ? 'animate-drop-error' : '',
-                            ]"
-                            @pointerdown="handleTimelinePointerDown"
-                            @pointerup="handleTimelinePointerUp"
-                            @pointercancel="handleTimelinePointerCancel"
-                            @pointermove="handleTimelinePointerUp"
+                    <!-- Timeline with interleaved drop zones -->
+                    <div class="space-y-1">
+                        <template
+                            v-for="item in timelineWithDropZones"
+                            :key="item.kind === 'track' ? `t-${item.track_id}` : `dz-${item.insertAfterTrackId}`"
                         >
-                            <template v-if="item.kind === 'track'">
+                            <TimelineDropZone
+                                v-if="item.kind === 'drop-zone'"
+                                :insert-after-track-id="item.insertAfterTrackId"
+                                :is-active="item.isActive"
+                                :has-placed="hasGuessInTimeline"
+                                :disabled="isPlacementLocked || isPlacementTimeExpired"
+                                :is-placing="isPlacing || isUndoingPlacement"
+                                @place="handleDropZonePlace"
+                                @undo="handleUndo"
+                            />
+
+                            <!-- Track card (static) -->
+                            <div
+                                v-else
+                                class="flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-accent-500/15"
+                            >
                                 <img
                                     v-if="item.artwork_url"
                                     :src="item.artwork_url"
                                     alt=""
-                                    class="w-16 h-16 rounded object-cover shrink-0"
+                                    class="w-14 h-14 rounded object-cover shrink-0"
                                 />
-                                <div v-else class="w-16 h-16 rounded bg-white/10 shrink-0" />
+                                <div v-else class="w-14 h-14 rounded bg-white/10 shrink-0" />
                                 <div class="flex-1 min-w-0">
                                     <div class="text-[clamp(1.6rem,6vw,2.25rem)] font-black text-accent-400 leading-none mb-1">
                                         {{ item.year }}
                                     </div>
-                                    <div class="font-medium truncate">{{ item.title }}</div>
-                                    <div class="text-sm text-white/60 truncate">{{ item.artist }}</div>
+                                    <div class="font-medium truncate text-sm">{{ item.title }}</div>
+                                    <div class="text-xs text-white/60 truncate">{{ item.artist }}</div>
                                 </div>
-                            </template>
+                            </div>
+                        </template>
+                    </div>
 
-                            <template v-else>
-                                <div class="w-16 h-16 rounded bg-accent-900/50 flex items-center justify-center shrink-0">
-                                    <svg class="w-8 h-8 text-accent-200" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
-                                        />
-                                    </svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-[clamp(1.6rem,6vw,2.25rem)] font-black text-accent-200 leading-none mb-1">???</div>
-                                    <div class="font-medium truncate">Your guess</div>
-                                    <div class="text-sm text-white/60 truncate">Drag to reposition</div>
-                                </div>
-
-                                <div class="w-8 h-8 shrink-0 flex items-center justify-center">
-                                    <div
-                                        v-if="isPlacing"
-                                        class="w-5 h-5 rounded-full border-2 border-white/25 border-t-white/80 animate-spin"
-                                    />
-                                    <div v-else class="w-6 h-6 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center">
-                                        <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path
-                                                fill-rule="evenodd"
-                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                clip-rule="evenodd"
-                                            />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </template>
-                        </li>
-                    </ul>
-
-                    <div v-if="(state.timeline?.length ?? 0) === 0" class="text-center text-white/55 mt-3">
-                        Drop into the empty box to place as your first track
+                    <!-- Empty state hint -->
+                    <div v-if="(state.timeline?.length ?? 0) === 0 && !hasGuessInTimeline" class="text-center text-white/55 mt-3">
+                        Tap the slot above to place as your first track
                     </div>
                 </GlassCard>
 
@@ -836,7 +426,7 @@ const handleTimelinePointerCancel = () => {
                         >
                             Reveal Answers
                         </button>
-                        <div v-else class="text-sm text-white/60">Waiting for host to reveal…</div>
+                        <div v-else class="text-sm text-white/60">Waiting for host to reveal...</div>
                     </div>
                 </GlassCard>
             </div>
