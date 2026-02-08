@@ -210,14 +210,14 @@ class GameService
                 'track_id' => $track->id,
             ]);
 
-            $placementDelaySeconds = config('game.placement_delay', 3);
+            $placementDelaySeconds = $room->placement_delay_seconds ?? config('game.placement_delay', 3);
             $startedAt = now();
             $placementUnlocksAt = $startedAt->copy()->addSeconds($placementDelaySeconds);
 
             // Only set placement end time if timer is enabled
             $placementEndsAt = null;
             if ($room->placement_timer_enabled) {
-                $placementDurationSeconds = config('game.placement_duration', 12);
+                $placementDurationSeconds = $room->placement_timer_duration ?? config('game.placement_duration', 12);
                 $placementEndsAt = $placementUnlocksAt->copy()->addSeconds($placementDurationSeconds);
             }
 
@@ -409,6 +409,58 @@ class GameService
             $room->update([
                 'placement_timer_enabled' => $enabled,
             ]);
+
+            DB::afterCommit(static function () use ($room): void {
+                event(new RoomStateChanged($room->code, $room->state, $room->current_round_id));
+            });
+        });
+    }
+
+    /**
+     * Update room game settings (lobby only).
+     *
+     * @param  array{
+     *   placement_timer_enabled?: bool,
+     *   placement_timer_duration?: int|null,
+     *   placement_delay_seconds?: int|null,
+     *   max_rounds?: int|null,
+     *   amen_enabled?: bool
+     * }  $settings
+     */
+    public function updateRoomSettings(Room $room, array $settings): void
+    {
+        if (! $room->isInLobby()) {
+            throw new \RuntimeException('Settings can only be changed in the lobby.');
+        }
+
+        $fillable = [];
+
+        if (array_key_exists('placement_timer_enabled', $settings)) {
+            $fillable['placement_timer_enabled'] = (bool) $settings['placement_timer_enabled'];
+        }
+
+        if (array_key_exists('placement_timer_duration', $settings)) {
+            $fillable['placement_timer_duration'] = $settings['placement_timer_duration'];
+        }
+
+        if (array_key_exists('placement_delay_seconds', $settings)) {
+            $fillable['placement_delay_seconds'] = $settings['placement_delay_seconds'];
+        }
+
+        if (array_key_exists('max_rounds', $settings)) {
+            $fillable['max_rounds'] = $settings['max_rounds'];
+        }
+
+        if (array_key_exists('amen_enabled', $settings)) {
+            $fillable['amen_enabled'] = (bool) $settings['amen_enabled'];
+        }
+
+        if ($fillable === []) {
+            return;
+        }
+
+        DB::transaction(static function () use ($room, $fillable): void {
+            $room->update($fillable);
 
             DB::afterCommit(static function () use ($room): void {
                 event(new RoomStateChanged($room->code, $room->state, $room->current_round_id));
@@ -616,6 +668,13 @@ class GameService
             $room->currentRound?->update(['status' => RoundStatus::Done]);
         }
 
+        // Check if max rounds limit has been reached
+        if ($room->max_rounds !== null && $room->rounds()->count() >= $room->max_rounds) {
+            $this->finishRoom($room);
+
+            return null;
+        }
+
         try {
             return $this->startRound($room);
         } catch (\RuntimeException $e) {
@@ -709,6 +768,11 @@ class GameService
      */
     public function claimAmen(Round $round, RoomPlayer $player): Round
     {
+        // Check if AMEN is enabled for this room
+        if (! ($round->room->amen_enabled ?? true)) {
+            throw new \RuntimeException('AMEN is disabled for this room.');
+        }
+
         return DB::transaction(static function () use ($round, $player): Round {
             // Lock the round row to prevent race conditions
             $round = Round::query()->lockForUpdate()->find($round->id);

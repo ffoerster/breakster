@@ -5,7 +5,6 @@ import BottomActionBar from "../../Ui/BottomActionBar.vue";
 import BottomSheet from "../../Ui/BottomSheet.vue";
 import CountdownRing from "../../Ui/CountdownRing.vue";
 import GlassCard from "../../Ui/GlassCard.vue";
-import PlayersList from "../PlayersList.vue";
 import AmenButton from "./AmenButton.vue";
 import AmenGuessForm from "./AmenGuessForm.vue";
 import AmenResult from "./AmenResult.vue";
@@ -250,8 +249,8 @@ const totalPlacementTime = computed(() => {
 
 <template>
     <div class="space-y-6">
-        <div class="grid gap-6 lg:grid-cols-12 lg:items-start">
-            <div class="hidden lg:block lg:col-span-4 lg:sticky lg:top-6 space-y-6">
+        <div class="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
+            <div class="hidden lg:block lg:sticky lg:top-6 space-y-6">
                 <RoundListenPanel
                     :state="state"
                     :is-host="isHost"
@@ -265,7 +264,7 @@ const totalPlacementTime = computed(() => {
                 />
             </div>
 
-            <div class="lg:col-span-5 space-y-6">
+            <div class="space-y-6">
                 <!-- AMEN Section -->
                 <div v-if="state.round?.amen" class="space-y-4">
                     <!-- AMEN Button (when can claim) -->
@@ -411,30 +410,6 @@ const totalPlacementTime = computed(() => {
                     </div>
                 </GlassCard>
 
-                <GlassCard class="p-4 hidden lg:block">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div class="text-sm text-white/60 font-mono-party">
-                            {{ state.round.placements_count }} / {{ state.round.players_count }} players have placed
-                        </div>
-                        <button
-                            v-if="isHost"
-                            type="button"
-                            class="btn-interactive btn-warning px-6 py-2 rounded-lg font-bold disabled:cursor-not-allowed"
-                            :disabled="state.round.players_count === 0"
-                            @click="revealRound"
-                        >
-                            Reveal Answers
-                        </button>
-                        <div v-else class="text-sm text-white/60">Waiting for host to reveal...</div>
-                    </div>
-                </GlassCard>
-            </div>
-
-            <div class="lg:col-span-3 lg:sticky lg:top-6 space-y-6">
-                <GlassCard class="p-8">
-                    <h2 class="text-xl font-bold mb-4 font-display">Players</h2>
-                    <PlayersList :players="state.players" show-score />
-                </GlassCard>
             </div>
         </div>
 

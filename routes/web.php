@@ -58,6 +58,7 @@ Route::prefix('/room/{code}')
         Route::post('/placement-timer', [RoomActionController::class, 'setPlacementTimer'])->name(
             'room.placement-timer',
         );
+        Route::post('/settings', [RoomActionController::class, 'updateSettings'])->name('room.settings');
         Route::post('/start', [RoomActionController::class, 'start'])->name('room.start');
         Route::post('/place', [RoomActionController::class, 'place'])->name('room.place');
         Route::delete('/place', [RoomActionController::class, 'undoPlace'])->name('room.place.undo');

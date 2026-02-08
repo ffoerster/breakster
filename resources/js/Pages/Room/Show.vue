@@ -12,6 +12,7 @@ import {
 	watch,
 } from "vue";
 import FinishedView from "../../Components/Room/Finished/FinishedView.vue";
+import HostControlPanel from "../../Components/Room/HostControlPanel.vue";
 import LobbyView from "../../Components/Room/Lobby/LobbyView.vue";
 import PlayersList from "../../Components/Room/PlayersList.vue";
 import RevealView from "../../Components/Room/Reveal/RevealView.vue";
@@ -73,6 +74,8 @@ const {
 	selectProvider,
 	startGame,
 	canStart,
+	startError,
+	isStarting,
 	place,
 	placeError,
 	isPlacing,
@@ -102,9 +105,9 @@ const {
 	markReady,
 	isMarkingReady,
 	markReadyError,
-	// Placement timer
-	togglePlacementTimer,
-	isTogglingPlacementTimer,
+	// Game settings
+	updateSettings,
+	isUpdatingSettings,
 	// Summary
 	summary,
 	isLoadingSummary,
@@ -484,102 +487,113 @@ onBeforeUnmount(() => {
                 <RoomIntroCard :room="state.room" :me="state.me" />
             </div>
 
-            <Transition name="view-fade" mode="out-in">
-                <LobbyView
-                    v-if="isInLobby"
-                    key="lobby"
-                    :state="state"
-                    :is-host="isHost"
-                    :can-start="canStart"
-                    :select-provider="selectProvider"
-                    :start-game="startGame"
-                    :open-details="openDetails"
-                    :is-spotify-provider="isSpotifyProvider"
-                    :has-spotify-token="hasSpotifyToken"
-                    :spotify-devices="spotifyDevices"
-                    :spotify-error="spotifyError"
-                    :is-loading-devices="isLoadingDevices"
-                    :selected-device-id="selectedDeviceId"
-                    :connect-spotify="connectSpotify"
-                    :load-spotify-devices="loadSpotifyDevices"
-                    :select-spotify-device="selectSpotifyDevice"
-                    :mark-ready="markReady"
-                    :is-marking-ready="isMarkingReady"
-                    :mark-ready-error="markReadyError"
-                    :toggle-placement-timer="togglePlacementTimer"
-                    :is-toggling-placement-timer="isTogglingPlacementTimer"
-                />
+            <div class="lg:grid lg:gap-6" :class="isHost && !isFinished ? 'lg:grid-cols-[1fr_280px]' : ''">
+                <div class="min-w-0">
+                    <Transition name="view-fade" mode="out-in">
+                        <LobbyView
+                            v-if="isInLobby"
+                            key="lobby"
+                            :state="state"
+                            :is-host="isHost"
+                            :can-start="canStart"
+                            :select-provider="selectProvider"
+                            :start-game="startGame"
+                            :open-details="openDetails"
+                            :is-spotify-provider="isSpotifyProvider"
+                            :has-spotify-token="hasSpotifyToken"
+                            :spotify-devices="spotifyDevices"
+                            :spotify-error="spotifyError"
+                            :is-loading-devices="isLoadingDevices"
+                            :selected-device-id="selectedDeviceId"
+                            :connect-spotify="connectSpotify"
+                            :load-spotify-devices="loadSpotifyDevices"
+                            :select-spotify-device="selectSpotifyDevice"
+                            :mark-ready="markReady"
+                            :is-marking-ready="isMarkingReady"
+                            :mark-ready-error="markReadyError"
+                            :update-settings="updateSettings"
+                            :is-updating-settings="isUpdatingSettings"
+                        />
 
-                <RoundView
-                    v-else-if="isInRound"
-                    key="round"
-                    :state="state"
-                    :is-host="isHost"
-                    :play-url="playUrl"
-                    :copy-play-url="copyPlayUrl"
-                    :copied-play-url="copiedPlayUrl"
-                    :remaining-seconds="remainingSeconds"
-                    :is-placement-locked="isPlacementLocked"
-                    :placement-time-remaining="placementTimeRemainingSeconds"
-                    :is-placement-time-expired="isPlacementTimeExpired"
-                    :is-placing="isPlacing"
-                    :place-error="placeError"
-                    :place="place"
-                    :undo-placement="undoPlacement"
-                    :is-undoing-placement="isUndoingPlacement"
-                    :reveal-round="revealRound"
-                    :open-details="openDetails"
-                    :is-spotify-provider="isSpotifyProvider"
-                    :spotify-play-error="spotifyPlayError"
-                    :is-playing-spotify="isPlayingSpotify"
-                    :play-spotify-track="playSpotifyTrack"
-                    :claim-amen="claimAmen"
-                    :is-claiming-amen="isClaimingAmen"
-                    :amen-claim-error="amenClaimError"
-                    :submit-amen-guess="submitAmenGuess"
-                    :is-submitting-amen-guess="isSubmittingAmenGuess"
-                    :amen-guess-error="amenGuessError"
-                />
+                        <RoundView
+                            v-else-if="isInRound"
+                            key="round"
+                            :state="state"
+                            :is-host="isHost"
+                            :play-url="playUrl"
+                            :copy-play-url="copyPlayUrl"
+                            :copied-play-url="copiedPlayUrl"
+                            :remaining-seconds="remainingSeconds"
+                            :is-placement-locked="isPlacementLocked"
+                            :placement-time-remaining="placementTimeRemainingSeconds"
+                            :is-placement-time-expired="isPlacementTimeExpired"
+                            :is-placing="isPlacing"
+                            :place-error="placeError"
+                            :place="place"
+                            :undo-placement="undoPlacement"
+                            :is-undoing-placement="isUndoingPlacement"
+                            :reveal-round="revealRound"
+                            :open-details="openDetails"
+                            :is-spotify-provider="isSpotifyProvider"
+                            :spotify-play-error="spotifyPlayError"
+                            :is-playing-spotify="isPlayingSpotify"
+                            :play-spotify-track="playSpotifyTrack"
+                            :claim-amen="claimAmen"
+                            :is-claiming-amen="isClaimingAmen"
+                            :amen-claim-error="amenClaimError"
+                            :submit-amen-guess="submitAmenGuess"
+                            :is-submitting-amen-guess="isSubmittingAmenGuess"
+                            :amen-guess-error="amenGuessError"
+                        />
 
-                <RevealView
-                    v-else-if="isInReveal"
-                    key="reveal"
-                    :state="state"
-                    :is-host="isHost"
-                    :leaderboard="leaderboard"
-                    :previous-leaderboard="previousLeaderboard"
-                    :next-round="nextRound"
-                    :open-details="openDetails"
-                    :submit-amen-guess="submitAmenGuess"
-                    :is-submitting-amen-guess="isSubmittingAmenGuess"
-                    :amen-guess-error="amenGuessError"
-                    :submit-amen-vote="submitAmenVote"
-                    :is-submitting-amen-vote="isSubmittingAmenVote"
-                    :amen-vote-error="amenVoteError"
-                />
+                        <RevealView
+                            v-else-if="isInReveal"
+                            key="reveal"
+                            :state="state"
+                            :is-host="isHost"
+                            :leaderboard="leaderboard"
+                            :previous-leaderboard="previousLeaderboard"
+                            :next-round="nextRound"
+                            :open-details="openDetails"
+                            :submit-amen-guess="submitAmenGuess"
+                            :is-submitting-amen-guess="isSubmittingAmenGuess"
+                            :amen-guess-error="amenGuessError"
+                            :submit-amen-vote="submitAmenVote"
+                            :is-submitting-amen-vote="isSubmittingAmenVote"
+                            :amen-vote-error="amenVoteError"
+                        />
 
-                <FinishedView
-                    v-else-if="isFinished"
-                    key="finished"
-                    :leaderboard="leaderboard"
-                    :summary="summary"
-                    :is-loading-summary="isLoadingSummary"
-                />
-            </Transition>
+                        <FinishedView
+                            v-else-if="isFinished"
+                            key="finished"
+                            :leaderboard="leaderboard"
+                            :summary="summary"
+                            :is-loading-summary="isLoadingSummary"
+                        />
+                    </Transition>
+                </div>
 
-            <Transition name="view-fade">
-                <div v-if="isHost && !isFinished" class="pt-10 hidden lg:block">
-                    <div class="bg-gray-800/30 backdrop-blur rounded-2xl border border-white/10 p-6 flex justify-center">
-                        <button
-                            type="button"
-                            class="btn-interactive btn-danger px-8 py-4 text-white font-bold rounded-lg"
-                            @click="openFinishGameConfirm"
-                        >
-                            Close Game
-                        </button>
+                <!-- Host Control Panel Sidebar (desktop only) -->
+                <div v-if="isHost && !isFinished" class="hidden lg:block">
+                    <div class="lg:sticky lg:top-6">
+                        <HostControlPanel
+                            :state="state"
+                            :is-host="isHost"
+                            :can-start="canStart"
+                            :start-game="startGame"
+                            :is-starting="isStarting"
+                            :start-error="startError"
+                            :reveal-round="revealRound"
+                            :next-round="nextRound"
+                            :open-finish-game-confirm="openFinishGameConfirm"
+                            :is-spotify-provider="isSpotifyProvider"
+                            :play-spotify-track="playSpotifyTrack"
+                            :is-playing-spotify="isPlayingSpotify"
+                            :spotify-play-error="spotifyPlayError"
+                        />
                     </div>
                 </div>
-            </Transition>
+            </div>
 
             <BottomSheet
                 :open="isDetailsOpen"

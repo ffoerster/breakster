@@ -547,10 +547,10 @@ export function useRoomState(props) {
         }
     };
 
-    // Placement timer toggle
-    const isTogglingPlacementTimer = ref(false);
+    // Game settings
+    const isUpdatingSettings = ref(false);
 
-    const togglePlacementTimer = async (enabled) => {
+    const updateSettings = async (settings) => {
         if (!isHost.value || !isInLobby.value) {
             return;
         }
@@ -559,24 +559,29 @@ export function useRoomState(props) {
             return;
         }
 
-        isTogglingPlacementTimer.value = true;
+        isUpdatingSettings.value = true;
 
         try {
-            await executeAction(`/room/${code.value}/placement-timer`, {
+            await executeAction(`/room/${code.value}/settings`, {
                 method: 'POST',
-                data: {
-                    enabled,
-                },
+                data: settings,
             });
 
             await refreshState();
         } catch (e) {
-            toast.error('Could not update timer setting', {
+            toast.error('Could not update settings', {
                 description: getRequestErrorMessage(e, 'Please try again.'),
             });
         } finally {
-            isTogglingPlacementTimer.value = false;
+            isUpdatingSettings.value = false;
         }
+    };
+
+    // Backwards-compatible wrapper
+    const isTogglingPlacementTimer = isUpdatingSettings;
+
+    const togglePlacementTimer = async (enabled) => {
+        await updateSettings({ placement_timer_enabled: enabled });
     };
 
     // Ready feature
@@ -759,7 +764,9 @@ export function useRoomState(props) {
         isMarkingReady,
         markReadyError,
 
-        // Placement timer
+        // Game settings
+        updateSettings,
+        isUpdatingSettings,
         togglePlacementTimer,
         isTogglingPlacementTimer,
 

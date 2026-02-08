@@ -245,6 +245,32 @@ class RoomActionController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function updateSettings(
+        \Illuminate\Http\Request $request,
+        string $code,
+        RoomSession $roomSession,
+        GameService $gameService,
+    ): JsonResponse {
+        $room = $this->room($code);
+        $roomSession->requireHost($room);
+
+        $validated = $request->validate([
+            'placement_timer_enabled' => ['sometimes', 'boolean'],
+            'placement_timer_duration' => ['sometimes', 'nullable', 'integer', 'min:10', 'max:300'],
+            'placement_delay_seconds' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:30'],
+            'max_rounds' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
+            'amen_enabled' => ['sometimes', 'boolean'],
+        ]);
+
+        try {
+            $gameService->updateRoomSettings($room, $validated);
+        } catch (\RuntimeException $e) {
+            abort(409, $e->getMessage());
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
     public function claimAmen(
         string $code,
         int $roundId,

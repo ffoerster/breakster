@@ -3,6 +3,7 @@ import { computed } from "vue";
 import BottomActionBar from "../../Ui/BottomActionBar.vue";
 import GlassCard from "../../Ui/GlassCard.vue";
 import PlayersList from "../PlayersList.vue";
+import GameSettingsPanel from "./GameSettingsPanel.vue";
 import ProviderPicker from "./ProviderPicker.vue";
 import ReadyButton from "./ReadyButton.vue";
 import SpotifyHostSetup from "./SpotifyHostSetup.vue";
@@ -80,11 +81,11 @@ const props = defineProps({
 		type: String,
 		default: "",
 	},
-	togglePlacementTimer: {
+	updateSettings: {
 		type: Function,
 		required: true,
 	},
-	isTogglingPlacementTimer: {
+	isUpdatingSettings: {
 		type: Boolean,
 		default: false,
 	},
@@ -137,47 +138,15 @@ const allGuestsReady = computed(() => {
                 </div>
 
                 <div v-if="isHost" class="mt-6 border-t border-white/10 pt-6">
-                    <h3 class="text-sm font-medium text-white/70 mb-3 font-display">Game Settings</h3>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <button
-                            type="button"
-                            role="switch"
-                            :aria-checked="state.room.placement_timer_enabled"
-                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 focus:ring-offset-gray-950"
-                            :class="state.room.placement_timer_enabled ? 'bg-accent-500' : 'bg-white/10'"
-                            :disabled="isTogglingPlacementTimer"
-                            @click="togglePlacementTimer(!state.room.placement_timer_enabled)"
-                        >
-                            <span
-                                :class="state.room.placement_timer_enabled ? 'translate-x-5' : 'translate-x-0'"
-                                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                            />
-                        </button>
-                        <span class="text-sm text-white/70">
-                            Round timer ({{ state.room.placement_timer_enabled ? 'enabled' : 'disabled' }})
-                        </span>
-                    </label>
-                    <p class="mt-2 text-xs text-white/50">
-                        When enabled, players have limited time to place their guess each round.
-                    </p>
+                    <GameSettingsPanel
+                        :settings="state.room"
+                        :on-update="updateSettings"
+                        :is-updating="isUpdatingSettings"
+                    />
                 </div>
 
                 <div class="mt-6 hidden lg:block">
-                    <div v-if="isHost" class="flex gap-4">
-                        <button
-                            type="button"
-                            :class="[
-                                'btn-interactive flex-1 py-4 px-6 font-bold rounded-lg',
-                                canStart ? 'btn-success' : 'btn-secondary cursor-not-allowed',
-                                allGuestsReady && canStart ? 'pulse-ready' : '',
-                            ]"
-                            :disabled="!canStart"
-                            @click="startGame"
-                        >
-                            Start Game
-                        </button>
-                    </div>
-                    <div v-else>
+                    <div v-if="!isHost">
                         <ReadyButton
                             :is-ready="state.me?.is_ready ?? false"
                             :is-marking="isMarkingReady"

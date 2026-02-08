@@ -258,18 +258,9 @@ onMounted(() => {
             </GlassCard>
         </div>
 
-        <div v-if="isHost" class="hidden lg:flex justify-center">
-            <div class="flex flex-col sm:flex-row gap-3">
-                <button
-                    type="button"
-                    class="btn-interactive btn-success px-8 py-4 rounded-lg font-bold text-lg"
-                    @click="nextRound"
-                >
-                    Next Round
-                </button>
-            </div>
+        <div class="hidden lg:block text-center text-sm text-white/40" v-if="!isHost">
+            Waiting for host to start the next round…
         </div>
-        <div v-else class="text-center text-white/60">Waiting for host to start the next round…</div>
 
         <BottomActionBar class="lg:hidden" max-width-class="max-w-6xl">
             <div class="grid grid-cols-2 gap-2">

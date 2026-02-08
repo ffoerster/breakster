@@ -22,6 +22,10 @@ class Room extends Model
         'spotify_device_id',
         'state',
         'placement_timer_enabled',
+        'placement_timer_duration',
+        'placement_delay_seconds',
+        'max_rounds',
+        'amen_enabled',
         'current_round_id',
     ];
 
@@ -30,6 +34,7 @@ class Room extends Model
         return [
             'state' => RoomState::class,
             'placement_timer_enabled' => 'boolean',
+            'amen_enabled' => 'boolean',
         ];
     }
 

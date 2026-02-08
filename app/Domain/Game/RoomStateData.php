@@ -97,6 +97,10 @@ class RoomStateData
             'ready_total' => $readyTotal,
             'players_count' => $room->players()->count(),
             'placement_timer_enabled' => $room->placement_timer_enabled,
+            'placement_timer_duration' => $room->placement_timer_duration ?? (int) config('game.placement_duration'),
+            'placement_delay_seconds' => $room->placement_delay_seconds ?? (int) config('game.placement_delay'),
+            'max_rounds' => $room->max_rounds,
+            'amen_enabled' => $room->amen_enabled ?? true,
         ];
     }
 
@@ -239,7 +243,7 @@ class RoomStateData
         }
 
         // Add AMEN state
-        $base['amen'] = $this->amenState($round, $me, $room->players()->count());
+        $base['amen'] = $this->amenState($round, $me, $room->players()->count(), $room->amen_enabled ?? true);
 
         return $base;
     }
@@ -267,7 +271,7 @@ class RoomStateData
      *
      * @return array<string, mixed>
      */
-    private function amenState(Round $round, ?RoomPlayer $me, int $playerCount): array
+    private function amenState(Round $round, ?RoomPlayer $me, int $playerCount, bool $amenEnabled = true): array
     {
         $isResolved = $round->isAmenResolved();
         $hasClaim = $round->hasAmenClaim();
@@ -327,7 +331,7 @@ class RoomStateData
             'resolved' => $isResolved,
             'correct' => $isResolved ? $round->amen_awarded_points > 0 : null,
             'awarded_points' => $round->amen_awarded_points,
-            'can_claim' => $round->canClaimAmen() && $playerCount >= 2,
+            'can_claim' => $amenEnabled && $round->canClaimAmen() && $playerCount >= 2,
             'voting_open' => $votingOpen,
             'can_vote' => $canVote,
         ];
