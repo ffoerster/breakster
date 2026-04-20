@@ -3,6 +3,7 @@
 ## Quick Start
 
 ### Build and Release
+
 ```bash
 # Make the release script executable
 chmod +x release.sh
@@ -17,6 +18,7 @@ chmod +x release.sh
 ## Docker Image
 
 The image is built from `serversideup/php:8.4-fpm-nginx` and includes:
+
 - PHP 8.4 with FPM and Nginx
 - Required extensions (intl, etc.)
 - Production-optimized Composer dependencies
@@ -43,6 +45,7 @@ docker-compose down
 ### Manual Docker Commands
 
 **Web Server:**
+
 ```bash
 docker run -d \
   --name breakster-web \
@@ -56,6 +59,7 @@ docker run -d \
 ```
 
 **Queue Worker:**
+
 ```bash
 docker run -d \
   --name breakster-queue \
@@ -69,6 +73,7 @@ docker run -d \
 ```
 
 **Laravel Reverb (WebSockets):**
+
 ```bash
 docker run -d \
   --name breakster-reverb \
@@ -84,6 +89,7 @@ docker run -d \
 ## Environment Variables
 
 ### Required Variables
+
 - `APP_KEY` - Laravel application key
 - `DB_HOST` - Database hostname
 - `DB_DATABASE` - Database name
@@ -91,6 +97,7 @@ docker run -d \
 - `DB_PASSWORD` - Database password
 
 ### Optional Variables
+
 - `APP_ENV` - Application environment (default: production)
 - `APP_DEBUG` - Enable debug mode (default: false)
 - `REDIS_HOST` - Redis hostname
@@ -103,6 +110,7 @@ docker run -d \
 ## Health Checks
 
 The image includes a health check that runs every 30 seconds:
+
 ```bash
 docker ps  # Check health status in STATUS column
 ```
@@ -110,17 +118,21 @@ docker ps  # Check health status in STATUS column
 ## Volumes
 
 Mount these volumes for persistent data:
+
 - `/var/www/html/storage` - Laravel storage (logs, cache, uploads)
 
 ## Security Features
 
 ### SBOM (Software Bill of Materials)
+
 The image includes an SBOM attestation listing all components.
 
 ### Provenance
+
 Build provenance attestations ensure reproducibility and security.
 
 ### Verify Attestations
+
 ```bash
 # View SBOM
 docker buildx imagetools inspect itrcglobe/breakster:latest --format "{{ json .SBOM }}"
@@ -132,6 +144,7 @@ docker buildx imagetools inspect itrcglobe/breakster:latest --format "{{ json .P
 ## Troubleshooting
 
 ### Check Logs
+
 ```bash
 # Web server logs
 docker logs breakster-web
@@ -144,11 +157,13 @@ docker logs breakster-reverb
 ```
 
 ### Access Container Shell
+
 ```bash
 docker exec -it breakster-web bash
 ```
 
 ### Run Artisan Commands
+
 ```bash
 docker exec breakster-web php artisan migrate
 docker exec breakster-web php artisan cache:clear

@@ -9,8 +9,15 @@ export default defineConfig({
     staged: {
         "*": "vp check --fix",
     },
-    fmt: {},
-    lint: { options: { typeAware: true, typeCheck: true } },
+    fmt: {
+        ignorePatterns: ["storage/**", "vendor/**", ".ddev/**"],
+        semi: true,
+        sortPackageJson: true,
+    },
+    lint: {
+        ignorePatterns: ["storage/**", "vendor/**", ".ddev/**"],
+        options: { typeAware: true, typeCheck: true },
+    },
     plugins: [
         laravel({
             input: [

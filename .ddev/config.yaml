@@ -1,16 +1,16 @@
 name: breakster
 type: laravel
 docroot: public
-php_version: "8.4"
+php_version: '8.4'
 webserver_type: nginx-fpm
 xdebug_enabled: false
 additional_hostnames: []
 additional_fqdns: []
 database:
-    type: postgres
-    version: 16
+  type: postgres
+  version: 16
 use_dns_when_possible: true
-composer_version: "2"
+composer_version: '2'
 web_environment: []
 corepack_enable: false
 
