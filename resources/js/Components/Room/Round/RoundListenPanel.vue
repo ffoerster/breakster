@@ -7,46 +7,46 @@ import GlassCard from "../../Ui/GlassCard.vue";
 const QrcodeVue = defineAsyncComponent(() => import("qrcode.vue"));
 
 const props = defineProps({
-	state: {
-		type: Object,
-		required: true,
-	},
-	isHost: {
-		type: Boolean,
-		required: true,
-	},
-	playUrl: {
-		type: String,
-		required: true,
-	},
-	copyPlayUrl: {
-		type: Function,
-		required: true,
-	},
-	copiedPlayUrl: {
-		type: Boolean,
-		default: false,
-	},
-	isSpotifyProvider: {
-		type: Boolean,
-		required: true,
-	},
-	spotifyPlayError: {
-		type: String,
-		required: true,
-	},
-	isPlayingSpotify: {
-		type: Boolean,
-		required: true,
-	},
-	playSpotifyTrack: {
-		type: Function,
-		required: true,
-	},
-	compact: {
-		type: Boolean,
-		default: false,
-	},
+    state: {
+        type: Object,
+        required: true,
+    },
+    isHost: {
+        type: Boolean,
+        required: true,
+    },
+    playUrl: {
+        type: String,
+        required: true,
+    },
+    copyPlayUrl: {
+        type: Function,
+        required: true,
+    },
+    copiedPlayUrl: {
+        type: Boolean,
+        default: false,
+    },
+    isSpotifyProvider: {
+        type: Boolean,
+        required: true,
+    },
+    spotifyPlayError: {
+        type: String,
+        required: true,
+    },
+    isPlayingSpotify: {
+        type: Boolean,
+        required: true,
+    },
+    playSpotifyTrack: {
+        type: Function,
+        required: true,
+    },
+    compact: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const qrSize = () => (props.compact ? 190 : 220);
@@ -55,14 +55,13 @@ const outerPaddingClass = () => (props.compact ? "p-6" : "p-8");
 
 <template>
     <GlassCard :class="outerPaddingClass()" class="text-center">
-        <div class="text-sm text-white/60 mb-2 font-mono-party">Round {{ state.round.round_number }}</div>
+        <div class="text-sm text-white/60 mb-2 font-mono-party">
+            Round {{ state.round.round_number }}
+        </div>
         <h2 class="text-2xl font-bold mb-6 font-display">Listen and place this track!</h2>
 
         <div v-if="isHost" class="max-w-sm mx-auto mb-6">
-            <div
-                v-if="isSpotifyProvider && state.room.spotify_device_id"
-                class="mb-6"
-            >
+            <div v-if="isSpotifyProvider && state.room.spotify_device_id" class="mb-6">
                 <button
                     type="button"
                     class="btn-interactive btn-success w-full min-h-11 px-6 py-3 disabled:cursor-not-allowed rounded-lg font-bold flex items-center justify-center gap-3"
@@ -80,11 +79,13 @@ const outerPaddingClass = () => (props.compact ? "p-6" : "p-8");
                 <div v-if="spotifyPlayError" class="mt-2 text-sm text-red-400 text-center">
                     {{ spotifyPlayError }}
                 </div>
-                <div v-if="!compact" class="mt-2 text-xs text-white/60 text-center">Plays on your selected Spotify device</div>
+                <div v-if="!compact" class="mt-2 text-xs text-white/60 text-center">
+                    Plays on your selected Spotify device
+                </div>
             </div>
 
             <div class="text-sm text-white/60 mb-3">
-                Scan to open in {{ state.room.playback_provider?.name ?? 'your app' }}
+                Scan to open in {{ state.room.playback_provider?.name ?? "your app" }}
             </div>
 
             <QrcodeVue
@@ -126,6 +127,8 @@ const outerPaddingClass = () => (props.compact ? "p-6" : "p-8");
             </a>
         </div>
 
-        <p v-if="!compact" class="mt-4 text-white/60 text-sm">No titles, no artists, no years — just your ears.</p>
+        <p v-if="!compact" class="mt-4 text-white/60 text-sm">
+            No titles, no artists, no years — just your ears.
+        </p>
     </GlassCard>
 </template>

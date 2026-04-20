@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
     state: {
@@ -20,46 +20,46 @@ const props = defineProps({
     },
 });
 
-const phase = computed(() => props.state.room?.state ?? '');
+const phase = computed(() => props.state.room?.state ?? "");
 
 const phaseLabel = computed(() => {
-    if (phase.value === 'lobby') {
-        return 'Lobby';
+    if (phase.value === "lobby") {
+        return "Lobby";
     }
 
-    if (phase.value === 'in_round') {
-        return 'Round';
+    if (phase.value === "in_round") {
+        return "Round";
     }
 
-    if (phase.value === 'reveal') {
-        return 'Reveal';
+    if (phase.value === "reveal") {
+        return "Reveal";
     }
 
-    if (phase.value === 'finished') {
-        return 'Finished';
+    if (phase.value === "finished") {
+        return "Finished";
     }
 
-    return 'Game';
+    return "Game";
 });
 
 const timerLabel = computed(() => {
-    if (phase.value !== 'in_round') {
-        return '';
+    if (phase.value !== "in_round") {
+        return "";
     }
 
     if (props.remainingSeconds > 0) {
-        return props.isPlacementLocked ? 'Locked' : 'Starts';
+        return props.isPlacementLocked ? "Locked" : "Starts";
     }
 
     if (props.placementTimeRemaining > 0) {
-        return 'Time';
+        return "Time";
     }
 
-    return '';
+    return "";
 });
 
 const timerValue = computed(() => {
-    if (phase.value !== 'in_round') {
+    if (phase.value !== "in_round") {
         return null;
     }
 
@@ -78,7 +78,7 @@ const placements = computed(() => {
     const placed = props.state.round?.placements_count ?? null;
     const total = props.state.round?.players_count ?? null;
 
-    if (phase.value !== 'in_round' || placed === null || total === null) {
+    if (phase.value !== "in_round" || placed === null || total === null) {
         return null;
     }
 
@@ -89,7 +89,7 @@ const ready = computed(() => {
     const count = props.state.room?.ready_count ?? null;
     const total = props.state.room?.ready_total ?? null;
 
-    if (phase.value !== 'lobby' || count === null || total === null || total <= 0) {
+    if (phase.value !== "lobby" || count === null || total === null || total <= 0) {
         return null;
     }
 
@@ -102,10 +102,10 @@ const ready = computed(() => {
         <div class="flex items-center justify-between gap-4">
             <div class="min-w-0">
                 <div class="flex items-center gap-3">
-                    <div class="font-display text-sm text-white/90">
-                        Breakster
-                    </div>
-                    <div class="px-2 py-1 rounded-full border border-white/10 bg-white/5 text-xs text-white/80 font-display">
+                    <div class="font-display text-sm text-white/90">Breakster</div>
+                    <div
+                        class="px-2 py-1 rounded-full border border-white/10 bg-white/5 text-xs text-white/80 font-display"
+                    >
                         {{ phaseLabel }}
                     </div>
                 </div>

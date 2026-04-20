@@ -2,48 +2,48 @@
 import BottomSheet from "./BottomSheet.vue";
 
 defineProps({
-	open: {
-		type: Boolean,
-		required: true,
-	},
-	title: {
-		type: String,
-		required: true,
-	},
-	message: {
-		type: String,
-		required: true,
-	},
-	confirmLabel: {
-		type: String,
-		default: "Confirm",
-	},
-	cancelLabel: {
-		type: String,
-		default: "Cancel",
-	},
-	danger: {
-		type: Boolean,
-		default: false,
-	},
-	isConfirming: {
-		type: Boolean,
-		default: false,
-	},
-	error: {
-		type: String,
-		default: "",
-	},
+    open: {
+        type: Boolean,
+        required: true,
+    },
+    title: {
+        type: String,
+        required: true,
+    },
+    message: {
+        type: String,
+        required: true,
+    },
+    confirmLabel: {
+        type: String,
+        default: "Confirm",
+    },
+    cancelLabel: {
+        type: String,
+        default: "Cancel",
+    },
+    danger: {
+        type: Boolean,
+        default: false,
+    },
+    isConfirming: {
+        type: Boolean,
+        default: false,
+    },
+    error: {
+        type: String,
+        default: "",
+    },
 });
 
 const emit = defineEmits(["confirm", "cancel"]);
 
 const confirm = () => {
-	emit("confirm");
+    emit("confirm");
 };
 
 const cancel = () => {
-	emit("cancel");
+    emit("cancel");
 };
 </script>
 
@@ -61,7 +61,10 @@ const cancel = () => {
                 {{ message }}
             </p>
 
-            <div v-if="error" class="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            <div
+                v-if="error"
+                class="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+            >
                 {{ error }}
             </div>
 

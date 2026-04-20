@@ -2,88 +2,88 @@
 import { reactive, watch } from "vue";
 
 const props = defineProps({
-	settings: {
-		type: Object,
-		required: true,
-	},
-	onUpdate: {
-		type: Function,
-		required: true,
-	},
-	isUpdating: {
-		type: Boolean,
-		default: false,
-	},
+    settings: {
+        type: Object,
+        required: true,
+    },
+    onUpdate: {
+        type: Function,
+        required: true,
+    },
+    isUpdating: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const local = reactive({
-	placement_timer_enabled: props.settings.placement_timer_enabled ?? false,
-	placement_timer_duration: props.settings.placement_timer_duration ?? 120,
-	placement_delay_seconds: props.settings.placement_delay_seconds ?? 3,
-	max_rounds: props.settings.max_rounds,
-	amen_enabled: props.settings.amen_enabled ?? true,
+    placement_timer_enabled: props.settings.placement_timer_enabled ?? false,
+    placement_timer_duration: props.settings.placement_timer_duration ?? 120,
+    placement_delay_seconds: props.settings.placement_delay_seconds ?? 3,
+    max_rounds: props.settings.max_rounds,
+    amen_enabled: props.settings.amen_enabled ?? true,
 });
 
 const maxRoundsUnlimited = () => local.max_rounds === null || local.max_rounds === undefined;
 
 watch(
-	() => props.settings,
-	(s) => {
-		local.placement_timer_enabled = s.placement_timer_enabled ?? false;
-		local.placement_timer_duration = s.placement_timer_duration ?? 120;
-		local.placement_delay_seconds = s.placement_delay_seconds ?? 3;
-		local.max_rounds = s.max_rounds;
-		local.amen_enabled = s.amen_enabled ?? true;
-	},
+    () => props.settings,
+    (s) => {
+        local.placement_timer_enabled = s.placement_timer_enabled ?? false;
+        local.placement_timer_duration = s.placement_timer_duration ?? 120;
+        local.placement_delay_seconds = s.placement_delay_seconds ?? 3;
+        local.max_rounds = s.max_rounds;
+        local.amen_enabled = s.amen_enabled ?? true;
+    },
 );
 
 const send = (overrides = {}) => {
-	props.onUpdate({ ...local, ...overrides });
+    props.onUpdate({ ...local, ...overrides });
 };
 
 const toggleTimer = () => {
-	local.placement_timer_enabled = !local.placement_timer_enabled;
-	send();
+    local.placement_timer_enabled = !local.placement_timer_enabled;
+    send();
 };
 
 const setTimerDuration = (value) => {
-	const clamped = Math.min(300, Math.max(10, parseInt(value, 10) || 120));
-	local.placement_timer_duration = clamped;
-	send();
+    const clamped = Math.min(300, Math.max(10, parseInt(value, 10) || 120));
+    local.placement_timer_duration = clamped;
+    send();
 };
 
 const setDelay = (value) => {
-	const clamped = Math.min(30, Math.max(1, parseInt(value, 10) || 3));
-	local.placement_delay_seconds = clamped;
-	send();
+    const clamped = Math.min(30, Math.max(1, parseInt(value, 10) || 3));
+    local.placement_delay_seconds = clamped;
+    send();
 };
 
 const stepDelay = (delta) => {
-	setDelay(local.placement_delay_seconds + delta);
+    setDelay(local.placement_delay_seconds + delta);
 };
 
 const toggleMaxRounds = () => {
-	if (maxRoundsUnlimited()) {
-		local.max_rounds = 10;
-	} else {
-		local.max_rounds = null;
-	}
-	send();
+    if (maxRoundsUnlimited()) {
+        local.max_rounds = 10;
+    } else {
+        local.max_rounds = null;
+    }
+    send();
 };
 
 const setMaxRounds = (value) => {
-	const parsed = parseInt(value, 10);
-	if (!parsed || parsed < 1) {
-		local.max_rounds = null;
-	} else {
-		local.max_rounds = Math.min(100, parsed);
-	}
-	send();
+    const parsed = parseInt(value, 10);
+    if (!parsed || parsed < 1) {
+        local.max_rounds = null;
+    } else {
+        local.max_rounds = Math.min(100, parsed);
+    }
+    send();
 };
 
 const toggleAmen = () => {
-	local.amen_enabled = !local.amen_enabled;
-	send();
+    local.amen_enabled = !local.amen_enabled;
+    send();
 };
 </script>
 
@@ -118,7 +118,9 @@ const toggleAmen = () => {
             <div v-if="local.placement_timer_enabled" class="pl-1 space-y-2">
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-white/70">Duration</span>
-                    <span class="font-mono-party text-accent-200">{{ local.placement_timer_duration }}s</span>
+                    <span class="font-mono-party text-accent-200"
+                        >{{ local.placement_timer_duration }}s</span
+                    >
                 </div>
                 <input
                     type="range"
@@ -153,7 +155,9 @@ const toggleAmen = () => {
                     >
                         &minus;
                     </button>
-                    <span class="w-10 text-center font-mono-party text-accent-200 text-sm">{{ local.placement_delay_seconds }}s</span>
+                    <span class="w-10 text-center font-mono-party text-accent-200 text-sm"
+                        >{{ local.placement_delay_seconds }}s</span
+                    >
                     <button
                         type="button"
                         class="w-8 h-8 rounded-lg bg-white/10 text-white/70 font-bold text-lg flex items-center justify-center hover:bg-white/20 transition disabled:opacity-30"

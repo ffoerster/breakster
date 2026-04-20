@@ -27,7 +27,9 @@ defineProps({
             class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-accent-500/15"
         >
             <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center font-bold shrink-0 text-white">
+                <div
+                    class="w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center font-bold shrink-0 text-white"
+                >
                     {{ String(p.display_name).slice(0, 1).toUpperCase() }}
                 </div>
                 <div class="font-medium truncate text-white">
@@ -58,7 +60,9 @@ defineProps({
                     Host
                 </span>
 
-                <div v-if="showScore" class="font-bold text-accent-200 font-mono-party">{{ p.score }} pts</div>
+                <div v-if="showScore" class="font-bold text-accent-200 font-mono-party">
+                    {{ p.score }} pts
+                </div>
             </div>
         </div>
     </TransitionGroup>

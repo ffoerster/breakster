@@ -4,23 +4,23 @@ import AppLayout from "../Layouts/AppLayout.vue";
 import GlassCard from "../Components/Ui/GlassCard.vue";
 
 const props = defineProps({
-	initial_display_name: {
-		type: String,
-		default: "",
-	},
-	initial_code: {
-		type: String,
-		default: "",
-	},
+    initial_display_name: {
+        type: String,
+        default: "",
+    },
+    initial_code: {
+        type: String,
+        default: "",
+    },
 });
 
 const form = useForm({
-	code: props.initial_code,
-	display_name: props.initial_display_name,
+    code: props.initial_code,
+    display_name: props.initial_display_name,
 });
 
 const submit = () => {
-	form.post("/room/join");
+    form.post("/room/join");
 };
 </script>
 
@@ -31,7 +31,9 @@ const submit = () => {
 
             <form @submit.prevent="submit" class="space-y-6">
                 <div>
-                    <label for="code" class="block text-sm font-medium text-white/70 mb-2">Room Code</label>
+                    <label for="code" class="block text-sm font-medium text-white/70 mb-2"
+                        >Room Code</label
+                    >
                     <input
                         id="code"
                         v-model="form.code"
@@ -43,11 +45,15 @@ const submit = () => {
                         autocapitalize="characters"
                         autocomplete="off"
                     />
-                    <p v-if="form.errors.code" class="mt-1 text-sm text-red-400">{{ form.errors.code }}</p>
+                    <p v-if="form.errors.code" class="mt-1 text-sm text-red-400">
+                        {{ form.errors.code }}
+                    </p>
                 </div>
 
                 <div>
-                    <label for="displayName" class="block text-sm font-medium text-white/70 mb-2">Your Name</label>
+                    <label for="displayName" class="block text-sm font-medium text-white/70 mb-2"
+                        >Your Name</label
+                    >
                     <input
                         id="displayName"
                         v-model="form.display_name"
@@ -68,7 +74,7 @@ const submit = () => {
                     class="btn-interactive btn-primary w-full min-h-11 py-4 px-6 text-white font-bold rounded-lg transition disabled:cursor-not-allowed"
                     :disabled="form.processing"
                 >
-                    {{ form.processing ? 'Joining…' : 'Join Room' }}
+                    {{ form.processing ? "Joining…" : "Join Room" }}
                 </button>
             </form>
 

@@ -1,7 +1,7 @@
 <script setup>
-import { useElementBounding, useMediaControls } from '@vueuse/core';
-import { useDrag } from '@vueuse/gesture';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useElementBounding, useMediaControls } from "@vueuse/core";
+import { useDrag } from "@vueuse/gesture";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
     src: {
@@ -34,11 +34,11 @@ const progress = computed(() => {
 
 const formatTime = (seconds) => {
     if (!seconds || !Number.isFinite(seconds)) {
-        return '0:00';
+        return "0:00";
     }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
 const tryPlay = async () => {
@@ -114,7 +114,7 @@ useDrag(
     },
     {
         target: progressBarEl,
-        axis: 'x',
+        axis: "x",
         filterTaps: true,
         eventOptions: { passive: false },
     },
@@ -155,11 +155,7 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
-        <audio
-            ref="audioRef"
-            :src="src"
-            preload="metadata"
-        />
+        <audio ref="audioRef" :src="src" preload="metadata" />
 
         <div class="flex items-center gap-4">
             <button
@@ -180,12 +176,7 @@ onBeforeUnmount(() => {
                         clip-rule="evenodd"
                     />
                 </svg>
-                <svg
-                    v-else
-                    class="w-5 h-5 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                >
+                <svg v-else class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path
                         fill-rule="evenodd"
                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"

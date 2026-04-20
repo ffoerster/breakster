@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
     remaining: {
@@ -26,10 +26,7 @@ const isUrgent = computed(() => props.remaining <= 1 && props.remaining > 0);
 </script>
 
 <template>
-    <div
-        class="relative w-20 h-20"
-        :class="{ 'animate-pulse': isUrgent }"
-    >
+    <div class="relative w-20 h-20" :class="{ 'animate-pulse': isUrgent }">
         <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
             <circle
                 cx="50"
@@ -58,7 +55,11 @@ const isUrgent = computed(() => props.remaining <= 1 && props.remaining > 0);
             <span
                 v-motion
                 :initial="{ scale: 1.3, opacity: 0 }"
-                :enter="{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } }"
+                :enter="{
+                    scale: 1,
+                    opacity: 1,
+                    transition: { type: 'spring', stiffness: 300, damping: 20 },
+                }"
                 :key="remaining"
                 class="text-2xl font-bold font-mono-party"
                 :class="isUrgent ? 'text-red-300' : 'text-accent-200'"

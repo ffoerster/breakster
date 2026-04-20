@@ -1,71 +1,75 @@
 <script setup>
 const props = defineProps({
-	claimantName: {
-		type: String,
-		required: true,
-	},
-	guess: {
-		type: Object,
-		default: null,
-	},
-	actual: {
-		type: Object,
-		default: null,
-	},
-	canVote: {
-		type: Boolean,
-		required: true,
-	},
-	myVote: {
-		type: [Boolean, null],
-		default: null,
-	},
-	votes: {
-		type: Object,
-		required: true,
-	},
-	isSubmitting: {
-		type: Boolean,
-		required: true,
-	},
-	error: {
-		type: String,
-		default: "",
-	},
-	submitVote: {
-		type: Function,
-		required: true,
-	},
+    claimantName: {
+        type: String,
+        required: true,
+    },
+    guess: {
+        type: Object,
+        default: null,
+    },
+    actual: {
+        type: Object,
+        default: null,
+    },
+    canVote: {
+        type: Boolean,
+        required: true,
+    },
+    myVote: {
+        type: [Boolean, null],
+        default: null,
+    },
+    votes: {
+        type: Object,
+        required: true,
+    },
+    isSubmitting: {
+        type: Boolean,
+        required: true,
+    },
+    error: {
+        type: String,
+        default: "",
+    },
+    submitVote: {
+        type: Function,
+        required: true,
+    },
 });
 
 const handleVote = async (vote) => {
-	if (!props.canVote || props.isSubmitting) {
-		return;
-	}
+    if (!props.canVote || props.isSubmitting) {
+        return;
+    }
 
-	await props.submitVote(vote);
+    await props.submitVote(vote);
 };
 </script>
 
 <template>
-    <div class="p-6 bg-linear-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40 rounded-xl">
+    <div
+        class="p-6 bg-linear-to-br from-accent-500/20 to-accent-600/20 border border-accent-500/40 rounded-xl"
+    >
         <h3 class="text-lg font-bold text-accent-200 mb-2 text-center font-display">
             {{ claimantName }} hat AMEN gerufen!
         </h3>
 
-        <p class="text-sm text-white/60 mb-4 text-center">
-            Hat {{ claimantName }} recht?
-        </p>
+        <p class="text-sm text-white/60 mb-4 text-center">Hat {{ claimantName }} recht?</p>
 
         <div v-if="guess && actual" class="mb-4">
             <div class="grid grid-cols-2 gap-4 text-sm">
                 <div class="text-center">
-                    <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Guessed</p>
+                    <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">
+                        Guessed
+                    </p>
                     <p class="font-bold text-white">{{ guess.artist }}</p>
                     <p class="text-white/80">{{ guess.title }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Actual</p>
+                    <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">
+                        Actual
+                    </p>
                     <p class="font-bold text-white">{{ actual.artist }}</p>
                     <p class="text-white/80">{{ actual.title }}</p>
                 </div>
@@ -79,7 +83,10 @@ const handleVote = async (vote) => {
                 :disabled="isSubmitting"
                 @click="handleVote(true)"
             >
-                <span v-if="isSubmitting" class="w-5 h-5 mx-auto rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <span
+                    v-if="isSubmitting"
+                    class="w-5 h-5 mx-auto rounded-full border-2 border-white/30 border-t-white animate-spin"
+                />
                 <span v-else>Ja, safe.</span>
             </button>
 
@@ -89,7 +96,10 @@ const handleVote = async (vote) => {
                 :disabled="isSubmitting"
                 @click="handleVote(false)"
             >
-                <span v-if="isSubmitting" class="w-5 h-5 mx-auto rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <span
+                    v-if="isSubmitting"
+                    class="w-5 h-5 mx-auto rounded-full border-2 border-white/30 border-t-white animate-spin"
+                />
                 <span v-else>Nope.</span>
             </button>
         </div>
@@ -98,7 +108,7 @@ const handleVote = async (vote) => {
             <p class="text-sm text-white/70">
                 Du hast abgestimmt:
                 <span :class="myVote ? 'text-green-400' : 'text-red-400'" class="font-bold">
-                    {{ myVote ? 'Ja, safe.' : 'Nope.' }}
+                    {{ myVote ? "Ja, safe." : "Nope." }}
                 </span>
             </p>
         </div>

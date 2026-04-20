@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue';
-import { usePreferredReducedMotion } from '@vueuse/core';
+import { ref, watch } from "vue";
+import { usePreferredReducedMotion } from "@vueuse/core";
 
 const props = defineProps({
     active: {
@@ -15,7 +15,7 @@ const showFlash = ref(false);
 watch(
     () => props.active,
     (isActive) => {
-        if (isActive && prefersReducedMotion.value !== 'reduce') {
+        if (isActive && prefersReducedMotion.value !== "reduce") {
             showFlash.value = true;
             setTimeout(() => {
                 showFlash.value = false;

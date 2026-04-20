@@ -22,7 +22,7 @@ defineProps({
     },
     error: {
         type: String,
-        default: '',
+        default: "",
     },
 });
 </script>
@@ -38,7 +38,9 @@ defineProps({
             @click="markReady"
         >
             <span v-if="isMarking" class="flex items-center justify-center gap-2">
-                <span class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <span
+                    class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"
+                />
                 <span>Marking...</span>
             </span>
             <span v-else>I'm Ready</span>

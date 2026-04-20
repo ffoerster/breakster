@@ -1,7 +1,13 @@
-import { useClipboard, useConfirmDialog, useDebounceFn, useDocumentVisibility, useOnline } from '@vueuse/core';
-import { useAxios } from '@vueuse/integrations/useAxios';
-import { computed, ref, shallowReactive, watch } from 'vue';
-import { toast } from 'vue-sonner';
+import {
+    useClipboard,
+    useConfirmDialog,
+    useDebounceFn,
+    useDocumentVisibility,
+    useOnline,
+} from "@vueuse/core";
+import { useAxios } from "@vueuse/integrations/useAxios";
+import { computed, ref, shallowReactive, watch } from "vue";
+import { toast } from "vue-sonner";
 
 export function useRoomState(props) {
     const state = shallowReactive({
@@ -23,10 +29,10 @@ export function useRoomState(props) {
     };
 
     const isHost = computed(() => Boolean(state.me?.is_host));
-    const isInLobby = computed(() => state.room.state === 'lobby');
-    const isInRound = computed(() => state.room.state === 'in_round');
-    const isInReveal = computed(() => state.room.state === 'reveal');
-    const isFinished = computed(() => state.room.state === 'finished');
+    const isInLobby = computed(() => state.room.state === "lobby");
+    const isInRound = computed(() => state.room.state === "in_round");
+    const isInReveal = computed(() => state.room.state === "reveal");
+    const isFinished = computed(() => state.room.state === "finished");
     const code = computed(() => state.room.code);
 
     const allGuestsReady = computed(() => {
@@ -49,18 +55,21 @@ export function useRoomState(props) {
             return;
         }
 
-        toast.success('All players are ready');
+        toast.success("All players are ready");
     });
 
     const playUrl = computed(() => {
         if (!state.round?.id) {
-            return '';
+            return "";
         }
 
         return `${window.location.origin}/play/${state.room.code}/${state.round.id}`;
     });
 
-    const { copy: copyToClipboard, copied: copiedPlayUrl } = useClipboard({ legacy: true, copiedDuring: 1500 });
+    const { copy: copyToClipboard, copied: copiedPlayUrl } = useClipboard({
+        legacy: true,
+        copiedDuring: 1500,
+    });
 
     const copyPlayUrl = async () => {
         if (!playUrl.value) {
@@ -97,9 +106,7 @@ export function useRoomState(props) {
     };
 
     const getRequestErrorMessage = (error, fallback) => {
-        return error?.response?.data?.message
-            ?? error?.response?.data?.error
-            ?? fallback;
+        return error?.response?.data?.message ?? error?.response?.data?.error ?? fallback;
     };
 
     const refreshState = async () => {
@@ -119,7 +126,7 @@ export function useRoomState(props) {
             const data = result.response.value?.data;
 
             if (data) {
-                if (data.room?.state === 'reveal' && state.room.state !== 'reveal') {
+                if (data.room?.state === "reveal" && state.room.state !== "reveal") {
                     capturePreviousLeaderboard();
                 }
 
@@ -136,7 +143,7 @@ export function useRoomState(props) {
 
     const scheduleRefresh = useDebounceFn(
         () => {
-            if (!isOnline.value || documentVisibility.value !== 'visible') {
+            if (!isOnline.value || documentVisibility.value !== "visible") {
                 pendingRefresh.value = true;
                 return;
             }
@@ -148,7 +155,7 @@ export function useRoomState(props) {
     );
 
     watch(documentVisibility, (visibility) => {
-        if (visibility !== 'visible' || !pendingRefresh.value) {
+        if (visibility !== "visible" || !pendingRefresh.value) {
             return;
         }
 
@@ -165,7 +172,7 @@ export function useRoomState(props) {
             return;
         }
 
-        if (documentVisibility.value !== 'visible') {
+        if (documentVisibility.value !== "visible") {
             return;
         }
 
@@ -181,7 +188,7 @@ export function useRoomState(props) {
     } = useConfirmDialog();
 
     const isFinishingGame = ref(false);
-    const finishGameError = ref('');
+    const finishGameError = ref("");
 
     const openFinishGameConfirm = () => {
         if (!isHost.value || isFinished.value) {
@@ -192,7 +199,7 @@ export function useRoomState(props) {
             return;
         }
 
-        finishGameError.value = '';
+        finishGameError.value = "";
 
         if (!isOnline.value) {
             finishGameError.value = "You're offline.";
@@ -212,7 +219,7 @@ export function useRoomState(props) {
 
         try {
             await executeAction(`/room/${code.value}/provider`, {
-                method: 'POST',
+                method: "POST",
                 data: {
                     playback_provider_id: providerId,
                 },
@@ -220,13 +227,13 @@ export function useRoomState(props) {
 
             await refreshState();
         } catch (e) {
-            toast.error('Could not set provider', {
-                description: getRequestErrorMessage(e, 'Please try again.'),
+            toast.error("Could not set provider", {
+                description: getRequestErrorMessage(e, "Please try again."),
             });
         }
     };
 
-    const startError = ref('');
+    const startError = ref("");
     const isStarting = ref(false);
 
     const startGame = async () => {
@@ -239,31 +246,38 @@ export function useRoomState(props) {
             return;
         }
 
-        startError.value = '';
+        startError.value = "";
         isStarting.value = true;
 
         try {
             const result = await actionRequest.execute(`/room/${code.value}/start`, {
-                method: 'POST',
+                method: "POST",
             });
 
             if (result.error.value) {
-                startError.value = result.error.value?.response?.data?.message
-                    ?? 'Could not start the game. Please try again.';
+                startError.value =
+                    result.error.value?.response?.data?.message ??
+                    "Could not start the game. Please try again.";
                 return;
             }
 
             await refreshState();
 
-            toast.success('Game started');
+            toast.success("Game started");
         } finally {
             isStarting.value = false;
         }
     };
 
-    const canStart = computed(() => isHost.value && isInLobby.value && Boolean(state.room.playback_provider) && !isStarting.value);
+    const canStart = computed(
+        () =>
+            isHost.value &&
+            isInLobby.value &&
+            Boolean(state.room.playback_provider) &&
+            !isStarting.value,
+    );
 
-    const placeError = ref('');
+    const placeError = ref("");
     const isPlacing = ref(false);
     const isUndoingPlacement = ref(false);
 
@@ -278,7 +292,7 @@ export function useRoomState(props) {
 
         const wasPlaced = Boolean(state.me?.has_placed);
 
-        placeError.value = '';
+        placeError.value = "";
         isPlacing.value = true;
 
         if (!isOnline.value) {
@@ -289,23 +303,24 @@ export function useRoomState(props) {
 
         try {
             const result = await actionRequest.execute(`/room/${code.value}/place`, {
-                method: 'POST',
+                method: "POST",
                 data: {
                     inserted_after_track_id: insertedAfterTrackId,
                 },
             });
 
             if (result.error.value) {
-                placeError.value = result.error.value?.response?.data?.message
-                    ?? 'Could not submit placement. Please try again.';
+                placeError.value =
+                    result.error.value?.response?.data?.message ??
+                    "Could not submit placement. Please try again.";
                 return;
             }
 
             await refreshState();
 
             if (!wasPlaced && state.me?.has_placed) {
-                toast.success('Guess saved', {
-                    description: 'You can change it until reveal.',
+                toast.success("Guess saved", {
+                    description: "You can change it until reveal.",
                 });
             }
         } finally {
@@ -319,7 +334,7 @@ export function useRoomState(props) {
         }
 
         isUndoingPlacement.value = true;
-        placeError.value = '';
+        placeError.value = "";
 
         if (!isOnline.value) {
             placeError.value = "You're offline.";
@@ -329,18 +344,18 @@ export function useRoomState(props) {
 
         try {
             const result = await actionRequest.execute(`/room/${code.value}/place`, {
-                method: 'DELETE',
+                method: "DELETE",
             });
 
             if (result.error.value) {
-                placeError.value = result.error.value?.response?.data?.message
-                    ?? 'Could not undo placement.';
+                placeError.value =
+                    result.error.value?.response?.data?.message ?? "Could not undo placement.";
                 return;
             }
 
             await refreshState();
 
-            toast.success('Placement removed');
+            toast.success("Placement removed");
         } finally {
             isUndoingPlacement.value = false;
         }
@@ -359,14 +374,14 @@ export function useRoomState(props) {
             capturePreviousLeaderboard();
 
             await executeAction(`/room/${code.value}/reveal`, {
-                method: 'POST',
+                method: "POST",
             });
             await refreshState();
 
-            toast.success('Revealed');
+            toast.success("Revealed");
         } catch (e) {
-            toast.error('Could not reveal', {
-                description: getRequestErrorMessage(e, 'Please try again.'),
+            toast.error("Could not reveal", {
+                description: getRequestErrorMessage(e, "Please try again."),
             });
         }
     };
@@ -382,14 +397,14 @@ export function useRoomState(props) {
 
         try {
             await executeAction(`/room/${code.value}/next`, {
-                method: 'POST',
+                method: "POST",
             });
             await refreshState();
 
-            toast.success('Next round');
+            toast.success("Next round");
         } catch (e) {
-            toast.error('Could not start next round', {
-                description: getRequestErrorMessage(e, 'Please try again.'),
+            toast.error("Could not start next round", {
+                description: getRequestErrorMessage(e, "Please try again."),
             });
         }
     };
@@ -405,40 +420,41 @@ export function useRoomState(props) {
         }
 
         isFinishingGame.value = true;
-        finishGameError.value = '';
+        finishGameError.value = "";
 
         try {
             const result = await actionRequest.execute(`/room/${code.value}/finish`, {
-                method: 'POST',
+                method: "POST",
             });
 
             if (result.error.value) {
-                finishGameError.value = result.error.value?.response?.data?.message
-                    ?? 'Could not finish the game. Please try again.';
+                finishGameError.value =
+                    result.error.value?.response?.data?.message ??
+                    "Could not finish the game. Please try again.";
                 return;
             }
 
             confirmFinishGameConfirm();
             await refreshState();
 
-            toast.success('Game closed');
+            toast.success("Game closed");
         } finally {
             isFinishingGame.value = false;
         }
     };
 
     const cancelFinishGame = () => {
-        finishGameError.value = '';
+        finishGameError.value = "";
         cancelFinishGameConfirm();
     };
 
     // AMEN feature
     const isClaimingAmen = ref(false);
-    const amenClaimError = ref('');
+    const amenClaimError = ref("");
     const isSubmittingAmenGuess = ref(false);
-    const amenGuessError = ref('');
+    const amenGuessError = ref("");
     const isSubmittingAmenVote = ref(false);
-    const amenVoteError = ref('');
+    const amenVoteError = ref("");
 
     const claimAmen = async () => {
         if (!isInRound.value || !state.round?.id) {
@@ -450,7 +466,7 @@ export function useRoomState(props) {
         }
 
         isClaimingAmen.value = true;
-        amenClaimError.value = '';
+        amenClaimError.value = "";
 
         if (!isOnline.value) {
             amenClaimError.value = "You're offline.";
@@ -459,18 +475,22 @@ export function useRoomState(props) {
         }
 
         try {
-            const result = await actionRequest.execute(`/room/${code.value}/round/${state.round.id}/amen`, {
-                method: 'POST',
-            });
+            const result = await actionRequest.execute(
+                `/room/${code.value}/round/${state.round.id}/amen`,
+                {
+                    method: "POST",
+                },
+            );
 
             if (result.error.value) {
-                amenClaimError.value = result.error.value?.response?.data?.message ?? 'Could not claim AMEN.';
+                amenClaimError.value =
+                    result.error.value?.response?.data?.message ?? "Could not claim AMEN.";
                 return;
             }
 
             await refreshState();
 
-            toast.success('AMEN claimed');
+            toast.success("AMEN claimed");
         } finally {
             isClaimingAmen.value = false;
         }
@@ -482,7 +502,7 @@ export function useRoomState(props) {
         }
 
         isSubmittingAmenGuess.value = true;
-        amenGuessError.value = '';
+        amenGuessError.value = "";
 
         if (!isOnline.value) {
             amenGuessError.value = "You're offline.";
@@ -491,22 +511,26 @@ export function useRoomState(props) {
         }
 
         try {
-            const result = await actionRequest.execute(`/room/${code.value}/round/${state.round.id}/amen/guess`, {
-                method: 'POST',
-                data: {
-                    artist,
-                    title,
+            const result = await actionRequest.execute(
+                `/room/${code.value}/round/${state.round.id}/amen/guess`,
+                {
+                    method: "POST",
+                    data: {
+                        artist,
+                        title,
+                    },
                 },
-            });
+            );
 
             if (result.error.value) {
-                amenGuessError.value = result.error.value?.response?.data?.message ?? 'Could not submit guess.';
+                amenGuessError.value =
+                    result.error.value?.response?.data?.message ?? "Could not submit guess.";
                 return;
             }
 
             await refreshState();
 
-            toast.success('AMEN guess saved');
+            toast.success("AMEN guess saved");
         } finally {
             isSubmittingAmenGuess.value = false;
         }
@@ -518,7 +542,7 @@ export function useRoomState(props) {
         }
 
         isSubmittingAmenVote.value = true;
-        amenVoteError.value = '';
+        amenVoteError.value = "";
 
         if (!isOnline.value) {
             amenVoteError.value = "You're offline.";
@@ -527,21 +551,25 @@ export function useRoomState(props) {
         }
 
         try {
-            const result = await actionRequest.execute(`/room/${code.value}/round/${state.round.id}/amen/vote`, {
-                method: 'POST',
-                data: {
-                    vote,
+            const result = await actionRequest.execute(
+                `/room/${code.value}/round/${state.round.id}/amen/vote`,
+                {
+                    method: "POST",
+                    data: {
+                        vote,
+                    },
                 },
-            });
+            );
 
             if (result.error.value) {
-                amenVoteError.value = result.error.value?.response?.data?.message ?? 'Could not submit vote.';
+                amenVoteError.value =
+                    result.error.value?.response?.data?.message ?? "Could not submit vote.";
                 return;
             }
 
             await refreshState();
 
-            toast.success('AMEN vote saved');
+            toast.success("AMEN vote saved");
         } finally {
             isSubmittingAmenVote.value = false;
         }
@@ -563,14 +591,14 @@ export function useRoomState(props) {
 
         try {
             await executeAction(`/room/${code.value}/settings`, {
-                method: 'POST',
+                method: "POST",
                 data: settings,
             });
 
             await refreshState();
         } catch (e) {
-            toast.error('Could not update settings', {
-                description: getRequestErrorMessage(e, 'Please try again.'),
+            toast.error("Could not update settings", {
+                description: getRequestErrorMessage(e, "Please try again."),
             });
         } finally {
             isUpdatingSettings.value = false;
@@ -586,7 +614,7 @@ export function useRoomState(props) {
 
     // Ready feature
     const isMarkingReady = ref(false);
-    const markReadyError = ref('');
+    const markReadyError = ref("");
 
     const markReady = async () => {
         if (!isInLobby.value) {
@@ -598,7 +626,7 @@ export function useRoomState(props) {
         }
 
         isMarkingReady.value = true;
-        markReadyError.value = '';
+        markReadyError.value = "";
 
         if (!isOnline.value) {
             markReadyError.value = "You're offline.";
@@ -608,11 +636,12 @@ export function useRoomState(props) {
 
         try {
             const result = await actionRequest.execute(`/room/${code.value}/ready`, {
-                method: 'POST',
+                method: "POST",
             });
 
             if (result.error.value) {
-                markReadyError.value = result.error.value?.response?.data?.message ?? 'Could not mark as ready.';
+                markReadyError.value =
+                    result.error.value?.response?.data?.message ?? "Could not mark as ready.";
                 return;
             }
 
@@ -629,7 +658,7 @@ export function useRoomState(props) {
     // Game summary for finished games
     const summary = ref(null);
     const isLoadingSummary = ref(false);
-    const summaryError = ref('');
+    const summaryError = ref("");
 
     const fetchSummary = async () => {
         if (!isFinished.value || summary.value) {
@@ -642,7 +671,7 @@ export function useRoomState(props) {
         }
 
         isLoadingSummary.value = true;
-        summaryError.value = '';
+        summaryError.value = "";
 
         try {
             const result = await refreshRequest.execute(`/room/${code.value}/summary`);
@@ -652,7 +681,7 @@ export function useRoomState(props) {
                 summary.value = data;
             }
         } catch (e) {
-            summaryError.value = getRequestErrorMessage(e, 'Could not load summary.');
+            summaryError.value = getRequestErrorMessage(e, "Could not load summary.");
         } finally {
             isLoadingSummary.value = false;
         }

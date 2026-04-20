@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
     leaderboard: {
@@ -32,26 +32,26 @@ const leaderboardWithChanges = computed(() => {
 
 const getRankChangeClass = (change) => {
     if (change > 0) {
-        return 'text-green-400';
+        return "text-green-400";
     }
 
     if (change < 0) {
-        return 'text-red-400';
+        return "text-red-400";
     }
 
-    return 'text-white/55';
+    return "text-white/55";
 };
 
 const getRankChangeIcon = (change) => {
     if (change > 0) {
-        return '\u25B2';
+        return "\u25B2";
     }
 
     if (change < 0) {
-        return '\u25BC';
+        return "\u25BC";
     }
 
-    return '\u2013';
+    return "\u2013";
 };
 </script>
 

@@ -1,12 +1,12 @@
-import { useAxios } from '@vueuse/integrations/useAxios';
-import { useOnline } from '@vueuse/core';
-import { computed, ref, watch } from 'vue';
+import { useAxios } from "@vueuse/integrations/useAxios";
+import { useOnline } from "@vueuse/core";
+import { computed, ref, watch } from "vue";
 
 export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
     const spotifyDevices = ref([]);
-    const spotifyError = ref('');
+    const spotifyError = ref("");
     const isLoadingDevices = ref(false);
-    const spotifyPlayError = ref('');
+    const spotifyPlayError = ref("");
     const isPlayingSpotify = ref(false);
 
     const isOnline = useOnline();
@@ -22,7 +22,7 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
     });
 
     const hasSpotifyToken = computed(() => Boolean(state.room.host_has_spotify_token));
-    const isSpotifyProvider = computed(() => state.room.playback_provider?.key === 'spotify');
+    const isSpotifyProvider = computed(() => state.room.playback_provider?.key === "spotify");
     const selectedDeviceId = computed(() => state.room.spotify_device_id);
 
     const loadSpotifyDevices = async () => {
@@ -30,7 +30,7 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
             return;
         }
 
-        spotifyError.value = '';
+        spotifyError.value = "";
         isLoadingDevices.value = true;
 
         if (!isOnline.value) {
@@ -46,12 +46,12 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
                 const status = result.error.value?.response?.status;
                 const message = result.error.value?.response?.data?.error;
 
-                if (status === 403 && message?.includes('Premium')) {
-                    spotifyError.value = 'Spotify Premium required for host-controlled playback.';
+                if (status === 403 && message?.includes("Premium")) {
+                    spotifyError.value = "Spotify Premium required for host-controlled playback.";
                 } else if (message) {
                     spotifyError.value = message;
                 } else {
-                    spotifyError.value = 'Failed to load Spotify devices. Please try again.';
+                    spotifyError.value = "Failed to load Spotify devices. Please try again.";
                 }
 
                 spotifyDevices.value = [];
@@ -62,7 +62,7 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
 
             if (spotifyDevices.value.length === 0) {
                 spotifyError.value =
-                    'No devices found. Open Spotify on your phone or computer and start playing something once, then refresh.';
+                    "No devices found. Open Spotify on your phone or computer and start playing something once, then refresh.";
             }
         } finally {
             isLoadingDevices.value = false;
@@ -74,7 +74,7 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
             return;
         }
 
-        spotifyError.value = '';
+        spotifyError.value = "";
 
         if (!isOnline.value) {
             spotifyError.value = "You're offline.";
@@ -82,15 +82,20 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
         }
 
         try {
-            const result = await spotifyActionRequest.execute(`/room/${code.value}/spotify/device`, {
-                method: 'POST',
-                data: {
-                    device_id: deviceId,
+            const result = await spotifyActionRequest.execute(
+                `/room/${code.value}/spotify/device`,
+                {
+                    method: "POST",
+                    data: {
+                        device_id: deviceId,
+                    },
                 },
-            });
+            );
 
             if (result.error.value) {
-                spotifyError.value = result.error.value?.response?.data?.error || 'Failed to set device. Please try again.';
+                spotifyError.value =
+                    result.error.value?.response?.data?.error ||
+                    "Failed to set device. Please try again.";
                 return;
             }
 
@@ -110,7 +115,7 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
             return;
         }
 
-        spotifyPlayError.value = '';
+        spotifyPlayError.value = "";
         isPlayingSpotify.value = true;
 
         if (!isOnline.value) {
@@ -121,12 +126,13 @@ export function useSpotifyHostPlayback({ state, isHost, code, refreshState }) {
 
         try {
             const result = await spotifyActionRequest.execute(`/room/${code.value}/spotify/play`, {
-                method: 'POST',
+                method: "POST",
             });
 
             if (result.error.value) {
-                spotifyPlayError.value = result.error.value?.response?.data?.error
-                    || 'Failed to start playback. Please try again.';
+                spotifyPlayError.value =
+                    result.error.value?.response?.data?.error ||
+                    "Failed to start playback. Please try again.";
             }
         } finally {
             isPlayingSpotify.value = false;

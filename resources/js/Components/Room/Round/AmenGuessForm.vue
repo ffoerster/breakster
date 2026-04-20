@@ -2,41 +2,46 @@
 import { ref } from "vue";
 
 const props = defineProps({
-	isSubmitting: {
-		type: Boolean,
-		required: true,
-	},
-	error: {
-		type: String,
-		default: "",
-	},
-	submitGuess: {
-		type: Function,
-		required: true,
-	},
+    isSubmitting: {
+        type: Boolean,
+        required: true,
+    },
+    error: {
+        type: String,
+        default: "",
+    },
+    submitGuess: {
+        type: Function,
+        required: true,
+    },
 });
 
 const artist = ref("");
 const title = ref("");
 
 const handleSubmit = async () => {
-	if (!artist.value.trim() || !title.value.trim() || props.isSubmitting) {
-		return;
-	}
+    if (!artist.value.trim() || !title.value.trim() || props.isSubmitting) {
+        return;
+    }
 
-	await props.submitGuess(artist.value.trim(), title.value.trim());
+    await props.submitGuess(artist.value.trim(), title.value.trim());
 };
 </script>
 
 <template>
-    <div class="p-6 bg-linear-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50 rounded-xl">
+    <div
+        class="p-6 bg-linear-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/50 rounded-xl"
+    >
         <h3 class="text-lg font-bold text-amber-300 mb-4 text-center font-display">
             Alright. Name it.
         </h3>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
             <div>
-                <label for="amen-artist" class="block text-sm font-medium text-white/70 mb-1 font-display">
+                <label
+                    for="amen-artist"
+                    class="block text-sm font-medium text-white/70 mb-1 font-display"
+                >
                     Artist
                 </label>
                 <input
@@ -51,7 +56,10 @@ const handleSubmit = async () => {
             </div>
 
             <div>
-                <label for="amen-title" class="block text-sm font-medium text-white/70 mb-1 font-display">
+                <label
+                    for="amen-title"
+                    class="block text-sm font-medium text-white/70 mb-1 font-display"
+                >
                     Track Title
                 </label>
                 <input
@@ -71,7 +79,9 @@ const handleSubmit = async () => {
                 :disabled="!artist.trim() || !title.trim() || isSubmitting"
             >
                 <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
-                    <span class="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span
+                        class="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"
+                    />
                     <span>Submitting...</span>
                 </span>
                 <span v-else>Submit Guess</span>

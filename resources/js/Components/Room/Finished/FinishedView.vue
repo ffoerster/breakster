@@ -1,11 +1,11 @@
 <script setup>
-import { useTimeoutFn } from '@vueuse/core';
-import { computed, onMounted } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { useTimeoutFn } from "@vueuse/core";
+import { computed, onMounted } from "vue";
+import { Link } from "@inertiajs/vue3";
 
-import GlassCard from '../../Ui/GlassCard.vue';
-import AwardCard from './AwardCard.vue';
-import AmenStatsPanel from './AmenStatsPanel.vue';
+import GlassCard from "../../Ui/GlassCard.vue";
+import AwardCard from "./AwardCard.vue";
+import AmenStatsPanel from "./AmenStatsPanel.vue";
 
 const props = defineProps({
     leaderboard: {
@@ -29,9 +29,9 @@ const gameStats = computed(() => props.summary?.game_stats);
 
 const formatYearDelta = (delta) => {
     if (delta === 0) {
-        return 'Perfect!';
+        return "Perfect!";
     }
-    return `${delta} year${delta !== 1 ? 's' : ''} off`;
+    return `${delta} year${delta !== 1 ? "s" : ""} off`;
 };
 
 let confettiLib = null;
@@ -41,7 +41,7 @@ const getConfetti = async () => {
         return confettiLib;
     }
 
-    const mod = await import('canvas-confetti');
+    const mod = await import("canvas-confetti");
     confettiLib = mod.default;
 
     return confettiLib;
@@ -55,14 +55,14 @@ const fireSecondConfettiBurst = async () => {
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#00d4ff', '#ff6b6b', '#ffd93d'],
+        colors: ["#00d4ff", "#ff6b6b", "#ffd93d"],
     });
     confetti({
         particleCount: 50,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#00d4ff', '#ff6b6b', '#ffd93d'],
+        colors: ["#00d4ff", "#ff6b6b", "#ffd93d"],
     });
 };
 
@@ -84,7 +84,7 @@ onMounted(async () => {
             particleCount: 100,
             spread: 70,
             origin: { y: 0.6 },
-            colors: ['#00d4ff', '#ff6b6b', '#ffd93d', '#6bcb77'],
+            colors: ["#00d4ff", "#ff6b6b", "#ffd93d", "#6bcb77"],
         });
 
         startSecondConfettiBurst();
@@ -98,7 +98,11 @@ onMounted(async () => {
             <h1
                 v-motion
                 :initial="{ scale: 0.8, opacity: 0 }"
-                :enter="{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 15 } }"
+                :enter="{
+                    scale: 1,
+                    opacity: 1,
+                    transition: { type: 'spring', stiffness: 200, damping: 15 },
+                }"
                 class="text-4xl font-bold mb-6 font-display"
             >
                 Game Over!
@@ -108,12 +112,18 @@ onMounted(async () => {
                 v-if="leaderboard[0]"
                 v-motion
                 :initial="{ scale: 0.5, opacity: 0 }"
-                :enter="{ scale: 1, opacity: 1, transition: { delay: 200, type: 'spring', stiffness: 180, damping: 12 } }"
+                :enter="{
+                    scale: 1,
+                    opacity: 1,
+                    transition: { delay: 200, type: 'spring', stiffness: 180, damping: 12 },
+                }"
                 class="inline-block p-6 bg-yellow-500/20 rounded-2xl border border-yellow-500 mb-4 animate-pulse-glow"
             >
                 <div class="text-yellow-300 text-sm mb-2 font-display">Winner</div>
                 <div class="text-3xl font-bold">{{ leaderboard[0].display_name }}</div>
-                <div class="text-2xl text-yellow-300 font-mono-party">{{ leaderboard[0].score }} points</div>
+                <div class="text-2xl text-yellow-300 font-mono-party">
+                    {{ leaderboard[0].score }} points
+                </div>
             </div>
         </GlassCard>
 
@@ -125,21 +135,38 @@ onMounted(async () => {
                     :key="p.id"
                     v-motion
                     :initial="{ x: -30, opacity: 0 }"
-                    :enter="{ x: 0, opacity: 1, transition: { delay: 400 + index * 80, type: 'spring', stiffness: 300, damping: 25 } }"
+                    :enter="{
+                        x: 0,
+                        opacity: 1,
+                        transition: {
+                            delay: 400 + index * 80,
+                            type: 'spring',
+                            stiffness: 300,
+                            damping: 25,
+                        },
+                    }"
                     class="flex items-center justify-between p-4 rounded-lg"
                     :class="
                         p.rank === 1
                             ? 'bg-yellow-500/20 border border-yellow-500'
                             : p.is_me
-                                ? 'bg-accent-500/20'
-                                : 'bg-white/5 border border-accent-500/15'
+                              ? 'bg-accent-500/20'
+                              : 'bg-white/5 border border-accent-500/15'
                     "
                 >
                     <div class="flex items-center gap-3">
                         <div
                             v-motion
                             :initial="{ scale: 0 }"
-                            :enter="{ scale: 1, transition: { delay: 500 + index * 80, type: 'spring', stiffness: 400, damping: 15 } }"
+                            :enter="{
+                                scale: 1,
+                                transition: {
+                                    delay: 500 + index * 80,
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 15,
+                                },
+                            }"
                             class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
                             :class="p.rank === 1 ? 'bg-yellow-500 text-black' : 'bg-white/10'"
                         >
@@ -175,7 +202,9 @@ onMounted(async () => {
         </div>
 
         <!-- Loading state for summary -->
-        <div v-else-if="isLoadingSummary" class="text-center py-4 text-white/60">Loading stats...</div>
+        <div v-else-if="isLoadingSummary" class="text-center py-4 text-white/60">
+            Loading stats...
+        </div>
 
         <!-- AMEN Stats -->
         <AmenStatsPanel v-if="amenStats && amenStats.total_claims > 0" :stats="amenStats" />
@@ -185,20 +214,30 @@ onMounted(async () => {
             v-if="gameStats && gameStats.rounds_played > 0"
             v-motion
             :initial="{ y: 20, opacity: 0 }"
-            :enter="{ y: 0, opacity: 1, transition: { delay: 200, type: 'spring', stiffness: 200, damping: 20 } }"
+            :enter="{
+                y: 0,
+                opacity: 1,
+                transition: { delay: 200, type: 'spring', stiffness: 200, damping: 20 },
+            }"
             class="p-4"
         >
             <div class="flex justify-center gap-8 text-center">
                 <div>
-                    <div class="text-2xl font-bold font-mono-party">{{ gameStats.rounds_played }}</div>
+                    <div class="text-2xl font-bold font-mono-party">
+                        {{ gameStats.rounds_played }}
+                    </div>
                     <div class="text-sm text-white/60 font-display">Rounds</div>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold font-mono-party">{{ gameStats.overall_accuracy }}%</div>
+                    <div class="text-2xl font-bold font-mono-party">
+                        {{ gameStats.overall_accuracy }}%
+                    </div>
                     <div class="text-sm text-white/60 font-display">Accuracy</div>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold font-mono-party">{{ gameStats.total_placements }}</div>
+                    <div class="text-2xl font-bold font-mono-party">
+                        {{ gameStats.total_placements }}
+                    </div>
                     <div class="text-sm text-white/60 font-display">Placements</div>
                 </div>
             </div>
@@ -207,13 +246,24 @@ onMounted(async () => {
         <div
             v-motion
             :initial="{ y: 20, opacity: 0 }"
-            :enter="{ y: 0, opacity: 1, transition: { delay: 600, type: 'spring', stiffness: 200, damping: 20 } }"
+            :enter="{
+                y: 0,
+                opacity: 1,
+                transition: { delay: 600, type: 'spring', stiffness: 200, damping: 20 },
+            }"
             class="flex justify-center gap-4"
         >
-            <Link href="/room/create" class="btn-interactive btn-primary px-6 py-3 rounded-lg font-bold">
+            <Link
+                href="/room/create"
+                class="btn-interactive btn-primary px-6 py-3 rounded-lg font-bold"
+            >
                 Play Again
             </Link>
-            <Link href="/" class="btn-interactive btn-secondary px-6 py-3 rounded-lg font-bold text-white">Home</Link>
+            <Link
+                href="/"
+                class="btn-interactive btn-secondary px-6 py-3 rounded-lg font-bold text-white"
+                >Home</Link
+            >
         </div>
     </div>
 </template>

@@ -47,14 +47,17 @@ defineProps({
         </h3>
 
         <p class="text-sm text-white/60 mb-4">
-            Host-controlled playback lets you start tracks automatically on your device during the game.
+            Host-controlled playback lets you start tracks automatically on your device during the
+            game.
         </p>
 
         <div v-if="!hasSpotifyToken" class="space-y-3">
-                <div class="p-3 bg-yellow-500/20 border border-yellow-500 rounded-lg text-sm">
-                    <div class="font-bold text-yellow-400 mb-1">Not Connected</div>
-                    <div class="text-white/75">Connect your Spotify account to enable host playback control.</div>
+            <div class="p-3 bg-yellow-500/20 border border-yellow-500 rounded-lg text-sm">
+                <div class="font-bold text-yellow-400 mb-1">Not Connected</div>
+                <div class="text-white/75">
+                    Connect your Spotify account to enable host playback control.
                 </div>
+            </div>
             <button
                 type="button"
                 class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition flex items-center justify-center gap-2"
@@ -75,7 +78,10 @@ defineProps({
                 <div class="text-white/75">Select a device to play tracks on during the game.</div>
             </div>
 
-            <div v-if="spotifyError" class="p-3 bg-red-500/20 border border-red-500 rounded-lg text-sm">
+            <div
+                v-if="spotifyError"
+                class="p-3 bg-red-500/20 border border-red-500 rounded-lg text-sm"
+            >
                 <div class="font-bold text-red-400 mb-1">Error</div>
                 <div class="text-white/75">{{ spotifyError }}</div>
             </div>
@@ -89,7 +95,7 @@ defineProps({
                         :disabled="isLoadingDevices"
                         @click="loadSpotifyDevices"
                     >
-                        {{ isLoadingDevices ? 'Loading...' : 'Refresh' }}
+                        {{ isLoadingDevices ? "Loading..." : "Refresh" }}
                     </button>
                 </div>
 
@@ -111,18 +117,27 @@ defineProps({
                                 <div class="font-bold">{{ device.name }}</div>
                                 <div class="text-xs text-white/60">{{ device.type }}</div>
                             </div>
-                            <div v-if="device.is_active" class="text-xs text-green-400 font-bold">Active</div>
-                            <div v-else-if="selectedDeviceId === device.id" class="text-xs text-green-400 font-bold">
+                            <div v-if="device.is_active" class="text-xs text-green-400 font-bold">
+                                Active
+                            </div>
+                            <div
+                                v-else-if="selectedDeviceId === device.id"
+                                class="text-xs text-green-400 font-bold"
+                            >
                                 Selected ✓
                             </div>
                         </div>
                     </button>
                 </div>
 
-                <div v-else-if="!isLoadingDevices" class="p-4 bg-white/5 rounded-lg text-center text-sm text-white/60">
+                <div
+                    v-else-if="!isLoadingDevices"
+                    class="p-4 bg-white/5 rounded-lg text-center text-sm text-white/60"
+                >
                     <div class="mb-2">No devices found</div>
                     <div class="text-xs">
-                        Open Spotify on your phone or computer and start playing something once, then click Refresh.
+                        Open Spotify on your phone or computer and start playing something once,
+                        then click Refresh.
                     </div>
                 </div>
             </div>

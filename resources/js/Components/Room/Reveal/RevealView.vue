@@ -12,54 +12,54 @@ import RevealTrackCard from "./RevealTrackCard.vue";
 import ScreenFlash from "./ScreenFlash.vue";
 
 const props = defineProps({
-	state: {
-		type: Object,
-		required: true,
-	},
-	isHost: {
-		type: Boolean,
-		required: true,
-	},
-	leaderboard: {
-		type: Array,
-		required: true,
-	},
-	previousLeaderboard: {
-		type: Array,
-		default: () => [],
-	},
-	nextRound: {
-		type: Function,
-		required: true,
-	},
-	openDetails: {
-		type: Function,
-		required: true,
-	},
-	submitAmenGuess: {
-		type: Function,
-		required: true,
-	},
-	isSubmittingAmenGuess: {
-		type: Boolean,
-		required: true,
-	},
-	amenGuessError: {
-		type: String,
-		default: "",
-	},
-	submitAmenVote: {
-		type: Function,
-		required: true,
-	},
-	isSubmittingAmenVote: {
-		type: Boolean,
-		required: true,
-	},
-	amenVoteError: {
-		type: String,
-		default: "",
-	},
+    state: {
+        type: Object,
+        required: true,
+    },
+    isHost: {
+        type: Boolean,
+        required: true,
+    },
+    leaderboard: {
+        type: Array,
+        required: true,
+    },
+    previousLeaderboard: {
+        type: Array,
+        default: () => [],
+    },
+    nextRound: {
+        type: Function,
+        required: true,
+    },
+    openDetails: {
+        type: Function,
+        required: true,
+    },
+    submitAmenGuess: {
+        type: Function,
+        required: true,
+    },
+    isSubmittingAmenGuess: {
+        type: Boolean,
+        required: true,
+    },
+    amenGuessError: {
+        type: String,
+        default: "",
+    },
+    submitAmenVote: {
+        type: Function,
+        required: true,
+    },
+    isSubmittingAmenVote: {
+        type: Boolean,
+        required: true,
+    },
+    amenVoteError: {
+        type: String,
+        default: "",
+    },
 });
 
 const prefersReducedMotion = usePreferredReducedMotion();
@@ -72,77 +72,77 @@ const screenFlashActive = ref(false);
 let confettiLib = null;
 
 const actualYear = computed(() => {
-	const year = props.state.round?.track?.year;
-	return year ? parseInt(year, 10) : 0;
+    const year = props.state.round?.track?.year;
+    return year ? parseInt(year, 10) : 0;
 });
 
 const hasAmenResolved = computed(() => {
-	return (
-		props.state.round?.amen?.claimed_by && props.state.round?.amen?.resolved
-	);
+    return props.state.round?.amen?.claimed_by && props.state.round?.amen?.resolved;
 });
 
 const getConfetti = async () => {
-	if (confettiLib) {
-		return confettiLib;
-	}
+    if (confettiLib) {
+        return confettiLib;
+    }
 
-	const mod = await import("canvas-confetti");
-	confettiLib = mod.default;
-	return confettiLib;
+    const mod = await import("canvas-confetti");
+    confettiLib = mod.default;
+    return confettiLib;
 };
 
 const triggerConfetti = async () => {
-	if (prefersReducedMotion.value === "reduce") {
-		return;
-	}
+    if (prefersReducedMotion.value === "reduce") {
+        return;
+    }
 
-	const confetti = await getConfetti();
-	confetti({
-		particleCount: 40,
-		spread: 60,
-		origin: { x: 0.5, y: 0.6 },
-		colors: ["#00d4ff", "#22c55e", "#ffd93d"],
-	});
+    const confetti = await getConfetti();
+    confetti({
+        particleCount: 40,
+        spread: 60,
+        origin: { x: 0.5, y: 0.6 },
+        colors: ["#00d4ff", "#22c55e", "#ffd93d"],
+    });
 };
 
 const triggerScreenFlash = () => {
-	screenFlashActive.value = true;
-	setTimeout(() => {
-		screenFlashActive.value = false;
-	}, 50);
+    screenFlashActive.value = true;
+    setTimeout(() => {
+        screenFlashActive.value = false;
+    }, 50);
 };
 
 const onTrackFlipComplete = () => {
-	showResults.value = true;
+    showResults.value = true;
 };
 
 const onResultAnimationComplete = () => {
-	// Results are animating
+    // Results are animating
 };
 
 onMounted(() => {
-	if (prefersReducedMotion.value === "reduce") {
-		showResults.value = true;
-		showAmen.value = true;
-		showLeaderboard.value = true;
-		return;
-	}
+    if (prefersReducedMotion.value === "reduce") {
+        showResults.value = true;
+        showAmen.value = true;
+        showLeaderboard.value = true;
+        return;
+    }
 
-	setTimeout(() => {
-		showAmen.value = true;
-	}, 1400);
+    setTimeout(() => {
+        showAmen.value = true;
+    }, 1400);
 
-	setTimeout(() => {
-		showLeaderboard.value = true;
-	}, 1800);
+    setTimeout(() => {
+        showLeaderboard.value = true;
+    }, 1800);
 });
 </script>
 
 <template>
     <div class="space-y-6">
         <GlassCard class="p-8 text-center">
-            <div class="text-sm text-white/60 mb-4 font-mono-party">Round {{ state.round.round_number }} - Revealed!</div>
+            <div class="text-sm text-white/60 mb-4 font-mono-party">
+                Round {{ state.round.round_number }} - Revealed!
+            </div>
 
             <RevealTrackCard
                 v-if="state.round.track"
@@ -168,7 +168,13 @@ onMounted(() => {
             </Transition>
 
             <!-- AMEN Voting (only after reveal, not resolved yet) -->
-            <template v-if="!state.round.amen.resolved && state.round.is_revealed && state.round.amen.voting_open">
+            <template
+                v-if="
+                    !state.round.amen.resolved &&
+                    state.round.is_revealed &&
+                    state.round.amen.voting_open
+                "
+            >
                 <AmenGuessForm
                     v-if="state.round.amen.is_claimant && !state.round.amen.has_guess"
                     :is-submitting="isSubmittingAmenGuess"
@@ -180,7 +186,11 @@ onMounted(() => {
                     v-else-if="!state.round.amen.is_claimant && state.round.amen.has_guess"
                     :claimant-name="state.round.amen.claimant_name"
                     :guess="state.round.amen.guess"
-                    :actual="state.round.track ? { artist: state.round.track.artist, title: state.round.track.title } : null"
+                    :actual="
+                        state.round.track
+                            ? { artist: state.round.track.artist, title: state.round.track.title }
+                            : null
+                    "
                     :can-vote="state.round.amen.can_vote"
                     :my-vote="state.round.amen.my_vote"
                     :votes="state.round.amen.votes"
@@ -197,14 +207,25 @@ onMounted(() => {
                         Waiting for votes...
                     </h3>
 
-                    <div v-if="state.round.amen.guess && state.round.track" class="grid grid-cols-2 gap-4 text-sm">
+                    <div
+                        v-if="state.round.amen.guess && state.round.track"
+                        class="grid grid-cols-2 gap-4 text-sm"
+                    >
                         <div class="text-center">
-                            <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Guessed</p>
+                            <p
+                                class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display"
+                            >
+                                Guessed
+                            </p>
                             <p class="font-bold text-white">{{ state.round.amen.guess.artist }}</p>
                             <p class="text-white/80">{{ state.round.amen.guess.title }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display">Actual</p>
+                            <p
+                                class="text-white/60 text-xs uppercase tracking-wider mb-1 font-display"
+                            >
+                                Actual
+                            </p>
                             <p class="font-bold text-white">{{ state.round.track.artist }}</p>
                             <p class="text-white/80">{{ state.round.track.title }}</p>
                         </div>
@@ -232,7 +253,7 @@ onMounted(() => {
                 <Transition name="view-fade">
                     <div v-if="showResults" class="space-y-3">
                         <RevealResultItem
-                            v-for="(placement, index) in (state.round.placements ?? [])"
+                            v-for="(placement, index) in state.round.placements ?? []"
                             :key="placement.id"
                             :placement="placement"
                             :actual-year="actualYear"

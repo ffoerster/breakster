@@ -2,7 +2,7 @@
 defineProps({
     maxWidthClass: {
         type: String,
-        default: 'max-w-6xl',
+        default: "max-w-6xl",
     },
 });
 </script>

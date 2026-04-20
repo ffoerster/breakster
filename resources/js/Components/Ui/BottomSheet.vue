@@ -5,30 +5,30 @@ import { useDrag } from "@vueuse/gesture";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
 const props = defineProps({
-	open: {
-		type: Boolean,
-		required: true,
-	},
-	title: {
-		type: String,
-		default: "",
-	},
-	showCloseButton: {
-		type: Boolean,
-		default: true,
-	},
-	closeLabel: {
-		type: String,
-		default: "Close",
-	},
-	allowDragToClose: {
-		type: Boolean,
-		default: true,
-	},
-	maxWidthClass: {
-		type: String,
-		default: "max-w-6xl",
-	},
+    open: {
+        type: Boolean,
+        required: true,
+    },
+    title: {
+        type: String,
+        default: "",
+    },
+    showCloseButton: {
+        type: Boolean,
+        default: true,
+    },
+    closeLabel: {
+        type: String,
+        default: "Close",
+    },
+    allowDragToClose: {
+        type: Boolean,
+        default: true,
+    },
+    maxWidthClass: {
+        type: String,
+        default: "max-w-6xl",
+    },
 });
 
 const emit = defineEmits(["close"]);
@@ -41,13 +41,12 @@ let restoreFocusEl = null;
 const isScrollLocked = useScrollLock(document.body, false);
 const titleId = `bottom-sheet-title-${Math.random().toString(36).slice(2)}`;
 
-const { activate: activateFocusTrap, deactivate: deactivateFocusTrap } =
-	useFocusTrap(panelEl, {
-		immediate: false,
-		escapeDeactivates: false,
-		clickOutsideDeactivates: false,
-		returnFocusOnDeactivate: false,
-	});
+const { activate: activateFocusTrap, deactivate: deactivateFocusTrap } = useFocusTrap(panelEl, {
+    immediate: false,
+    escapeDeactivates: false,
+    clickOutsideDeactivates: false,
+    returnFocusOnDeactivate: false,
+});
 
 let stopKeydownListener = null;
 
@@ -56,161 +55,154 @@ let previousAriaHidden = null;
 let hadInert = false;
 
 const close = () => {
-	sheetDragY.value = 0;
-	emit("close");
+    sheetDragY.value = 0;
+    emit("close");
 };
 
 const onKeydown = (e) => {
-	if (e.key === "Escape") {
-		e.preventDefault();
-		close();
-		return;
-	}
+    if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+        return;
+    }
 };
 
 const labelledById = computed(() => {
-	if (!props.title) {
-		return null;
-	}
+    if (!props.title) {
+        return null;
+    }
 
-	return titleId;
+    return titleId;
 });
 
 watch(
-	() => props.open,
-	async (isOpen) => {
-		if (!isOpen) {
-			stopKeydownListener?.();
-			stopKeydownListener = null;
+    () => props.open,
+    async (isOpen) => {
+        if (!isOpen) {
+            stopKeydownListener?.();
+            stopKeydownListener = null;
 
-			deactivateFocusTrap();
+            deactivateFocusTrap();
 
-			isScrollLocked.value = false;
+            isScrollLocked.value = false;
 
-			if (appRootEl) {
-				if (previousAriaHidden === null) {
-					appRootEl.removeAttribute("aria-hidden");
-				} else {
-					appRootEl.setAttribute("aria-hidden", previousAriaHidden);
-				}
+            if (appRootEl) {
+                if (previousAriaHidden === null) {
+                    appRootEl.removeAttribute("aria-hidden");
+                } else {
+                    appRootEl.setAttribute("aria-hidden", previousAriaHidden);
+                }
 
-				if (!hadInert) {
-					appRootEl.removeAttribute("inert");
-				}
+                if (!hadInert) {
+                    appRootEl.removeAttribute("inert");
+                }
 
-				appRootEl = null;
-				previousAriaHidden = null;
-				hadInert = false;
-			}
+                appRootEl = null;
+                previousAriaHidden = null;
+                hadInert = false;
+            }
 
-			if (restoreFocusEl && restoreFocusEl.focus) {
-				restoreFocusEl.focus();
-			}
+            if (restoreFocusEl && restoreFocusEl.focus) {
+                restoreFocusEl.focus();
+            }
 
-			restoreFocusEl = null;
+            restoreFocusEl = null;
 
-			sheetDragY.value = 0;
-			return;
-		}
+            sheetDragY.value = 0;
+            return;
+        }
 
-		restoreFocusEl = document.activeElement;
+        restoreFocusEl = document.activeElement;
 
-		isScrollLocked.value = true;
+        isScrollLocked.value = true;
 
-		appRootEl = document.getElementById("app");
-		if (appRootEl) {
-			previousAriaHidden = appRootEl.getAttribute("aria-hidden");
-			hadInert = appRootEl.hasAttribute("inert");
-			appRootEl.setAttribute("aria-hidden", "true");
-			appRootEl.setAttribute("inert", "");
-		}
+        appRootEl = document.getElementById("app");
+        if (appRootEl) {
+            previousAriaHidden = appRootEl.getAttribute("aria-hidden");
+            hadInert = appRootEl.hasAttribute("inert");
+            appRootEl.setAttribute("aria-hidden", "true");
+            appRootEl.setAttribute("inert", "");
+        }
 
-		stopKeydownListener = useEventListener(document, "keydown", onKeydown, {
-			passive: false,
-		});
+        stopKeydownListener = useEventListener(document, "keydown", onKeydown, {
+            passive: false,
+        });
 
-		await nextTick();
+        await nextTick();
 
-		activateFocusTrap();
+        activateFocusTrap();
 
-		const root = panelEl.value;
-		const focusTarget =
-			closeButtonEl.value ??
-			root?.querySelector?.(
-				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-			);
+        const root = panelEl.value;
+        const focusTarget =
+            closeButtonEl.value ??
+            root?.querySelector?.(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            );
 
-		focusTarget?.focus?.();
-	},
-	{ immediate: true },
+        focusTarget?.focus?.();
+    },
+    { immediate: true },
 );
 
 useDrag(
-	({ movement: [, my], velocity: [, vy], last, event }) => {
-		if (!props.open || !props.allowDragToClose) {
-			return;
-		}
+    ({ movement: [, my], velocity: [, vy], last, event }) => {
+        if (!props.open || !props.allowDragToClose) {
+            return;
+        }
 
-		event?.preventDefault?.();
+        event?.preventDefault?.();
 
-		sheetDragY.value = Math.max(0, my);
+        sheetDragY.value = Math.max(0, my);
 
-		if (!last) {
-			return;
-		}
+        if (!last) {
+            return;
+        }
 
-		const shouldClose = sheetDragY.value > 120 || vy > 0.6;
-		if (shouldClose) {
-			close();
-			return;
-		}
+        const shouldClose = sheetDragY.value > 120 || vy > 0.6;
+        if (shouldClose) {
+            close();
+            return;
+        }
 
-		sheetDragY.value = 0;
-	},
-	{
-		target: dragHandleEl,
-		filterTaps: true,
-		axis: "y",
-		eventOptions: { passive: false },
-	},
+        sheetDragY.value = 0;
+    },
+    {
+        target: dragHandleEl,
+        filterTaps: true,
+        axis: "y",
+        eventOptions: { passive: false },
+    },
 );
 
 onBeforeUnmount(() => {
-	stopKeydownListener?.();
-	stopKeydownListener = null;
+    stopKeydownListener?.();
+    stopKeydownListener = null;
 
-	deactivateFocusTrap();
+    deactivateFocusTrap();
 
-	isScrollLocked.value = false;
+    isScrollLocked.value = false;
 
-	if (appRootEl) {
-		if (previousAriaHidden === null) {
-			appRootEl.removeAttribute("aria-hidden");
-		} else {
-			appRootEl.setAttribute("aria-hidden", previousAriaHidden);
-		}
+    if (appRootEl) {
+        if (previousAriaHidden === null) {
+            appRootEl.removeAttribute("aria-hidden");
+        } else {
+            appRootEl.setAttribute("aria-hidden", previousAriaHidden);
+        }
 
-		if (!hadInert) {
-			appRootEl.removeAttribute("inert");
-		}
-	}
+        if (!hadInert) {
+            appRootEl.removeAttribute("inert");
+        }
+    }
 
-	sheetDragY.value = 0;
+    sheetDragY.value = 0;
 });
 </script>
 
 <template>
     <Teleport to="body">
         <Transition name="sheet-fade">
-            <div
-                v-if="open"
-                class="fixed inset-0 z-50"
-                aria-live="polite"
-            >
-                <div
-                    class="absolute inset-0 bg-black/60"
-                    @click="close"
-                />
+            <div v-if="open" class="fixed inset-0 z-50" aria-live="polite">
+                <div class="absolute inset-0 bg-black/60" @click="close" />
 
                 <Transition name="sheet-slide">
                     <div

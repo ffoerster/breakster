@@ -1,7 +1,7 @@
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
-import GlassCard from '../Ui/GlassCard.vue';
+import GlassCard from "../Ui/GlassCard.vue";
 
 const props = defineProps({
     state: {
@@ -28,7 +28,7 @@ const props = defineProps({
     },
     startError: {
         type: String,
-        default: '',
+        default: "",
     },
 
     // Round actions
@@ -64,44 +64,44 @@ const props = defineProps({
     },
     spotifyPlayError: {
         type: String,
-        default: '',
+        default: "",
     },
 });
 
-const isInLobby = computed(() => props.state.room.state === 'lobby');
-const isInRound = computed(() => props.state.room.state === 'in_round');
-const isInReveal = computed(() => props.state.room.state === 'reveal');
+const isInLobby = computed(() => props.state.room.state === "lobby");
+const isInRound = computed(() => props.state.room.state === "in_round");
+const isInReveal = computed(() => props.state.room.state === "reveal");
 
 const phaseLabel = computed(() => {
     if (isInLobby.value) {
-        return 'Lobby';
+        return "Lobby";
     }
 
     if (isInRound.value) {
-        return 'Round';
+        return "Round";
     }
 
     if (isInReveal.value) {
-        return 'Reveal';
+        return "Reveal";
     }
 
-    return '';
+    return "";
 });
 
 const phaseColor = computed(() => {
     if (isInLobby.value) {
-        return 'bg-accent-500/20 text-accent-200 border-accent-500/40';
+        return "bg-accent-500/20 text-accent-200 border-accent-500/40";
     }
 
     if (isInRound.value) {
-        return 'bg-amber-500/20 text-amber-200 border-amber-500/40';
+        return "bg-amber-500/20 text-amber-200 border-amber-500/40";
     }
 
     if (isInReveal.value) {
-        return 'bg-green-500/20 text-green-200 border-green-500/40';
+        return "bg-green-500/20 text-green-200 border-green-500/40";
     }
 
-    return 'bg-white/10 text-white/70 border-white/20';
+    return "bg-white/10 text-white/70 border-white/20";
 });
 
 const allGuestsReady = computed(() => {
@@ -128,10 +128,7 @@ const placementsProgress = computed(() => {
         <!-- Phase Badge -->
         <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold text-white/80 font-display">Host Controls</h3>
-            <span
-                class="px-2.5 py-1 rounded-full text-xs font-bold border"
-                :class="phaseColor"
-            >
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold border" :class="phaseColor">
                 {{ phaseLabel }}
             </span>
         </div>
@@ -142,9 +139,15 @@ const placementsProgress = computed(() => {
                 <span class="text-white/60">Players</span>
                 <span class="font-mono-party text-white/90">{{ state.players.length }}</span>
             </div>
-            <div v-if="state.room.ready_total > 0" class="flex items-center justify-between text-sm">
+            <div
+                v-if="state.room.ready_total > 0"
+                class="flex items-center justify-between text-sm"
+            >
                 <span class="text-white/60">Ready</span>
-                <span class="font-mono-party" :class="allGuestsReady ? 'text-green-400' : 'text-accent-200'">
+                <span
+                    class="font-mono-party"
+                    :class="allGuestsReady ? 'text-green-400' : 'text-accent-200'"
+                >
                     {{ state.room.ready_count ?? 0 }} / {{ state.room.ready_total }}
                 </span>
             </div>
@@ -160,7 +163,9 @@ const placementsProgress = computed(() => {
                 @click="startGame"
             >
                 <span v-if="isStarting" class="flex items-center justify-center gap-2">
-                    <span class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span
+                        class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"
+                    />
                     Starting...
                 </span>
                 <span v-else>Start Game</span>
@@ -179,7 +184,8 @@ const placementsProgress = computed(() => {
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-white/60">Placements</span>
                     <span class="font-mono-party text-accent-200">
-                        {{ state.round?.placements_count ?? 0 }} / {{ state.round?.players_count ?? 0 }}
+                        {{ state.round?.placements_count ?? 0 }} /
+                        {{ state.round?.players_count ?? 0 }}
                     </span>
                 </div>
                 <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -199,7 +205,9 @@ const placementsProgress = computed(() => {
                 @click="playSpotifyTrack"
             >
                 <span v-if="isPlayingSpotify" class="flex items-center justify-center gap-2">
-                    <span class="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span
+                        class="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin"
+                    />
                     Playing...
                 </span>
                 <span v-else>Retry Spotify</span>

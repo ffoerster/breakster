@@ -31,12 +31,15 @@ defineProps({
                 selectedProviderId === provider.id
                     ? 'border-accent-400/70 bg-accent-500/15 shadow-lg shadow-black/20'
                     : isHost
-                        ? 'border-accent-500/15 bg-white/5 hover:border-accent-500/30 hover:bg-white/8'
-                        : 'border-accent-500/10 bg-white/4 opacity-60 cursor-not-allowed'
+                      ? 'border-accent-500/15 bg-white/5 hover:border-accent-500/30 hover:bg-white/8'
+                      : 'border-accent-500/10 bg-white/4 opacity-60 cursor-not-allowed'
             "
             @click="onSelect(provider.id)"
         >
-            <div class="text-lg font-bold" :class="selectedProviderId === provider.id ? 'text-accent-200' : 'text-white'">
+            <div
+                class="text-lg font-bold"
+                :class="selectedProviderId === provider.id ? 'text-accent-200' : 'text-white'"
+            >
                 {{ provider.name }}
             </div>
             <div class="text-sm text-white/65 mt-1">Players open tracks in {{ provider.name }}</div>
