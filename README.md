@@ -13,10 +13,12 @@ Breakster is a real-time multiplayer music party game. Players listen to short p
 - **Backend:** Laravel 12, PHP 8.4
 - **Admin panel:** Filament 5
 - **Frontend:** Vue 3 + Inertia.js, Tailwind CSS 4
-- **Real-time:** Laravel Reverb (WebSockets)
+- **Realtime:** Laravel Reverb (WebSockets) via Laravel Echo
 - **Music providers:** TIDAL, Spotify
-- **Testing:** Pest 4
-- **Build:** Vite 7, PWA support
+- **Testing:** Pest 4 (Feature + Unit)
+- **Frontend tooling:** Vite+ (`vp`) with Bun package manager
+- **PWA:** `vite-plugin-pwa` + service worker
+- **Local infra:** DDEV (Docker) + PostgreSQL
 
 ## Local development (DDEV + Postgres)
 
@@ -30,7 +32,7 @@ ddev start
 
 ```bash
 ddev composer install
-ddev npm install
+vp install
 ```
 
 ### 3) Configure env
@@ -52,7 +54,7 @@ In separate terminals:
 
 ```bash
 ddev php artisan reverb:start   # WebSocket server
-ddev npm run dev                # Vite dev server with HMR
+vp dev                          # Frontend dev server with HMR
 ddev php artisan queue:work     # Queue worker
 ```
 
@@ -63,6 +65,15 @@ composer run dev
 ```
 
 This starts the web server, queue worker, log tail, and Vite concurrently.
+
+### Frontend commands (Vite+)
+
+```bash
+vp dev      # Start frontend dev server
+vp build    # Production build
+vp check    # Format + lint + type checks
+vp test     # Frontend tests
+```
 
 ### URLs
 
@@ -155,4 +166,9 @@ Hosts can also toggle the placement timer per room.
 ddev php artisan test                          # All tests
 ddev php artisan test tests/Feature/SomeTest.php  # Single file
 ddev php artisan test --filter=testName        # Single test
+vp check                                       # Frontend format/lint/type-check
 ```
+
+## License
+
+This project is licensed under **GNU GPL v3.0 or later** (`GPL-3.0-or-later`).
