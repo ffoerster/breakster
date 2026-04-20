@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
-@import 'tailwindcss';
-@import 'vue-sonner/style.css';
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bungee&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+@import "tailwindcss";
+@import "vue-sonner/style.css";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -12,11 +12,13 @@
 
 @theme {
     /* Typography */
-    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-display: 'Bungee', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-        'Courier New', monospace;
+    --font-sans:
+        "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol", "Noto Color Emoji";
+    --font-display: "Bungee", ui-sans-serif, system-ui, sans-serif;
+    --font-mono:
+        "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
 
     /* Electric Cyan Accent Color */
     --color-accent-50: oklch(0.97 0.03 200);
@@ -36,13 +38,13 @@
     --color-gray-100: oklch(0.96 0 0);
     --color-gray-200: oklch(0.92 0 0);
     --color-gray-300: oklch(0.85 0 0);
-    --color-gray-400: oklch(0.70 0 0);
+    --color-gray-400: oklch(0.7 0 0);
     --color-gray-500: oklch(0.55 0 0);
     --color-gray-600: oklch(0.45 0 0);
     --color-gray-700: oklch(0.35 0 0);
     --color-gray-800: oklch(0.25 0 0);
     --color-gray-900: oklch(0.15 0 0);
-    --color-gray-950: oklch(0.10 0 0);
+    --color-gray-950: oklch(0.1 0 0);
 }
 
 .font-display {
@@ -59,12 +61,12 @@
     position: relative;
     background:
         radial-gradient(1200px 600px at 20% 0%, oklch(0.72 0.15 200 / 0.12), transparent 55%),
-        radial-gradient(900px 520px at 90% 20%, oklch(0.74 0.18 330 / 0.10), transparent 55%),
-        radial-gradient(800px 520px at 50% 90%, oklch(0.80 0.17 140 / 0.10), transparent 60%);
+        radial-gradient(900px 520px at 90% 20%, oklch(0.74 0.18 330 / 0.1), transparent 55%),
+        radial-gradient(800px 520px at 50% 90%, oklch(0.8 0.17 140 / 0.1), transparent 60%);
 }
 
 .arcade-shell::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
@@ -88,13 +90,19 @@
 }
 
 @keyframes party-pulse {
-    0%, 100% {
+    0%,
+    100% {
         transform: translateY(0);
-        box-shadow: 0 12px 30px oklch(0 0 0 / 0.20), 0 0 0 1px oklch(0.80 0.17 140 / 0.22);
+        box-shadow:
+            0 12px 30px oklch(0 0 0 / 0.2),
+            0 0 0 1px oklch(0.8 0.17 140 / 0.22);
     }
     50% {
         transform: translateY(-2px);
-        box-shadow: 0 16px 42px oklch(0 0 0 / 0.28), 0 0 0 1px oklch(0.80 0.17 140 / 0.45), 0 0 24px oklch(0.80 0.17 140 / 0.25);
+        box-shadow:
+            0 16px 42px oklch(0 0 0 / 0.28),
+            0 0 0 1px oklch(0.8 0.17 140 / 0.45),
+            0 0 24px oklch(0.8 0.17 140 / 0.25);
     }
 }
 
@@ -113,7 +121,9 @@
 /* View/Page transitions */
 .view-fade-enter-active,
 .view-fade-leave-active {
-    transition: opacity 300ms ease, transform 300ms cubic-bezier(0.2, 0, 0, 1);
+    transition:
+        opacity 300ms ease,
+        transform 300ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Bottom sheet transitions */
@@ -154,11 +164,15 @@
 
 /* Feedback message animations */
 .feedback-slide-enter-active {
-    transition: opacity 250ms ease, transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:
+        opacity 250ms ease,
+        transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .feedback-slide-leave-active {
-    transition: opacity 150ms ease, transform 150ms ease;
+    transition:
+        opacity 150ms ease,
+        transform 150ms ease;
 }
 
 .feedback-slide-enter-from {
@@ -173,7 +187,9 @@
 
 /* Staggered list animations */
 .result-list-enter-active {
-    transition: opacity 300ms ease, transform 300ms cubic-bezier(0.2, 0, 0, 1);
+    transition:
+        opacity 300ms ease,
+        transform 300ms cubic-bezier(0.2, 0, 0, 1);
     transition-delay: calc(var(--stagger-index, 0) * 80ms);
 }
 
@@ -196,11 +212,15 @@
 
 /* Player list animations */
 .player-list-enter-active {
-    transition: opacity 300ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:
+        opacity 300ms ease,
+        transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .player-list-leave-active {
-    transition: opacity 200ms ease, transform 200ms ease;
+    transition:
+        opacity 200ms ease,
+        transform 200ms ease;
 }
 
 .player-list-enter-from {
@@ -220,7 +240,9 @@
 /* Drag-and-drop enhancements */
 .sortable-drag {
     transform: rotate(var(--drag-rotation, 2deg)) scale(1.05) !important;
-    box-shadow: 0 16px 32px oklch(0 0 0 / 0.25), 0 6px 12px oklch(0 0 0 / 0.15) !important;
+    box-shadow:
+        0 16px 32px oklch(0 0 0 / 0.25),
+        0 6px 12px oklch(0 0 0 / 0.15) !important;
     z-index: 1000 !important;
     cursor: grabbing !important;
 }
@@ -243,7 +265,9 @@
 }
 
 .timeline-item {
-    transition: transform 180ms cubic-bezier(0.2, 0, 0, 1), box-shadow 180ms ease;
+    transition:
+        transform 180ms cubic-bezier(0.2, 0, 0, 1),
+        box-shadow 180ms ease;
     will-change: transform;
 }
 
@@ -253,9 +277,16 @@
 
 /* Drop success animation */
 @keyframes drop-success {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.08); box-shadow: 0 0 20px oklch(0.72 0.2 140 / 0.5); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 20px oklch(0.72 0.2 140 / 0.5);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .animate-drop-success {
@@ -264,11 +295,22 @@
 
 /* Drop error animation */
 @keyframes drop-error {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-8px); }
-    40% { transform: translateX(8px); }
-    60% { transform: translateX(-6px); }
-    80% { transform: translateX(4px); }
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    20% {
+        transform: translateX(-8px);
+    }
+    40% {
+        transform: translateX(8px);
+    }
+    60% {
+        transform: translateX(-6px);
+    }
+    80% {
+        transform: translateX(4px);
+    }
 }
 
 .animate-drop-error {
@@ -277,14 +319,17 @@
 
 /* Button micro-interactions */
 .btn-interactive {
-    transition: background-color 150ms ease, transform 100ms ease, box-shadow 150ms ease;
+    transition:
+        background-color 150ms ease,
+        transform 100ms ease,
+        box-shadow 150ms ease;
 }
 
 /* Button variants (dark arcade baseline) */
 .btn-primary {
     background: oklch(0.72 0.15 200);
     color: oklch(1 0 0);
-    border: 1px solid oklch(1 0 0 / 0.10);
+    border: 1px solid oklch(1 0 0 / 0.1);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -292,8 +337,8 @@
 }
 
 .btn-secondary {
-    background: oklch(1 0 0 / 0.10);
-    border: 1px solid oklch(1 0 0 / 0.10);
+    background: oklch(1 0 0 / 0.1);
+    border: 1px solid oklch(1 0 0 / 0.1);
     color: oklch(1 0 0);
 }
 
@@ -305,7 +350,7 @@
 .btn-success {
     background: oklch(0.72 0.17 145);
     color: oklch(1 0 0);
-    border: 1px solid oklch(1 0 0 / 0.10);
+    border: 1px solid oklch(1 0 0 / 0.1);
 }
 
 .btn-success:hover:not(:disabled) {
@@ -315,7 +360,7 @@
 .btn-warning {
     background: oklch(0.72 0.16 85);
     color: oklch(1 0 0);
-    border: 1px solid oklch(1 0 0 / 0.10);
+    border: 1px solid oklch(1 0 0 / 0.1);
 }
 
 .btn-warning:hover:not(:disabled) {
@@ -325,7 +370,7 @@
 .btn-danger {
     background: oklch(0.62 0.22 25);
     color: oklch(1 0 0);
-    border: 1px solid oklch(1 0 0 / 0.10);
+    border: 1px solid oklch(1 0 0 / 0.1);
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -382,11 +427,22 @@
 
 /* Shake animation for errors */
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    20% {
+        transform: translateX(-6px);
+    }
+    40% {
+        transform: translateX(6px);
+    }
+    60% {
+        transform: translateX(-4px);
+    }
+    80% {
+        transform: translateX(4px);
+    }
 }
 
 .animate-shake {
@@ -395,7 +451,8 @@
 
 /* Pulse glow (cyan) */
 @keyframes pulse-glow {
-    0%, 100% {
+    0%,
+    100% {
         box-shadow: 0 0 0 0 oklch(0.72 0.15 200 / 0.4);
     }
     50% {
@@ -432,7 +489,8 @@
 
 /* Green pulse glow for correct placements */
 @keyframes pulse-glow-green {
-    0%, 100% {
+    0%,
+    100% {
         box-shadow: 0 0 0 0 oklch(0.72 0.2 140 / 0.4);
     }
     50% {
@@ -446,7 +504,8 @@
 
 /* Gold pulse glow for AMEN success */
 @keyframes pulse-glow-gold {
-    0%, 100% {
+    0%,
+    100% {
         box-shadow: 0 0 0 0 oklch(0.85 0.18 85 / 0.5);
     }
     50% {
@@ -460,7 +519,8 @@
 
 /* Screen edge flash for wrong answers */
 @keyframes edge-flash-red {
-    0%, 100% {
+    0%,
+    100% {
         box-shadow: inset 0 0 0 0 oklch(0.6 0.25 25 / 0);
     }
     50% {
@@ -474,16 +534,37 @@
 
 /* Dramatic shake for big misses (>10 years) */
 @keyframes shake-dramatic {
-    0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
-    10% { transform: translateX(-10px) translateY(-2px) rotate(-1deg); }
-    20% { transform: translateX(10px) translateY(2px) rotate(1deg); }
-    30% { transform: translateX(-8px) translateY(-1px) rotate(-0.5deg); }
-    40% { transform: translateX(8px) translateY(1px) rotate(0.5deg); }
-    50% { transform: translateX(-6px) rotate(-0.3deg); }
-    60% { transform: translateX(6px) rotate(0.3deg); }
-    70% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-    90% { transform: translateX(-2px); }
+    0%,
+    100% {
+        transform: translateX(0) translateY(0) rotate(0deg);
+    }
+    10% {
+        transform: translateX(-10px) translateY(-2px) rotate(-1deg);
+    }
+    20% {
+        transform: translateX(10px) translateY(2px) rotate(1deg);
+    }
+    30% {
+        transform: translateX(-8px) translateY(-1px) rotate(-0.5deg);
+    }
+    40% {
+        transform: translateX(8px) translateY(1px) rotate(0.5deg);
+    }
+    50% {
+        transform: translateX(-6px) rotate(-0.3deg);
+    }
+    60% {
+        transform: translateX(6px) rotate(0.3deg);
+    }
+    70% {
+        transform: translateX(-4px);
+    }
+    80% {
+        transform: translateX(4px);
+    }
+    90% {
+        transform: translateX(-2px);
+    }
 }
 
 .animate-shake-dramatic {
@@ -492,8 +573,13 @@
 
 /* Crown bounce animation */
 @keyframes crown-bounce {
-    0%, 100% { transform: translateY(0) rotate(-3deg); }
-    50% { transform: translateY(-4px) rotate(3deg); }
+    0%,
+    100% {
+        transform: translateY(0) rotate(-3deg);
+    }
+    50% {
+        transform: translateY(-4px) rotate(3deg);
+    }
 }
 
 .animate-crown-bounce {
@@ -507,8 +593,13 @@
 
 /* Drop zone styles */
 @keyframes drop-zone-pulse {
-    0%, 100% { border-color: oklch(0.72 0.15 200 / 0.3); }
-    50% { border-color: oklch(0.72 0.15 200 / 0.6); }
+    0%,
+    100% {
+        border-color: oklch(0.72 0.15 200 / 0.3);
+    }
+    50% {
+        border-color: oklch(0.72 0.15 200 / 0.6);
+    }
 }
 
 .drop-zone-idle {
