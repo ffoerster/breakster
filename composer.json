@@ -13,7 +13,7 @@
         "inertia",
         "livewire"
     ],
-    "license": "MIT",
+    "license": "GPL-3.0-or-later",
     "require": {
         "php": "^8.2",
         "dutchcodingcompany/filament-socialite": "^3.1",
