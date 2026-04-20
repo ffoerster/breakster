@@ -6,7 +6,7 @@ import { MotionPlugin } from "@vueuse/motion";
 const inertiaRoot = document.getElementById("app");
 
 if (inertiaRoot && inertiaRoot.dataset.page) {
-    createInertiaApp({
+    void createInertiaApp({
         resolve: (name) => {
             const pages = import.meta.glob("./Pages/**/*.vue", { eager: true });
             const page = pages[`./Pages/${name}.vue`];
@@ -28,6 +28,6 @@ if (inertiaRoot && inertiaRoot.dataset.page) {
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js", { scope: "/" });
+        void navigator.serviceWorker.register("/sw.js", { scope: "/" });
     });
 }
