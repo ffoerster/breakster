@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\RoomPlayer;
 use App\Models\Track;
 use Illuminate\Support\Facades\Event;
+use Tests\TestCase;
 
 beforeEach(function () {
     $this->gameService = app(GameService::class);
@@ -33,9 +34,10 @@ function createRoomInLobbyForReady($pack, $provider, $gameService, $guestDisplay
 describe('GameService::markReady', function () {
     it('marks a player as ready in the lobby', function () {
         $room = createRoomInLobbyForReady($this->pack, $this->provider, $this->gameService);
-        $player = $room->players()->where('is_host', true)->first();
 
         Event::fake();
+
+        $player = RoomPlayer::factory()->create(['room_id' => $room->id, 'display_name' => 'Player2']);
 
         $this->gameService->markReady($room, $player);
 
@@ -54,12 +56,12 @@ describe('GameService::markReady', function () {
         $player = $room->players()->where('is_host', true)->first();
 
         expect(fn () => $this->gameService->markReady($room, $player))
-            ->toThrow(\RuntimeException::class, 'Ready can only be marked in the lobby.');
+            ->toThrow(RuntimeException::class, 'Ready can only be marked in the lobby.');
     });
 
     it('is idempotent - calling twice succeeds without error', function () {
         $room = createRoomInLobbyForReady($this->pack, $this->provider, $this->gameService);
-        $player = $room->players()->where('is_host', true)->first();
+        $player = RoomPlayer::factory()->create(['room_id' => $room->id, 'display_name' => 'Player2']);
 
         $this->gameService->markReady($room, $player);
         $this->gameService->markReady($room, $player);
@@ -71,24 +73,22 @@ describe('GameService::markReady', function () {
         $room = createRoomInLobbyForReady($this->pack, $this->provider, $this->gameService);
         $player2 = RoomPlayer::factory()->create(['room_id' => $room->id, 'display_name' => 'Player2']);
 
-        $player1 = $room->players()->where('is_host', true)->first();
-
         Event::fake();
 
-        $this->gameService->markReady($room, $player1);
+        $this->gameService->markReady($room, $player2);
 
-        Event::assertDispatched(PlayerReady::class, function ($event) use ($room, $player1) {
+        Event::assertDispatched(PlayerReady::class, function ($event) use ($room, $player2) {
             return
                 $event->roomCode === $room->code
-                && $event->playerId === $player1->id
+                && $event->playerId === $player2->id
                 && $event->readyCount === 1
-                && $event->totalPlayers === 2;
+                && $event->totalPlayers === 1;
         });
     });
 
     it('resets ready status when starting a round', function () {
         $room = createRoomInLobbyForReady($this->pack, $this->provider, $this->gameService);
-        $player = $room->players()->where('is_host', true)->first();
+        $player = RoomPlayer::factory()->create(['room_id' => $room->id, 'display_name' => 'Player2']);
 
         // Mark ready in lobby
         $this->gameService->markReady($room, $player);
@@ -104,7 +104,7 @@ describe('GameService::markReady', function () {
 
 describe('Ready API endpoints', function () {
     it('marks player ready via POST /room/{code}/ready', function () {
-        /** @var \Tests\TestCase $this */
+        /** @var TestCase $this */
         $room = Room::factory()->inLobby()->create();
         $player = RoomPlayer::factory()->create(['room_id' => $room->id]);
 
@@ -116,7 +116,7 @@ describe('Ready API endpoints', function () {
     });
 
     it('returns 409 when room is not in lobby', function () {
-        /** @var \Tests\TestCase $this */
+        /** @var TestCase $this */
         $pack = Pack::factory()->create();
         Track::factory()
             ->count(5)
@@ -137,14 +137,14 @@ describe('Ready API endpoints', function () {
 
 describe('RoomStateData ready status', function () {
     it('includes ready_count in room data', function () {
-        /** @var \Tests\TestCase $this */
+        /** @var TestCase $this */
         $room = Room::factory()->inLobby()->create();
 
         $player1 = RoomPlayer::factory()->asHost()->create(['room_id' => $room->id]);
         $player2 = RoomPlayer::factory()->create(['room_id' => $room->id]);
 
         // Mark player1 as ready
-        $player1->update(['is_ready' => true]);
+        $player2->update(['is_ready' => true]);
 
         session()->put('room_player_id', $player2->id);
 
@@ -156,7 +156,7 @@ describe('RoomStateData ready status', function () {
     });
 
     it('includes is_ready in me data', function () {
-        /** @var \Tests\TestCase $this */
+        /** @var TestCase $this */
         $room = Room::factory()->inLobby()->create();
         $player = RoomPlayer::factory()->create(['room_id' => $room->id]);
 

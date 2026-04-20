@@ -5,6 +5,7 @@ use App\Domain\Game\Enums\RoundStatus;
 use App\Domain\Game\GameService;
 use App\Models\Pack;
 use App\Models\Placement;
+use App\Models\Provider;
 use App\Models\Room;
 use App\Models\Round;
 use App\Models\TimelineItem;
@@ -19,6 +20,13 @@ beforeEach(function () {
         ->count(20)
         ->for($this->pack)
         ->create();
+});
+
+beforeEach(function () {
+    $this->provider = Provider::query()->firstOrCreate(
+        ['key' => 'tidal'],
+        ['name' => 'TIDAL', 'is_active' => true],
+    );
 });
 
 describe('GameService::createRoom', function () {
@@ -83,8 +91,8 @@ describe('GameService::joinRoom', function () {
         $room = $this->gameService->createRoom($this->pack, host: $hostUser);
         $room->update(['state' => RoomState::Finished]);
 
-        expect(fn() => $this->gameService->joinRoom($room->code, user: $playerUser))
-            ->toThrow(\RuntimeException::class, 'This room has already finished.');
+        expect(fn () => $this->gameService->joinRoom($room->code, user: $playerUser))
+            ->toThrow(RuntimeException::class, 'This room has already finished.');
     });
 
     it('generates unique display names with suffix', function () {
@@ -100,7 +108,7 @@ describe('GameService::joinRoom', function () {
 
 describe('GameService::startRound', function () {
     it('starts a new round', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
 
         $round = $this->gameService->startRound($room);
 
@@ -115,6 +123,8 @@ describe('GameService::startRound', function () {
     it('never repeats a track within a room', function () {
         $hostUser = User::factory()->create();
         $room = $this->gameService->createRoom($this->pack, host: $hostUser);
+        $room->update(['playback_provider_id' => $this->provider->id]);
+        $room = $room->fresh();
         $usedTrackIds = [];
 
         // Play multiple rounds
@@ -132,11 +142,11 @@ describe('GameService::startRound', function () {
     });
 
     it('throws exception when not in valid state', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $room->update(['state' => RoomState::InRound]);
 
-        expect(fn() => $this->gameService->startRound($room))
-            ->toThrow(\RuntimeException::class, 'Cannot start a round in the current state.');
+        expect(fn () => $this->gameService->startRound($room))
+            ->toThrow(RuntimeException::class, 'Cannot start a round in the current state.');
     });
 
     it('finishes game when no tracks remain', function () {
@@ -147,7 +157,7 @@ describe('GameService::startRound', function () {
             ->for($smallPack)
             ->create();
 
-        $room = $this->gameService->createRoom($smallPack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($smallPack, $this->provider, $this->gameService);
 
         // Play the only playable track
         $round = $this->gameService->startRound($room);
@@ -155,14 +165,14 @@ describe('GameService::startRound', function () {
         $room->update(['state' => RoomState::Reveal]);
 
         // Try to start another round (no tracks remain)
-        expect(fn() => $this->gameService->startRound($room->fresh()))
-            ->toThrow(\RuntimeException::class, 'No more tracks available.');
+        expect(fn () => $this->gameService->startRound($room->fresh()))
+            ->toThrow(RuntimeException::class, 'No more tracks available.');
 
         expect($room->fresh()->state)->toBe(RoomState::Finished);
     });
 
     it('seeds each player with one timeline item on the first round', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P2']));
         $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P3']));
 
@@ -184,7 +194,7 @@ describe('GameService::startRound', function () {
     });
 
     it('never selects a seeded track for later rounds', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P2']));
         $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P3']));
 
@@ -207,7 +217,7 @@ describe('GameService::startRound', function () {
     });
 
     it('does not seed again after the first round', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P2']));
         $this->gameService->joinRoom($room->code, user: User::factory()->create(['name' => 'P3']));
 
@@ -228,7 +238,7 @@ describe('GameService::startRound', function () {
 
 describe('GameService::submitPlacement', function () {
     it('creates a placement', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $player = $room->players->first();
         $round = $this->gameService->startRound($room);
 
@@ -243,7 +253,7 @@ describe('GameService::submitPlacement', function () {
     });
 
     it('updates a placement when submitted again', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $player = $room->players->first();
         $round = $this->gameService->startRound($room);
 
@@ -269,19 +279,19 @@ describe('GameService::submitPlacement', function () {
     });
 
     it('throws exception for inactive round', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $player = $room->players->first();
         $round = $this->gameService->startRound($room);
         $round->update(['status' => RoundStatus::Revealed]);
 
-        expect(fn() => $this->gameService->submitPlacement($player, $round, null))
-            ->toThrow(\RuntimeException::class, 'This round is not active.');
+        expect(fn () => $this->gameService->submitPlacement($player, $round, null))
+            ->toThrow(RuntimeException::class, 'This round is not active.');
     });
 });
 
 describe('GameService::revealRound', function () {
     it('calculates correctness and awards points for correct placement', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $player = $room->players->first();
 
         // Create a track with a known date
@@ -313,7 +323,7 @@ describe('GameService::revealRound', function () {
     });
 
     it('does not add to timeline or award points for incorrect placement', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $player = $room->players->first();
 
         // Add an existing track to timeline (1990)
@@ -380,7 +390,7 @@ describe('GameService::revealRound', function () {
 
 describe('GameService::nextRound', function () {
     it('starts next round after reveal', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $round1 = $this->gameService->startRound($room);
         $round1->update(['status' => RoundStatus::Revealed]);
         $room->update(['state' => RoomState::Reveal]);
@@ -401,7 +411,7 @@ describe('GameService::nextRound', function () {
             ->for($smallPack)
             ->create();
 
-        $room = $this->gameService->createRoom($smallPack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($smallPack, $this->provider, $this->gameService);
         $round = $this->gameService->startRound($room);
         $round->update(['status' => RoundStatus::Revealed]);
         $room->update(['state' => RoomState::Reveal]);
@@ -502,7 +512,7 @@ describe('GameService::leaveRoom', function () {
 
 describe('GameService::reorderTimeline', function () {
     it('reorders timeline item positions for a player', function () {
-        $room = $this->gameService->createRoom($this->pack, guestDisplayName: 'Host');
+        $room = createRoomWithProvider($this->pack, $this->provider, $this->gameService);
         $round = $this->gameService->startRound($room);
 
         $player = $room->fresh()->players()->firstOrFail();

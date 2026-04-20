@@ -61,5 +61,5 @@ it('requires authentication to access spotify device endpoints', function () {
 
     $response = $this->getJson("/room/{$room->code}/spotify/devices");
 
-    $response->assertUnauthorized();
+    $response->assertForbidden();
 });
