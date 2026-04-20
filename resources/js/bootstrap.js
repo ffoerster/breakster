@@ -1,11 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 window.axios = axios;
 
-window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+window.axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
 if (csrfToken) {
-    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+    window.axios.defaults.headers.common["X-CSRF-TOKEN"] = csrfToken;
 }
 
 /**
@@ -14,4 +14,4 @@ if (csrfToken) {
  * allow your team to quickly build robust real-time web applications.
  */
 
-import './echo';
+import "./echo";

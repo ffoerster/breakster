@@ -1,14 +1,14 @@
-import './bootstrap';
-import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
-import { MotionPlugin } from '@vueuse/motion';
+import "./bootstrap";
+import { createApp, h } from "vue";
+import { createInertiaApp } from "@inertiajs/vue3";
+import { MotionPlugin } from "@vueuse/motion";
 
-const inertiaRoot = document.getElementById('app');
+const inertiaRoot = document.getElementById("app");
 
 if (inertiaRoot && inertiaRoot.dataset.page) {
     createInertiaApp({
         resolve: (name) => {
-            const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
+            const pages = import.meta.glob("./Pages/**/*.vue", { eager: true });
             const page = pages[`./Pages/${name}.vue`];
 
             if (!page) {
@@ -26,8 +26,8 @@ if (inertiaRoot && inertiaRoot.dataset.page) {
     });
 }
 
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' });
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" });
     });
 }
