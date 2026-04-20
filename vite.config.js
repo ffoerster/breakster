@@ -10,12 +10,12 @@ export default defineConfig({
         "*": "vp check --fix",
     },
     fmt: {
-        ignorePatterns: ["storage/**", "vendor/**", ".ddev/**"],
+        ignorePatterns: ["storage/**", "vendor/**", ".ddev/**", "public/**"],
         semi: true,
         sortPackageJson: true,
     },
     lint: {
-        ignorePatterns: ["storage/**", "vendor/**", ".ddev/**"],
+        ignorePatterns: ["storage/**", "vendor/**", ".ddev/**", "public/**"],
         options: { typeAware: true, typeCheck: true },
     },
     plugins: [
